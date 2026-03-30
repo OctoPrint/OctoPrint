@@ -401,7 +401,7 @@ def readGcodeFile(target, filename):
 
         recursive = request.values.get("recursive", "false") in valid_boolean_trues
 
-        file = _getFileDetails(target, filename, recursive)
+        file = _getFileDetails(target, filename, recursive=recursive)
         if not file:
             abort(404)
 
@@ -417,18 +417,19 @@ def _getFileDetails(origin, path, recursive=True):
     else:
         parent = None
 
-    if not recursive:
+    if recursive:
+        data = fileManager.get_storage_entry(origin, path)
+        if not data:
+            return None
+
+        return _analyse_and_convert_recursively(origin, [data], path=parent)[0]
+
+    else:
         files = _getFileList(origin, path=parent, recursive=False, level=1)
         for f in files:
             if f.path == path:
                 return f
         return None
-
-    data = fileManager.get_storage_entry(origin, path)
-    if not data:
-        return None
-
-    return _analyse_and_convert_recursively(origin, [data], path=parent)[0]
 
 
 @time_this(
