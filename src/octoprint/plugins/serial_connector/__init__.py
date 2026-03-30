@@ -28,7 +28,6 @@ class SerialConnectorPlugin(
         ConnectedSerialPrinter._serial_logger = self._serial_logger
 
     def _configure_serial_logger(self):
-        import logging
         import os
 
         from octoprint.logging import LOGGING_TIMED_MESSAGE_ONLY_FORMAT
