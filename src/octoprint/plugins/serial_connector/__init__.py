@@ -170,15 +170,12 @@ class SerialConnectorPlugin(
                     )
 
         if current is None or current < 3:
-            # TODO: needs unit tests added once #5340 is merged
+            # remove logWarning from plugins.logging
+            log_warning_enabled = True
 
-            # move logWarning from plugins.logging to plugins.serial_connector
             logging_config = self._settings.global_get(["plugins", "logging"])
             if logging_config and "serial_log_warning" in logging_config:
-                self._settings.global_set(
-                    ["plugins", "serial_connector", "logWarning"],
-                    logging_config.pop("serial_log_warning"),
-                )
+                log_warning_enabled = logging_config.pop("serial_log_warning")
                 self._settings.global_set(
                     ["plugins", "logging"], logging_config, force=True
                 )
@@ -203,6 +200,14 @@ class SerialConnectorPlugin(
                 self._settings.global_set(
                     ["appearance", "components", "disabled", "navbar"],
                     [new_id if x == old_id else x for x in navbar_disabled],
+                )
+            elif not log_warning_enabled:
+                # logWarning was disabled -> add to disabled navbar components
+                if navbar_disabled is None:
+                    navbar_disabled = []
+                navbar_disabled.append(new_id)
+                self._settings.global_set(
+                    ["appearance", "components", "disabled", "navbar"], navbar_disabled
                 )
 
     ##~~ TemplatePlugin mixin

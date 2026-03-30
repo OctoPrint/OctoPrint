@@ -12,8 +12,7 @@ $(function () {
                 self.settings.settings &&
                 self.settings.settings.plugins &&
                 self.settings.settings.plugins.serial_connector &&
-                self.settings.settings.plugins.serial_connector.log() &&
-                self.settings.settings.plugins.serial_connector.logWarning()
+                self.settings.settings.plugins.serial_connector.log()
             );
         });
 

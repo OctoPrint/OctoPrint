@@ -292,13 +292,38 @@ def test_migration_blocklists_unmodified(plugin):
 
 
 @pytest.mark.parametrize("current_version", [None, 2])
-def test_migration_logging_warning(plugin, current_version):
+def test_migration_logging_warning_enabled(plugin, current_version):
+    """Tests log warning flag gets migrated correctly"""
+
+    # prep
+    def settings_global_get(path):
+        if path == ["plugins", "logging"]:
+            return {"serial_log_warning": True}
+        elif path == ["appearance", "components", "disabled", "navbar"]:
+            return ["foo", "bar"]
+        return None
+
+    plugin._settings.global_get.side_effect = settings_global_get
+
+    # test
+    plugin.on_settings_migrate(TARGET_SETTINGS_VERSION, current_version)
+
+    # verify
+    plugin._settings.global_set.assert_called_once_with(
+        ["plugins", "logging"], {}, force=True
+    )
+
+
+@pytest.mark.parametrize("current_version", [None, 2])
+def test_migration_logging_warning_disabled(plugin, current_version):
     """Tests log warning flag gets migrated correctly"""
 
     # prep
     def settings_global_get(path):
         if path == ["plugins", "logging"]:
             return {"serial_log_warning": False}
+        elif path == ["appearance", "components", "disabled", "navbar"]:
+            return ["foo", "bar"]
         return None
 
     plugin._settings.global_get.side_effect = settings_global_get
@@ -309,8 +334,42 @@ def test_migration_logging_warning(plugin, current_version):
     # verify
     plugin._settings.global_set.assert_has_calls(
         [
-            mock.call(["plugins", "serial_connector", "logWarning"], False),
             mock.call(["plugins", "logging"], {}, force=True),
+            mock.call(
+                ["appearance", "components", "disabled", "navbar"],
+                ["foo", "bar", "plugin_serial_connector_seriallog"],
+            ),
+        ]
+    )
+
+
+@pytest.mark.parametrize("current_version", [None, 2])
+def test_migration_logging_warning_enabled_but_component_disabled(
+    plugin, current_version
+):
+    """Tests log warning flag gets migrated correctly"""
+
+    # prep
+    def settings_global_get(path):
+        if path == ["plugins", "logging"]:
+            return {"serial_log_warning": True}
+        elif path == ["appearance", "components", "disabled", "navbar"]:
+            return ["foo", "plugin_logging_seriallog", "bar"]
+        return None
+
+    plugin._settings.global_get.side_effect = settings_global_get
+
+    # test
+    plugin.on_settings_migrate(TARGET_SETTINGS_VERSION, current_version)
+
+    # verify
+    plugin._settings.global_set.assert_has_calls(
+        [
+            mock.call(["plugins", "logging"], {}, force=True),
+            mock.call(
+                ["appearance", "components", "disabled", "navbar"],
+                ["foo", "plugin_serial_connector_seriallog", "bar"],
+            ),
         ]
     )
 
@@ -359,6 +418,27 @@ def test_migration_logging_navbar_disabled(plugin, current_version):
     )
 
 
+EXPECTED_CALLS_BY_VERSION = {
+    "none_to_1": [
+        mock.call(["plugins", "serial_connector"], {"log": True}, force=True),
+    ],
+    "1_to_2": [
+        mock.call(["plugins", "serial_connector"], {"blocklistedPorts": []}, force=True)
+    ],
+    "2_to_3": [
+        mock.call(["plugins", "logging"], {}, force=True),
+        mock.call(
+            ["appearance", "components", "order", "navbar"],
+            ["foo", "plugin_serial_connector_seriallog", "bar"],
+        ),
+        mock.call(
+            ["appearance", "components", "disabled", "navbar"],
+            ["foo", "plugin_serial_connector_seriallog", "bar"],
+        ),
+    ],
+}
+
+
 def test_migration_path_version_none(plugin):
     """Tests all migrations are done"""
 
@@ -372,25 +452,9 @@ def test_migration_path_version_none(plugin):
 
     # verify
     plugin._settings.global_set.assert_has_calls(
-        [
-            # None -> 1
-            mock.call(["plugins", "serial_connector"], {"log": True}, force=True),
-            # 1 -> 2
-            mock.call(
-                ["plugins", "serial_connector"], {"blocklistedPorts": []}, force=True
-            ),
-            # 2 -> 3
-            mock.call(["plugins", "serial_connector", "logWarning"], False),
-            mock.call(["plugins", "logging"], {}, force=True),
-            mock.call(
-                ["appearance", "components", "order", "navbar"],
-                ["foo", "plugin_serial_connector_seriallog", "bar"],
-            ),
-            mock.call(
-                ["appearance", "components", "disabled", "navbar"],
-                ["foo", "plugin_serial_connector_seriallog", "bar"],
-            ),
-        ]
+        EXPECTED_CALLS_BY_VERSION["none_to_1"]
+        + EXPECTED_CALLS_BY_VERSION["1_to_2"]
+        + EXPECTED_CALLS_BY_VERSION["2_to_3"]
     )
     plugin._settings.global_remove.assert_called_once_with(["serial"])
 
@@ -408,23 +472,7 @@ def test_migration_path_version_1(plugin):
 
     # verify
     plugin._settings.global_set.assert_has_calls(
-        [
-            # 1 -> 2
-            mock.call(
-                ["plugins", "serial_connector"], {"blocklistedPorts": []}, force=True
-            ),
-            # 2 -> 3
-            mock.call(["plugins", "serial_connector", "logWarning"], False),
-            mock.call(["plugins", "logging"], {}, force=True),
-            mock.call(
-                ["appearance", "components", "order", "navbar"],
-                ["foo", "plugin_serial_connector_seriallog", "bar"],
-            ),
-            mock.call(
-                ["appearance", "components", "disabled", "navbar"],
-                ["foo", "plugin_serial_connector_seriallog", "bar"],
-            ),
-        ]
+        EXPECTED_CALLS_BY_VERSION["1_to_2"] + EXPECTED_CALLS_BY_VERSION["2_to_3"]
     )
     plugin._settings.global_remove.assert_not_called()
 
@@ -441,21 +489,7 @@ def test_migration_path_version_2(plugin):
     plugin.on_settings_migrate(TARGET_SETTINGS_VERSION, current_version)
 
     # verify
-    plugin._settings.global_set.assert_has_calls(
-        [
-            # 2 -> 3
-            mock.call(["plugins", "serial_connector", "logWarning"], False),
-            mock.call(["plugins", "logging"], {}, force=True),
-            mock.call(
-                ["appearance", "components", "order", "navbar"],
-                ["foo", "plugin_serial_connector_seriallog", "bar"],
-            ),
-            mock.call(
-                ["appearance", "components", "disabled", "navbar"],
-                ["foo", "plugin_serial_connector_seriallog", "bar"],
-            ),
-        ]
-    )
+    plugin._settings.global_set.assert_has_calls(EXPECTED_CALLS_BY_VERSION["2_to_3"])
     plugin._settings.global_remove.assert_not_called()
 
 

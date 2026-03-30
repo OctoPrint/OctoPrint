@@ -118,9 +118,6 @@ class SerialConfig(BaseModel):
     log: bool = False
     """Whether to log whole communication to ``serial.log`` (warning: might decrease performance)."""
 
-    logWarning: bool = True
-    """Whether to show the serial log warning in the navbar when serial logging is enabled."""
-
     timeout: SerialTimeoutConfig = SerialTimeoutConfig()
     """Timeouts used for the serial connection to the printer, you might want to adjust these if you are experiencing connection problems."""
 
