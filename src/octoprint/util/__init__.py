@@ -312,20 +312,6 @@ Returns:
     value: The value of the variable with the deprecation warnings in place.
 """
 
-# TODO rename to_unicode to to_str and deprecate to_unicode in 2.0.0
-to_str = deprecated(
-    "to_str has been renamed to to_bytes and in a future version will become the new to_unicode",
-    includedoc="to_str has been renamed to to_bytes and in a future version will become the new to_unicode",
-    since="1.3.11",
-)(to_bytes)
-
-
-to_native_str = deprecated(
-    "to_native_str is no longer needed, use to_unicode instead",
-    includedoc="to_native_str is no longer needed, use to_unicode instead",
-    since="1.8.0",
-)(to_unicode)
-
 
 def get_formatted_size(num):
     """
