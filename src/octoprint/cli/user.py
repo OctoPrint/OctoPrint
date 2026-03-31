@@ -173,7 +173,7 @@ def activate_command(ctx, username):
         user = ctx.obj.user_manager.find_user(username)
         if user:
             click.echo("User status:")
-            click.echo(f"\t{_user_to_line(user.asDict())}")
+            click.echo(f"\t{_user_to_line(user.as_dict())}")
     except UnknownUser:
         click.echo(f"User {username} does not exist!", err=True)
 
@@ -190,7 +190,7 @@ def deactivate_command(ctx, username):
         user = ctx.obj.user_manager.find_user(username)
         if user:
             click.echo("User status:")
-            click.echo(f"\t{_user_to_line(user.asDict())}")
+            click.echo(f"\t{_user_to_line(user.as_dict())}")
     except UnknownUser:
         click.echo(f"User {username} does not exist!", err=True)
 

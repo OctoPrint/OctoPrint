@@ -90,7 +90,9 @@ def pluginData(name):
 
     try:
         api_plugin = api_plugins[0]
-        if api_plugin.is_api_adminonly() and not current_user.is_admin:
+        if api_plugin.is_api_adminonly() and not current_user.has_permissions(
+            Permissions.ADMIN
+        ):
             abort(403)
 
         if api_plugin.is_api_protected():
