@@ -16,7 +16,14 @@ $(function () {
         self.defaultProfile = undefined;
 
         self.destinationFilename = ko.observable();
-        self.gcodeFilename = self.destinationFilename; // FIXME for backwards compatibility, mark deprecated ASAP
+
+        // TODO remove in 2.1.0
+        self.gcodeFilename = ko.pureComputed(() => {
+            log.warn(
+                "gcodeFilename() has been deprecated in favor of destinationFilename(), please upgrade your calling code accordingly. This compatibility wrapper will be removed in OctoPrint 2.1.0."
+            );
+            return self.destinationFilename();
+        });
 
         self.title = ko.observable();
         self.slicer = ko.observable();
