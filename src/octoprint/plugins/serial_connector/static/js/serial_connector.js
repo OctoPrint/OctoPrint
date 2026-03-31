@@ -53,9 +53,6 @@ $(function () {
         self.portCaption = ko.pureComputed(() =>
             self.validPort() ? "AUTO" : gettext("No serial port found")
         );
-        self.enablePort = ko.pureComputed(
-            () => self.validPort() && self.isErrorOrClosed()
-        );
 
         self.onConnectionDataReceived = (parameters, current, last, preferred) => {
             const ports = parameters.serial.port;
@@ -129,6 +126,12 @@ $(function () {
                     value: !parameters.baudrate ? "AUTO" : parameters.baudrate
                 }
             ];
+        };
+
+        self.onReevaluateConnectionParameters = (connector) => {
+            if (connector !== "serial") return null;
+
+            return self.validPort();
         };
 
         //~~ Settings related
