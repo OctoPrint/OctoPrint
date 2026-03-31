@@ -1010,7 +1010,7 @@ def mime_type_matches(mime, other):
     return type_matches and subtype_matches
 
 
-def parse_content_type_line(line: str) -> (str, dict):
+def parse_content_type_line(line: str) -> tuple[str, dict]:
     from email.policy import EmailPolicy
 
     header = EmailPolicy.header_factory("content-type", line)
