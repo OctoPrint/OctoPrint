@@ -697,19 +697,19 @@ def _verifyFolderExists(origin, foldername):
     return fileManager.folder_exists(origin, foldername)
 
 
-def _isBusy(target, path):  # FIXME this currently only checks local storage! (2.0.0)
+def _isBusy(target, path):
     currentOrigin, currentPath = _getCurrentFile()
     if (
         currentPath is not None
         and currentOrigin == target
-        and fileManager.file_in_path(FileDestinations.LOCAL, path, currentPath)
+        and fileManager.file_in_path(target, path, currentPath)
         and (printer.is_printing() or printer.is_paused())
     ):
         return True
 
     return any(
-        target == x[0] and fileManager.file_in_path(FileDestinations.LOCAL, path, x[1])
-        for x in fileManager.get_busy_files()
+        target == busy_storage and fileManager.file_in_path(target, path, busy_path)
+        for busy_storage, busy_path in fileManager.get_busy_files()
     )
 
 
