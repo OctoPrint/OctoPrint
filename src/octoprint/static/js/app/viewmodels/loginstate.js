@@ -334,14 +334,12 @@ $(function () {
                 self.username(data.name);
                 self.currentUser(data);
 
-                // FIXME set from needs or groups (2.0.0)
-                self.isUser(data.user);
-                self.isAdmin(data.admin);
+                self.isUser(data.groups.includes("users"));
+                self.isAdmin(data.groups.includes("users"));
             } else {
                 self.username(undefined);
                 self.currentUser(undefined);
 
-                // FIXME set from needs or groups (2.0.0)
                 self.isUser(false);
                 self.isAdmin(false);
             }
