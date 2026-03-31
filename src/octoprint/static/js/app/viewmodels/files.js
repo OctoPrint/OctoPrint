@@ -1974,7 +1974,7 @@ $(function () {
             )
                 return;
 
-            // TODO: update options instead of re-init
+            // FIXME update options instead of re-init
             button.fileupload({
                 url: API_BASEURL + "files/" + storage,
                 dataType: "json",

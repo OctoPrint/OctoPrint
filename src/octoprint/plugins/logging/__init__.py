@@ -118,7 +118,7 @@ class LoggingPlugin(
         if not isinstance(json_data, dict):
             abort(400, description="Invalid log level configuration")
 
-        # TODO validate further
+        # FIXME validate further
 
         self._set_logging_levels(json_data)
         return self.get_logging_levels_api()
@@ -203,7 +203,7 @@ class LoggingPlugin(
         )
 
     def _get_logging_file(self):
-        # TODO this might not be the logging config we are actually using here (command line parameter...)
+        # FIXME this might not be the logging config we are actually using here (command line parameter...)
         return os.path.join(self._settings.getBaseFolder("base"), "logging.yaml")
 
     def _get_logging_config(self):

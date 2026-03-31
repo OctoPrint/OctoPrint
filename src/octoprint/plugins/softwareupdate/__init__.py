@@ -1605,7 +1605,7 @@ class SoftwareUpdatePlugin(
         if check_targets is None:
             check_targets = list(checks.keys())
 
-        # TODO: caching doesn't take check_targets into account!
+        # FIXME caching doesn't take check_targets into account!
 
         update_available = False
         update_possible = False

@@ -84,7 +84,7 @@ $(function () {
             return capabilities && capabilities.temperature_offsets;
         });
 
-        // TODO: find some nicer way to update plot AFTER graph becomes visible
+        // FIXME find some nicer way to update plot AFTER graph becomes visible
         self.loginStateSubscription = undefined;
 
         self.tools = ko.observableArray([]);

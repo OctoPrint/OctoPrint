@@ -202,7 +202,7 @@ def load_user(userid):
     if userid is None:
         return None
 
-    if userid == "_api":  # TODO Remove in 2.1.0
+    if userid == "_api":  # TODO remove in 2.1.0
         return userManager.api_user_factory()
 
     if userid == "_internal":
@@ -1165,7 +1165,7 @@ class Server:
             files = {"_data/" + name: os.path.join(root, name) for name in allowed}
             loaders.append(octoprint.util.jinja.SelectedFilesLoader(files))
 
-        # TODO: Remove this in 2.0.0
+        # TODO remove in 2.1.0
         warning_message = "Loading plugin template '{template}' from '{filename}' without plugin prefix, this is deprecated and will soon no longer be supported."
         loaders.append(
             octoprint.util.jinja.WarningLoader(

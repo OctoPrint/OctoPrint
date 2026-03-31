@@ -313,7 +313,9 @@ class PrinterFileStorage(StorageInterface):
             )
 
         try:
-            result = self._connection.copy_printer_folder(source, destination)  # TODO
+            result = self._connection.copy_printer_folder(
+                source, destination
+            )  # FIXME is there something still to do here? (2.0.0)
             self._update_last_activity()
             return result
         except PrinterFilesError as exc:
@@ -419,7 +421,9 @@ class PrinterFileStorage(StorageInterface):
             )
 
         try:
-            result = self._connection.copy_printer_file(source, destination)  # TODO
+            result = self._connection.copy_printer_file(
+                source, destination
+            )  # FIXME is there something still to do here? (2.0.0)
             self._update_last_activity()
             return result
         except PrinterFilesError as exc:
@@ -440,7 +444,9 @@ class PrinterFileStorage(StorageInterface):
             )
 
         try:
-            result = self._connection.move_printer_file(source, destination)  # TODO
+            result = self._connection.move_printer_file(
+                source, destination
+            )  # FIXME is there something still to do here? (2.0.0)
             self._update_last_activity()
             return result
         except PrinterFilesError as exc:

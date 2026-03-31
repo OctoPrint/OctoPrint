@@ -7,7 +7,7 @@ $(function () {
         self.printerProfiles = parameters[2];
         self.about = parameters[3];
 
-        // TODO: remove in upcoming version, this is only for backwards compatibility
+        // TODO remove in 2.1.0, this is only for backwards compatibility
         self.users = parameters[4];
 
         // use this promise to do certain things once the SettingsViewModel has processed

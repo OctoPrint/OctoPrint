@@ -616,7 +616,7 @@ class LocalFileStorage(StorageInterface):
 
         # make sure folders exist
         if not os.path.exists(path):
-            # TODO persist display names of path segments!
+            # FIXME persist display names of path segments!
             os.makedirs(path)
 
         # save the file

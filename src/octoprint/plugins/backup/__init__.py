@@ -157,7 +157,7 @@ class BackupPlugin(
     @no_firstrun_access
     @Permissions.ADMIN.require(403)
     def get_unknown_plugins(self):
-        # TODO add caching
+        # FIXME add caching
         unknown_plugins = self._get_unknown_plugins()
         return flask.jsonify(unknown_plugins=unknown_plugins)
 
@@ -1156,7 +1156,7 @@ class BackupPlugin(
                             )
 
             except Exception as exc:  # noqa: F841
-                # TODO py3: use the exception, not sys.exc_info()
+                # FIXME py3: use the exception, not sys.exc_info()
                 if callable(on_backup_error):
                     exc_info = sys.exc_info()
                     try:

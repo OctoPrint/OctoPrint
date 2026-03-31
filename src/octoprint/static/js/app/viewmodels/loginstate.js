@@ -334,14 +334,14 @@ $(function () {
                 self.username(data.name);
                 self.currentUser(data);
 
-                // TODO: deprecated, remove in 1.5.0
+                // FIXME set from needs or groups (2.0.0)
                 self.isUser(data.user);
                 self.isAdmin(data.admin);
             } else {
                 self.username(undefined);
                 self.currentUser(undefined);
 
-                // TODO: deprecated, remove in 1.5.0
+                // FIXME set from needs or groups (2.0.0)
                 self.isUser(false);
                 self.isAdmin(false);
             }

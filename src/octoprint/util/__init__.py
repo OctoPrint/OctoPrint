@@ -821,7 +821,7 @@ class fallback_dict(dict):
         self.custom[key] = value
 
     def __delitem__(self, key):
-        # TODO: mark as deleted and leave fallbacks alone?
+        # FIXME mark as deleted and leave fallbacks alone?
         for dictionary in self._all():
             if key in dictionary:
                 del dictionary[key]

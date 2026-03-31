@@ -65,7 +65,7 @@ $(function () {
         self.isLoading = ko.observable(undefined);
 
         self.enableConnect = ko.pureComputed(function () {
-            //return self.enablePort() || !self.isErrorOrClosed();  // TODO: This needs to be checked against other connectors too
+            //return self.enablePort() || !self.isErrorOrClosed();  // FIXME this needs to be checked against other connectors too (2.0.0)
             return true;
         });
 
