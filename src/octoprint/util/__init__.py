@@ -1088,33 +1088,6 @@ def temppath(prefix=None, suffix=""):
 TemporaryDirectory = tempfile.TemporaryDirectory
 
 
-@deprecated("Please use open with '-sig' encoding instead", since="1.8.0")
-def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
-    # TODO Remove in 2.0.0
-    import codecs
-
-    assert "b" not in mode, "binary mode not support by bom_aware_open"
-
-    codec = codecs.lookup(encoding)
-    encoding = codec.name
-
-    if kwargs is None:
-        kwargs = {}
-
-    potential_bom_attribute = "BOM_" + codec.name.replace("utf-", "utf").upper()
-    if "r" in mode and hasattr(codecs, potential_bom_attribute):
-        # these encodings might have a BOM, so let's see if there is one
-        bom = getattr(codecs, potential_bom_attribute)
-
-        with open(filename, mode="rb") as f:
-            header = f.read(4)
-
-        if header.startswith(bom):
-            encoding += "-sig"
-
-    return open(filename, encoding=encoding, mode=mode, **kwargs)
-
-
 BOMS = {
     "utf-8-sig": codecs.BOM_UTF8,
     "utf-16-le": codecs.BOM_UTF16_LE,
