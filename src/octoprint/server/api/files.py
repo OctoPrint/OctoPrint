@@ -697,7 +697,7 @@ def _verifyFolderExists(origin, foldername):
     return fileManager.folder_exists(origin, foldername)
 
 
-def _isBusy(target, path):  # FIXME is there something still to do here? (2.0.0)
+def _isBusy(target, path):  # FIXME this currently only checks local storage! (2.0.0)
     currentOrigin, currentPath = _getCurrentFile()
     if (
         currentPath is not None
