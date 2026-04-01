@@ -702,6 +702,72 @@ class SettingsTest(unittest.TestCase):
             self.assertEqual(settings.get(["server", "host"]), "0.0.0.0")
             self.assertFalse(settings._is_deprecated_path(["server", "host"]))
 
+    ##~~ test compat overlays
+
+    @ddt.data(
+        # settings moved from serial to serial_connector as they were
+        ("log", False),
+        ("blocklistedPorts", ["foo"]),
+        ("blocklistedBaudrates", [9600]),
+        # connection params, moved from serial to printerConnection
+        ("port", "/dev/ttyUSB0"),
+        ("baudrate", 115200),
+        ("autoconnect", True),
+        ("autorefresh", False),
+        ("autorefreshInterval", 5),
+        # settings that were booleans and now are enums
+        ("alwaysSendChecksum", False),
+        ("neverSendChecksum", False),
+        ("disconnectOnErrors", True),
+        ("ignoreErrorsFromFirmware", False),
+        # old "blacklisted" settings, now renamed to "blocklisted"
+        ("blacklistedPorts", ["foo"]),
+        ("blacklistedBaudrates", [9600]),
+        # notifySuppressedCommands, moved to feature
+        ("notifySuppressedCommands", "never"),
+    )
+    @ddt.unpack
+    def test_serial_compat_overlay(self, serial_key, expected):
+        with self.serial_compat_settings() as settings:
+            self.assertEqual(settings.get(["serial", serial_key]), expected)
+            self.assertTrue(settings._is_deprecated_path(["serial", serial_key]))
+
+    @ddt.data(
+        (["plugins", "serial_connector", "log"], True, "log"),
+        (["printerConnection", "autoconnect"], False, "autoconnect"),
+        (["feature", "notifySuppressedCommands"], "log", "notifySuppressedCommands"),
+    )
+    @ddt.unpack
+    def test_serial_compat_overlay_updates(self, source_path, new_value, serial_key):
+        with self.serial_compat_settings() as settings:
+            settings.set(source_path, new_value, force=True)
+            self.assertEqual(settings.get(["serial", serial_key]), new_value)
+
+    def test_webcam_compat_overlay(self):
+        from octoprint.schema.webcam import Webcam, WebcamCompatibility
+
+        with self.mocked_basedir():
+            settings = octoprint.settings.Settings()
+
+            compat = WebcamCompatibility(
+                stream="http://cam/stream", snapshot="http://cam/snap"
+            )
+            webcam = Webcam(
+                name="test", displayName="Test", snapshotDisplay="", compat=compat
+            )
+            provided = unittest.mock.Mock()
+            provided.config = webcam
+
+            with unittest.mock.patch(
+                "octoprint.webcams.get_default_webcam", return_value=provided
+            ):
+                from octoprint import init_webcam_compat_overlay
+
+                init_webcam_compat_overlay(settings, unittest.mock.Mock())
+
+            self.assertEqual(settings.get(["webcam", "stream"]), "http://cam/stream")
+            self.assertTrue(settings._is_deprecated_path(["webcam", "stream"]))
+
     ##~~ test save
 
     def test_save(self):
@@ -832,6 +898,46 @@ class SettingsTest(unittest.TestCase):
         with self.mocked_config():
             settings = octoprint.settings.Settings()
             settings.add_overlay(self.overlay, key="overlay")
+            yield settings
+
+    @contextlib.contextmanager
+    def serial_compat_settings(self):
+        from octoprint import init_serial_compat_overlay
+
+        with self.mocked_basedir():
+            settings = octoprint.settings.Settings()
+            settings.set(
+                ["plugins", "serial_connector"],
+                {
+                    "log": False,
+                    "sendChecksum": "print",
+                    "errorHandling": "disconnect",
+                    "blocklistedPorts": ["foo"],
+                    "blocklistedBaudrates": [9600],
+                },
+                force=True,
+            )
+            settings.set(
+                ["printerConnection"],
+                {
+                    "preferred": {
+                        "parameters": {
+                            "port": "/dev/ttyUSB0",
+                            "baudrate": 115200,
+                        }
+                    },
+                    "autoconnect": True,
+                    "autorefresh": False,
+                    "autorefreshInterval": 5,
+                },
+                force=True,
+            )
+            settings.set(
+                ["feature"],
+                {"notifySuppressedCommands": "never"},
+                force=True,
+            )
+            init_serial_compat_overlay(settings)
             yield settings
 
     @contextlib.contextmanager
