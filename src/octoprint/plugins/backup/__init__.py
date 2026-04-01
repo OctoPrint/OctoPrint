@@ -692,11 +692,11 @@ class BackupPlugin(
                 {"name": name, "path": final_path, "excludes": exclude},
             )
 
-        def on_backup_error(name, exc_info):
+        def on_backup_error(name, exc):
             self._send_client_message(
-                "backup_error", payload={"name": name, "error": f"{exc_info[1]}"}
+                "backup_error", payload={"name": name, "error": f"{exc}"}
             )
-            self._logger.error("Error while creating backup zip", exc_info=exc_info)
+            self._logger.error("Error while creating backup zip", exc_info=exc)
 
         def on_backup_progress(name, progress):
             self._send_client_message(
@@ -1156,13 +1156,8 @@ class BackupPlugin(
                             )
 
             except Exception as exc:  # noqa: F841
-                # FIXME py3: use the exception, not sys.exc_info()
                 if callable(on_backup_error):
-                    exc_info = sys.exc_info()
-                    try:
-                        on_backup_error(name, exc_info)
-                    finally:
-                        del exc_info
+                    on_backup_error(name, exc)
                 raise
 
     @classmethod
