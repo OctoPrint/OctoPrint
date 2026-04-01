@@ -1033,6 +1033,7 @@ class Server:
     def _setup_plugin_manager(self, components):
         from octoprint import (
             init_custom_events,
+            init_serial_compat_overlay,
             init_settings_plugin_config_migration_and_cleanup,
             init_webcam_compat_overlay,
         )
@@ -1051,6 +1052,7 @@ class Server:
         self._plugin_manager.initialize_implementations()
 
         init_settings_plugin_config_migration_and_cleanup(self._plugin_manager)
+        init_serial_compat_overlay(self._settings)
         init_webcam_compat_overlay(self._settings, self._plugin_manager)
 
         self._plugin_manager.log_all_plugins()
