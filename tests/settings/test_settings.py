@@ -657,6 +657,17 @@ class SettingsTest(unittest.TestCase):
             # verify callback was not called again
             callback.assert_called_once_with(["api", "key"], "test", "newkey")
 
+    def test_update_callback_child_write(self):
+        with self.settings() as settings:
+            callback = unittest.mock.Mock()
+            settings.add_path_update_callback(["server"], callback)
+
+            # set a child value
+            settings.set(["server", "host"], "new")
+
+            # verify callback was called
+            callback.assert_called_once()
+
     ##~~ test overlays
 
     def test_overlay_add_and_remove(self):
