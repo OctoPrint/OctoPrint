@@ -469,13 +469,7 @@ $(function () {
                 }
 
                 return OctoPrint.access.users
-                    .update(
-                        user.name,
-                        user.active,
-                        user.admin,
-                        user.permissions,
-                        user.groups
-                    )
+                    .update(user.name, user.active, user.permissions, user.groups)
                     .done(self.fromResponse);
             };
 
