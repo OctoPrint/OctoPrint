@@ -9,50 +9,6 @@
         this.base = base;
     };
 
-    OctoPrintPluginManagerClient.prototype.get = function (refresh, opts) {
-        console.log(
-            "Deprecated endpoint OctoPrint.plugin.pluginmanager.get, " +
-                "please use OctoPrint.plugin.pluginmanager.get*"
-        );
-        var refresh_repo, refresh_notices, refresh_orphans;
-        if (_.isPlainObject(refresh)) {
-            refresh_repo = refresh.repo || false;
-            refresh_notices = refresh.notices || false;
-            refresh_orphans = refresh.orphans || false;
-        } else {
-            refresh_repo = refresh;
-            refresh_notices = false;
-            refresh_orphans = false;
-        }
-
-        var query = [];
-        if (refresh_repo) query.push("refresh_repository=true");
-        if (refresh_notices) query.push("refresh_notices=true");
-        if (refresh_orphans) query.push("refresh_orphans=true");
-
-        return this.base.get(
-            this.base.getSimpleApiUrl("pluginmanager") +
-                (query.length ? "?" + query.join("&") : ""),
-            opts
-        );
-    };
-
-    OctoPrintPluginManagerClient.prototype.getWithRefresh = function (opts) {
-        console.log(
-            "Deprecated endpoint OctoPrint.plugin.pluginmanager.getWithRefresh, " +
-                "please use OctoPrint.plugin.pluginmanager.get*"
-        );
-        return this.get(true, opts);
-    };
-
-    OctoPrintPluginManagerClient.prototype.getWithoutRefresh = function (opts) {
-        console.log(
-            "Deprecated endpoint OctoPrint.plugin.pluginmanager.getWithoutRefresh, " +
-                "please use OctoPrint.plugin.pluginmanager.get*"
-        );
-        return this.get(false, opts);
-    };
-
     OctoPrintPluginManagerClient.prototype.getPlugins = function (refresh, opts) {
         var url = this.base.getBlueprintUrl("pluginmanager") + "plugins";
         return this.base.get(url + (refresh ? "?refresh=true" : ""), opts);
