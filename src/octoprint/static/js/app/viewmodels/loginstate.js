@@ -335,7 +335,7 @@ $(function () {
                 self.currentUser(data);
 
                 self.isUser(data.groups.includes("users"));
-                self.isAdmin(data.groups.includes("users"));
+                self.isAdmin(data.groups.includes("admins"));
             } else {
                 self.username(undefined);
                 self.currentUser(undefined);
