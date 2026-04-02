@@ -20,7 +20,6 @@ import octoprint.filemanager.util
 import octoprint.slicing
 from octoprint.access.permissions import Permissions
 from octoprint.events import Events
-from octoprint.filemanager.destinations import FileDestinations
 from octoprint.filemanager.storage import (
     AnalysisDimensions,
     AnalysisFilamentUse,
@@ -783,9 +782,7 @@ def uploadGcodeFile(target):
                     canonFilename = request.values.get("filename")
 
                 futurePath = fileManager.sanitize_path(target, canonicalizedPath)
-                futureFilename = fileManager.sanitize_name(
-                    FileDestinations.LOCAL, canonFilename
-                )
+                futureFilename = fileManager.sanitize_name(target, canonFilename)
             except Exception:
                 _logger.exception(f"Error canonicalizing {upload_name} against {target}")
                 canonFilename = None
