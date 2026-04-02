@@ -562,8 +562,8 @@ def init_serial_compat_overlay(settings):
             settings.remove_overlay("serial_compat")
             return
 
-        send_checksum = serial_connector.get("sendChecksum")
-        error_handling = serial_connector.get("errorHandling")
+        send_checksum = serial_connector.pop("sendChecksum", None)
+        error_handling = serial_connector.pop("errorHandling", None)
 
         serial_compat = {
             # Connection params (moved to printerConnection.*)
