@@ -2176,17 +2176,6 @@ class Server:
                     "content_type": "image/gif",
                 },
             ),
-            # deprecated endpoints
-            (
-                r"/api/logs",
-                util.tornado.DeprecatedEndpointHandler,
-                {"url": "/plugin/logging/logs"},
-            ),
-            (
-                r"/api/logs/(.*)",
-                util.tornado.DeprecatedEndpointHandler,
-                {"url": "/plugin/logging/logs/{0}"},
-            ),
         ]
 
         # additional routes from plugins

@@ -15,7 +15,6 @@ REST API
    files.rst
    job.rst
    languages.rst
-   logs.rst
    printer.rst
    printerprofiles.rst
    settings.rst
