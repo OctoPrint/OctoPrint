@@ -1877,7 +1877,6 @@ def collect_core_assets(preferred_stylesheet="css"):
         "js/app/viewmodels/terminal.js",
         "js/app/viewmodels/timelapse.js",
         "js/app/viewmodels/uistate.js",
-        "js/app/viewmodels/users.js",
         "js/app/viewmodels/usersettings.js",
         "js/app/viewmodels/wizard.js",
         "js/app/viewmodels/about.js",
@@ -1899,7 +1898,6 @@ def collect_core_assets(preferred_stylesheet="css"):
         "js/app/client/slicing.js",
         "js/app/client/system.js",
         "js/app/client/timelapse.js",
-        "js/app/client/users.js",
         "js/app/client/util.js",
         "js/app/client/wizard.js",
     ]

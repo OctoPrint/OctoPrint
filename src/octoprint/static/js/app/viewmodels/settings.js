@@ -1363,8 +1363,7 @@ $(function () {
             "loginStateViewModel",
             "accessViewModel",
             "printerProfilesViewModel",
-            "aboutViewModel",
-            "usersViewModel"
+            "aboutViewModel"
         ],
         elements: ["#settings_dialog", "#navbar_settings"]
     });
