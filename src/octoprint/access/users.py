@@ -957,6 +957,10 @@ class User(UserMixin):
 
         self._settings = settings
 
+    @property
+    def is_active(self):
+        return self._active
+
     def as_dict(self):
         from octoprint.access.permissions import OctoPrintPermission
 
