@@ -139,24 +139,6 @@ $(function () {
                                 result = method(next, current) !== false && result;
                             }
                         );
-
-                        // also trigger the onWizardTabChange event here which we misnamed and
-                        // on which we misordered the parameters on during development but which might
-                        // already be used somewhere - log a deprecation warning to console though
-                        callViewModels(
-                            allViewModels,
-                            "onWizardTabChange",
-                            function (method, viewModel) {
-                                log.warn(
-                                    "View model",
-                                    viewModel,
-                                    'is using deprecated callback "onWizardTabChange", please change to "onBeforeWizardTabChange"'
-                                );
-
-                                // we want to continue evaluating even if result becomes false
-                                result = method(current, next) !== false && result;
-                            }
-                        );
                         return result;
                     }
                 },

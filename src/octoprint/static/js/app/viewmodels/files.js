@@ -608,31 +608,9 @@ $(function () {
                 return;
             }
 
-            var focus, switchToPath, force;
-
-            if (_.isObject(params)) {
-                focus = params.focus;
-                switchToPath = params.switchToPath;
-                force = params.force;
-            } else if (arguments.length) {
-                // old argument list type call signature
-                log.warn(
-                    "FilesViewModel.requestData called with old argument list. That is deprecated, please use parameter object instead."
-                );
-                if (arguments.length >= 1) {
-                    if (arguments.length >= 2) {
-                        focus = {location: arguments[1], path: arguments[0]};
-                    } else {
-                        focus = {location: "local", path: arguments[0]};
-                    }
-                }
-                if (arguments.length >= 3) {
-                    switchToPath = arguments[2];
-                }
-                if (arguments.length >= 4) {
-                    force = arguments[3];
-                }
-            }
+            const focus = params ? params.focus : undefined;
+            const switchToPath = params ? params.switchToPath : undefined;
+            const force = params ? params.force : false;
 
             self._filesToFocus =
                 self._filesToFocus && self._filesToFocus.length
@@ -666,25 +644,8 @@ $(function () {
         };
 
         self.fromResponse = function (response, params) {
-            let focus = [];
-            let switchToPath;
-
-            if (_.isObject(params)) {
-                focus = params.focus || focus;
-                switchToPath = params.switchToPath || undefined;
-            } else if (arguments.length > 1) {
-                log.warn(
-                    "FilesViewModel.fromResponse called with old argument list. That is deprecated, please use parameter object instead."
-                );
-                if (arguments.length > 2) {
-                    focus = [{location: arguments[2], path: arguments[1]}];
-                } else {
-                    focus = [{location: "local", path: arguments[1]}];
-                }
-                if (arguments.length > 3) {
-                    switchToPath = arguments[3] || undefined;
-                }
-            }
+            const focus = params.focus || [];
+            const switchToPath = params.switchToPath || undefined;
 
             self.storageFiles(response);
 

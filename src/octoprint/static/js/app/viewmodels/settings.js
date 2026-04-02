@@ -683,52 +683,12 @@ $(function () {
         };
 
         self.requestData = function (local) {
-            // handle old parameter format
-            var callback = undefined;
-            if (arguments.length === 2 || _.isFunction(local)) {
-                var exc = new Error();
-                log.warn(
-                    "The callback parameter of SettingsViewModel.requestData is deprecated, the method now returns a promise, please use that instead. Stacktrace:",
-                    exc.stack || exc.stacktrace || "<n/a>"
-                );
-
-                if (arguments.length === 2) {
-                    callback = arguments[0];
-                    local = arguments[1];
-                } else {
-                    callback = local;
-                    local = false;
-                }
-            }
-
-            // handler for any explicitly provided callbacks
-            var callbackHandler = function () {
-                if (!callback) return;
-                try {
-                    callback();
-                } catch (exc) {
-                    log.error(
-                        "Error calling settings callback",
-                        callback,
-                        ":",
-                        `${exc.message}\n${exc.stack || exc}`
-                    );
-                }
-            };
-
             // if a request is already active, create a new deferred and return
             // its promise, it will be resolved in the response handler of the
             // current request
             if (self.receiving()) {
                 var deferred = $.Deferred();
                 self.outstanding.push(deferred);
-
-                if (callback) {
-                    // if we have a callback, we need to make sure it will
-                    // get called when the deferred is resolved
-                    deferred.done(callbackHandler);
-                }
-
                 return deferred.promise();
             }
 
@@ -741,12 +701,6 @@ $(function () {
                 })
                 .done(function (response) {
                     self.fromResponse(response, local);
-
-                    if (callback) {
-                        var deferred = $.Deferred();
-                        deferred.done(callbackHandler);
-                        self.outstanding.push(deferred);
-                    }
 
                     // resolve all promises
                     var args = arguments;

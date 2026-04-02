@@ -194,19 +194,6 @@
     };
 
     OctoPrintClient.prototype.getRequestHeaders = function (method, additional, opts) {
-        if (arguments.length <= 1) {
-            // versions prior 1.8.3 don't know method and opts
-            if (!_.isString(method)) {
-                additional = method;
-                console.warn(
-                    "Calling OctoPrintClient.getRequestHeaders with additional " +
-                        "headers as the first parameter is deprecated. Please " +
-                        "consult the docs about the current signature and adjust " +
-                        "your code accordingly."
-                );
-            }
-        }
-
         method = method || "GET";
         additional = additional || {};
         opts = opts || {};
