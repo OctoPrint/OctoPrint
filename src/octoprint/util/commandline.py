@@ -31,11 +31,6 @@ def clean_ansi(line: str) -> str:
     """
     Removes ANSI control codes from ``line``.
 
-    Note: This function also still supports an input of ``bytes``, leading to an
-    ``output`` of ``bytes``. This if for reasons of backwards compatibility only,
-    should no longer be used and considered to be deprecated and to be removed in
-    a future version of OctoPrint. A warning will be logged.
-
     Parameters:
         line (str): the line to process
 
