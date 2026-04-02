@@ -69,6 +69,7 @@ $(function () {
         });
         self.reevaluateConnectionParameters = (connector) => {
             window.setTimeout(() => {
+                log.debug(`Reevaluating connection parameters for ${connector}...`);
                 let reevaluateResult = undefined;
                 callViewModels(
                     self.allViewModels,
@@ -123,7 +124,7 @@ $(function () {
             ["input", "select", "textarea"].forEach((tag) => {
                 $(`${tag}[data-connection-parameter]`, container).each(
                     (index, element) => {
-                        callback(element);
+                        callback(element, connector);
                     }
                 );
             });
@@ -257,10 +258,13 @@ $(function () {
             // add listeners to inputs to detect changes & reevaluate connection availability
 
             const event = "input.revalidate";
-            self.doOnAllInputs((element) => {
+            self.doOnAllInputs((element, connector) => {
                 $(element)
                     .off(event)
                     .on(event, () => {
+                        log.debug(
+                            `Change detected on ${element}, associated connector ${connector} vs ${self.selectedConnector()}`
+                        );
                         if (self.selectedConnector() === connector) {
                             self.reevaluateConnectionParameters(connector);
                         }
