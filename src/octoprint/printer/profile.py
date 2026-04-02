@@ -198,7 +198,6 @@ class BedFormFactor:
 
 
 BedTypes = BedFormFactor
-"""Deprecated name of :class:`BedFormFactors`"""
 
 
 class BedOrigin:

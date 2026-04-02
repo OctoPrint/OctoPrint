@@ -973,13 +973,15 @@ $(function () {
             };
 
             // set up webcam compat layer if not yet done
+            //
+            // TODO remove in 2.2.0
             _.each(self.webcamCompat, (mapped, key) => {
                 if (self.settings.hasOwnProperty(key)) return;
                 if (!self.settings.webcam.hasOwnProperty(mapped)) return;
                 const message =
                     "Please use the webcam system introduced with 1.9.0, the " +
                     key +
-                    " config setting is deprecated and will be removed in a future release. Stacktrace:";
+                    " config setting is deprecated and will be removed in 2.2.0. Stacktrace:";
                 self[key] = ko.pureComputed({
                     read: () => {
                         const exc = new Error();

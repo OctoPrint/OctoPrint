@@ -98,8 +98,9 @@ def _usageForFolders():
 @no_firstrun_access
 @Permissions.SYSTEM.require(403)
 def performSystemAction():
+    # TODO remove in 3.0.0
     logging.getLogger(__name__).warning(
-        f"Deprecated API call to /api/system made by {request.remote_addr}, should be migrated to use /system/commands/custom/<action>"
+        f"Deprecated API call to /api/system made by {request.remote_addr}, should be migrated to use /system/commands/custom/<action>. This compatibility wrapper will be removed in OctoPrint 3.0.0."
     )
 
     data = request.get_json(silent=True)
