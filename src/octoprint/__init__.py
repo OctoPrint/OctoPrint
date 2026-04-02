@@ -551,6 +551,78 @@ def init_settings_plugin_config_migration_and_cleanup(plugin_manager):
     ]
 
 
+def init_serial_compat_overlay(settings):
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    def set_overlay():
+        serial_connector = settings.get(["plugins", "serial_connector"])
+        if serial_connector is None:
+            settings.remove_overlay("serial_compat")
+            return
+
+        send_checksum = serial_connector.pop("sendChecksum", None)
+        error_handling = serial_connector.pop("errorHandling", None)
+
+        serial_compat = {
+            # Connection params (moved to printerConnection.*)
+            "port": settings.get(
+                ["printerConnection", "preferred", "parameters", "port"]
+            ),
+            "baudrate": settings.get(
+                ["printerConnection", "preferred", "parameters", "baudrate"]
+            ),
+            "autoconnect": settings.getBoolean(["printerConnection", "autoconnect"]),
+            "autorefresh": settings.getBoolean(["printerConnection", "autorefresh"]),
+            "autorefreshInterval": settings.getInt(
+                ["printerConnection", "autorefreshInterval"]
+            ),
+            # Moved to feature.*
+            "notifySuppressedCommands": settings.get(
+                ["feature", "notifySuppressedCommands"]
+            ),
+            # Old boolean keys derived from new enums
+            "alwaysSendChecksum": send_checksum == "always",
+            "neverSendChecksum": send_checksum == "never",
+            "disconnectOnErrors": error_handling == "disconnect",
+            "ignoreErrorsFromFirmware": error_handling == "ignore",
+            # Old names (blacklisted -> blocklisted)
+            "blacklistedPorts": serial_connector.get("blocklistedPorts"),
+            "blacklistedBaudrates": serial_connector.get("blocklistedBaudrates"),
+        }
+
+        for key, value in serial_connector.items():
+            if key not in serial_compat:
+                serial_compat[key] = value
+
+        overlay = {"serial": serial_compat}
+
+        logger.info(
+            "Installing serial compat overlay for deprecated serial.* settings path"
+        )
+        settings.add_overlay(
+            overlay,
+            key="serial_compat",
+            at_end=True,
+            deprecated=(
+                "Serial settings have been moved. Use plugins.serial_connector.*, "
+                "printerConnection.*, or feature.notifySuppressedCommands as "
+                "appropriate. This compatibility layer will be removed in a future "
+                "release."
+            ),
+            replace=True,
+        )
+
+    def callback(path, current_value, new_value):
+        set_overlay()
+
+    set_overlay()
+    settings.add_path_update_callback(["plugins", "serial_connector"], callback)
+    settings.add_path_update_callback(["printerConnection"], callback)
+    settings.add_path_update_callback(["feature", "notifySuppressedCommands"], callback)
+
+
 def init_webcam_compat_overlay(settings, plugin_manager):
     import logging
 

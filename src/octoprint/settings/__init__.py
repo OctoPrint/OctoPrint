@@ -791,16 +791,17 @@ class Settings:
             return False
 
     def _path_modified(self, path, current_value, new_value):
-        callbacks = self._path_update_callbacks.get(tuple(path))
-        if callbacks:
-            for callback in callbacks:
-                try:
-                    if callable(callback):
-                        callback(path, current_value, new_value)
-                except Exception:
-                    self._logger.exception(
-                        f"Error while executing callback {callback} for path {path}"
-                    )
+        for i in range(len(path), 0, -1):
+            callbacks = self._path_update_callbacks.get(tuple(path[:i]))
+            if callbacks:
+                for callback in callbacks:
+                    try:
+                        if callable(callback):
+                            callback(path, current_value, new_value)
+                    except Exception:
+                        self._logger.exception(
+                            f"Error while executing callback {callback} for path {path}"
+                        )
 
     def _get_default_folder(self, type):
         folder = default_settings["folder"][type]
