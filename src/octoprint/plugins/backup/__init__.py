@@ -1155,7 +1155,7 @@ class BackupPlugin(
                                 extra={"plugin": plugin},
                             )
 
-            except Exception as exc:  # noqa: F841
+            except Exception as exc:
                 if callable(on_backup_error):
                     on_backup_error(name, exc)
                 raise
