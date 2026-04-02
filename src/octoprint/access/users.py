@@ -16,7 +16,7 @@ from werkzeug.local import LocalProxy
 from octoprint.access.groups import Group, GroupChangeListener
 from octoprint.access.permissions import OctoPrintPermission, Permissions
 from octoprint.settings import settings as s
-from octoprint.util import atomic_write, deprecated, generate_api_key, to_bytes, yaml
+from octoprint.util import atomic_write, generate_api_key, to_bytes, yaml
 from octoprint.util import get_fully_qualified_classname as fqcn
 
 NOLOGIN_PWHASH = "nologin"
@@ -1199,13 +1199,6 @@ class SessionUser(wrapt.ObjectProxy):
 
     def touch(self):
         self._self_touched = time.monotonic()
-
-    @deprecated(
-        "SessionUser.get_session() has been deprecated, use SessionUser.session instead",
-        since="1.3.5",
-    )
-    def get_session(self):
-        return self.session
 
     def update_user(self, user):
         self.__wrapped__ = user
