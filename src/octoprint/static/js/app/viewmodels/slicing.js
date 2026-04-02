@@ -17,13 +17,13 @@ $(function () {
 
         self.destinationFilename = ko.observable();
 
-        // TODO remove in 2.1.0
-        self.gcodeFilename = ko.pureComputed(() => {
-            log.warn(
-                "gcodeFilename() has been deprecated in favor of destinationFilename(), please upgrade your calling code accordingly. This compatibility wrapper will be removed in OctoPrint 2.1.0."
-            );
-            return self.destinationFilename();
-        });
+        self.gcodeFilename = OctoPrintClient.deprecated(
+            "SlicingViewModel.gcodeFileName",
+            "SlicingViewModel.destinationFilename",
+            self.destinationFilename,
+            "2.0.0",
+            "2.2.0"
+        ); // TODO remove in 2.2.0
 
         self.title = ko.observable();
         self.slicer = ko.observable();

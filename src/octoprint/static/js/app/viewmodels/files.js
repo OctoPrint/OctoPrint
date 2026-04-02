@@ -1024,34 +1024,37 @@ $(function () {
             if (!self.loginState.hasPermission(self.access.permissions.CONTROL)) return;
             OctoPrint.printer.initStorage();
         };
-        self.initSdCard = function () {
-            log.warn(
-                "initSdCard has been deprecated as of OctoPrint 2.0.0, use initPrinterStorage instead"
-            );
-            self.initPrinterStorage();
-        };
+        self.initSdCard = OctoPrintClient.deprecated(
+            "FilesViewModel.initSdCard",
+            "FilesViewModel.initPrinterStorage",
+            self.initPrinterStorage,
+            "2.0.0",
+            "3.0.0"
+        ); // TODO remove in 3.0.0
 
         self.releasePrinterStorage = function () {
             if (!self.loginState.hasPermission(self.access.permissions.CONTROL)) return;
             OctoPrint.printer.releaseStorage();
         };
-        self.releaseSdCard = function () {
-            log.warn(
-                "releaseSdCard has been deprecated as of OctoPrint 2.0.0, use releasePrinterStorage instead"
-            );
-            self.releasePrinterStorage();
-        };
+        self.releaseSdCard = OctoPrintClient.deprecated(
+            "FilesViewModel.releaseSdCard",
+            "FilesViewModel.releasePrinterStorage",
+            self.releasePrinterStorage,
+            "2.0.0",
+            "3.0.0"
+        ); // TODO remove in 3.0.0
 
         self.refreshPrinterStorage = function () {
             if (!self.loginState.hasPermission(self.access.permissions.CONTROL)) return;
             OctoPrint.files.listForLocation("printer", true, true);
         };
-        self.refreshSdFiles = function () {
-            log.warn(
-                "refreshSdFiles has been deprecated as of OctoPrint 2.0.0, use the printer storage directly instead"
-            );
-            self.refreshPrinterStorage();
-        };
+        self.refreshSdFiles = OctoPrintClient.deprecated(
+            "FilesViewModel.refreshSdFiles",
+            "FilesViewModel.refreshPrinterStorage",
+            self.refreshPrinterStorage,
+            "2.0.0",
+            "3.0.0"
+        ); // TODO remove in 3.0.0
 
         self.moveFileOrFolder = function (source, destination, storage) {
             storage = storage || self.currentStorage();
