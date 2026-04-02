@@ -629,8 +629,6 @@ $(function () {
         };
 
         self.generateApiKey = () => {
-            if (!CONFIG_ACCESS_CONTROL) return;
-
             showConfirmationDialog(
                 gettext(
                     "This will generate a new API Key. The old API Key will cease to function immediately."
@@ -647,7 +645,6 @@ $(function () {
         };
 
         self.deleteApiKey = () => {
-            if (!CONFIG_ACCESS_CONTROL) return;
             if (!self.api_key()) return;
 
             showConfirmationDialog(

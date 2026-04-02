@@ -164,7 +164,6 @@ $(function () {
             });
 
             self.requestData = function () {
-                if (!CONFIG_ACCESS_CONTROL) return;
                 if (!access.loginState.hasPermissionKo(access.permissions.ADMIN)) return;
 
                 return OctoPrint.access.users.list().done(self.fromResponse);
@@ -178,8 +177,6 @@ $(function () {
             };
 
             self.showAddUserDialog = function () {
-                if (!CONFIG_ACCESS_CONTROL) return;
-
                 access.loginState.reauthenticateIfNecessary(() => {
                     self.currentUser(undefined);
 
@@ -205,8 +202,6 @@ $(function () {
             };
 
             self.confirmAddUser = function () {
-                if (!CONFIG_ACCESS_CONTROL) return;
-
                 var user = {
                     name: self.editor.name(),
                     password: self.editor.password(),
@@ -225,8 +220,6 @@ $(function () {
             };
 
             self.showEditUserDialog = function (user) {
-                if (!CONFIG_ACCESS_CONTROL) return;
-
                 var process = function (user) {
                     self.currentUser(user);
 
@@ -266,8 +259,6 @@ $(function () {
             };
 
             self.confirmEditUser = function () {
-                if (!CONFIG_ACCESS_CONTROL) return;
-
                 var user = self.currentUser();
                 user.active = self.editor.active();
                 user.groups = self.editor.groups();
@@ -283,8 +274,6 @@ $(function () {
             };
 
             self.confirmRemoveUser = (user) => {
-                if (!CONFIG_ACCESS_CONTROL) return;
-
                 if (user.name === access.loginState.username()) {
                     // we do not allow to delete ourselves
                     new PNotify({
@@ -313,8 +302,6 @@ $(function () {
             };
 
             self.showChangePasswordDialog = function (user) {
-                if (!CONFIG_ACCESS_CONTROL) return;
-
                 const proceed = () => {
                     self.currentUser(user);
                     self.changePasswordDialog.modal("show");
@@ -328,8 +315,6 @@ $(function () {
             };
 
             self.confirmChangePassword = function () {
-                if (!CONFIG_ACCESS_CONTROL) return;
-
                 const proceed = () => {
                     self.updatePassword(
                         self.currentUser().name,
@@ -357,8 +342,6 @@ $(function () {
             };
 
             self.confirmGenerateApikey = function () {
-                if (!CONFIG_ACCESS_CONTROL) return;
-
                 access.loginState.reauthenticateIfNecessary(() => {
                     self.generateApikey(self.currentUser().name).done(
                         function (response) {
@@ -394,8 +377,6 @@ $(function () {
             };
 
             self.confirmDeleteApikey = function () {
-                if (!CONFIG_ACCESS_CONTROL) return;
-
                 access.loginState.reauthenticateIfNecessary(() => {
                     self.deleteApikey(self.currentUser().name).done(function () {
                         self._updateApikey(undefined);
