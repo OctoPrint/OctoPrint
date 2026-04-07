@@ -2,8 +2,6 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-import sys
-
 import click
 
 import octoprint
@@ -348,7 +346,7 @@ from .systeminfo import cli as systeminfo_commands  # noqa: E402
 
 @click.group(
     name="octoprint",
-    invoke_without_command=True,
+    invoke_without_command=False,
     cls=click.CommandCollection,
     sources=[
         subcommands,
@@ -357,43 +355,7 @@ from .systeminfo import cli as systeminfo_commands  # noqa: E402
     ],
 )
 @standard_options()
-@legacy_options
 @click.version_option(version=octoprint.__version__, allow_from_autoenv=False)
 @click.pass_context
 def octo(ctx, **kwargs):
-    if ctx.invoked_subcommand is None:
-        # We have to support calling the octoprint command without any
-        # sub commands to remain backwards compatible.
-        #
-        # But better print a message to inform people that they should
-        # use the sub commands instead.
-
-        def get_value(key):
-            return get_ctx_obj_option(ctx, key, kwargs.get(key))
-
-        daemon = get_value("daemon")
-
-        if daemon:
-            click.echo(
-                'Daemon operation via "octoprint --daemon '
-                'start|stop|restart" is deprecated, please use '
-                '"octoprint daemon start|stop|restart" from now on'
-            )
-
-            if sys.platform == "win32" or sys.platform == "darwin":
-                click.echo(
-                    "Sorry, daemon mode is not supported under your operating system right now"
-                )
-            else:
-                from octoprint.cli.server import daemon_command
-
-                ctx.invoke(daemon_command, command=daemon, **kwargs)
-        else:
-            click.echo(
-                'Starting the server via "octoprint" is deprecated, '
-                'please use "octoprint serve" from now on.'
-            )
-
-            from octoprint.cli.server import serve_command
-
-            ctx.invoke(serve_command, **kwargs)
+    pass
