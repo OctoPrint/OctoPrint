@@ -483,7 +483,7 @@ class PluginSettings:
             "setInt": "set_int",
             "setFloat": "set_float",
             "setBoolean": "set_boolean",
-        }
+        }  # TODO *finally* remove in 3.0.0
 
     def _prefix_path(self, path=None):
         if path is None:
@@ -617,7 +617,7 @@ class PluginSettings:
             if item in self.deprecated_access_methods:
                 new = self.deprecated_access_methods[item]
                 decorator = deprecated(
-                    f"{item} has been renamed to {new}",
+                    f"{item} has been renamed to {new}. Please adjust your code, this compatibility layer will be removed in OctoPrint 3.0.0!",
                     stacklevel=2,
                 )
                 item = new

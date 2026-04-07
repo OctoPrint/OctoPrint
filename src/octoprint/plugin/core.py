@@ -825,7 +825,7 @@ class PluginInfo:
             self.invalid_syntax = True
             return {}
 
-    @deprecated("blacklisted is deprecated in favor of blocklisted")
+    @deprecated("blacklisted is deprecated in favor of blocklisted", since="2.0.0")
     @property
     def blacklisted(self):
         return self.blocklisted

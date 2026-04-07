@@ -48,7 +48,7 @@
         },
         "1.10.0",
         "3.0.0"
-    );
+    ); // TODO remove in 3.0.0
 
     OctoPrintAppKeysClient.prototype.revokeKeyForApp = function (app, user, opts) {
         const params = {app: app};
