@@ -973,12 +973,27 @@ class Server:
         global userManager
 
         # create user manager instance
-        user_manager_factories = self._plugin_manager.get_hooks(
+        #
+        # TODO remove deprecated hook in 3.0.0 and refactor accordingly
+        deprecated_user_factory_hooks = self._plugin_manager.get_hooks(
             "octoprint.users.factory"
-        )  # legacy, set first so that new wins
-        user_manager_factories.update(
-            self._plugin_manager.get_hooks("octoprint.access.users.factory")
         )
+        user_factory_hooks = self._plugin_manager.get_hooks(
+            "octoprint.access.users.factory"
+        )
+
+        for plugin in deprecated_user_factory_hooks:
+            if plugin not in user_factory_hooks:
+                self._logger.warning(
+                    f"Plugin {plugin} has registered deprecated hook octoprint.users.factory. It should be switched to using octoprint.access.users.factory"
+                )
+
+        user_manager_factories = {}
+        user_manager_factories.update(deprecated_user_factory_hooks)
+        user_manager_factories.update(
+            user_factory_hooks
+        )  # make sure this comes after the deprecated ones, to overwrite anything from that
+
         for name, factory in user_manager_factories.items():
             try:
                 userManager = factory(components, self._settings)
