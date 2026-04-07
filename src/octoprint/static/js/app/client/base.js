@@ -502,7 +502,7 @@
         deprecatedVersion,
         removalVersion
     ) {
-        Object.defineProperty(object, oldVar, {
+        Object.defineProperty(object, deprecated, {
             get: function () {
                 return OctoPrintClient.deprecated(
                     deprecated,
