@@ -18,7 +18,7 @@ $(function () {
         self.destinationFilename = ko.observable();
 
         self.gcodeFilename = OctoPrintClient.deprecated(
-            "SlicingViewModel.gcodeFileName",
+            "SlicingViewModel.gcodeFilename",
             "SlicingViewModel.destinationFilename",
             self.destinationFilename,
             "2.0.0",

@@ -316,7 +316,7 @@
         "OctoPrintClient.printer.refreshSd",
         "OctoPrintClient.files.listForLocation",
         function (opts) {
-            this.issueStorageCommand("refresh", {}, opts);
+            return this.issueStorageCommand("refresh", {}, opts);
         },
         "2.0.0",
         "3.0.0"

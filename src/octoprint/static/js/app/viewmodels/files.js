@@ -644,8 +644,8 @@ $(function () {
         };
 
         self.fromResponse = function (response, params) {
-            const focus = params.focus || [];
-            const switchToPath = params.switchToPath || undefined;
+            const focus = params ? params.focus || [] : [];
+            const switchToPath = params ? params.switchToPath : undefined;
 
             self.storageFiles(response);
 
