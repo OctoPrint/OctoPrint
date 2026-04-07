@@ -12,7 +12,7 @@ from flask import abort, jsonify, request, url_for
 import octoprint.timelapse
 import octoprint.util as util
 from octoprint.access.permissions import Permissions
-from octoprint.server import NO_CONTENT, admin_permission, printer
+from octoprint.server import NO_CONTENT, printer
 from octoprint.server.api import api
 from octoprint.server.util.flask import (
     get_json_command_from_request,
@@ -333,7 +333,7 @@ def setTimelapseConfig():
                     abort(400, description="renderAfterPrint is invalid")
 
         if (
-            admin_permission.can()
+            Permissions.ADMIN.can()
             and "save" in data
             and data["save"] in valid_boolean_trues
         ):

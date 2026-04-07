@@ -637,12 +637,6 @@ def dict_sanitize(a, b):
     return result
 
 
-dict_clean = deprecated(
-    "dict_clean has been renamed to dict_sanitize",
-    includedoc="Replaced by :func:`dict_sanitize`",
-)(dict_sanitize)
-
-
 def dict_minimal_mergediff(source, target):
     """
     Recursively calculates the minimal dict that would be needed to be deep merged with

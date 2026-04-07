@@ -110,23 +110,9 @@ class OctoPrintAnonymousIdentity(AnonymousIdentity):
             self.provides.add(need)
 
 
-import octoprint.access.groups as groups  # noqa: E402
-import octoprint.access.permissions as permissions  # noqa: E402
-
-# we set admin_permission to a GroupPermission with the default admin group
-admin_permission = octoprint.util.variable_deprecated(
-    "admin_permission has been deprecated, please use individual Permissions instead",
-    since="1.4.0",
-)(groups.GroupPermission(groups.ADMIN_GROUP))
-
-# we set user_permission to a GroupPermission with the default user group
-user_permission = octoprint.util.variable_deprecated(
-    "user_permission has been deprecated, please use individual Permissions instead",
-    since="1.4.0",
-)(groups.GroupPermission(groups.USER_GROUP))
-
 import octoprint._version  # noqa: E402
-import octoprint.access.groups as groups  # noqa: E402
+import octoprint.access.groups as groups  # noqa: E402  # noqa: E402
+import octoprint.access.permissions as permissions  # noqa: E402
 import octoprint.access.users as users  # noqa: E402
 import octoprint.events as events  # noqa: E402
 import octoprint.filemanager.analysis  # noqa: E402

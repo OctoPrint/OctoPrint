@@ -197,9 +197,6 @@ class BedFormFactor:
         ]
 
 
-BedTypes = BedFormFactor
-
-
 class BedOrigin:
     """Valid values for bed origin"""
 

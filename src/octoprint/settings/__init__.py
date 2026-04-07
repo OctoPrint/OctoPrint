@@ -37,7 +37,6 @@ from octoprint.schema.config import Config
 from octoprint.util import (
     CaseInsensitiveSet,
     atomic_write,
-    deprecated,
     dict_merge,
     fast_deepcopy,
     generate_api_key,
@@ -1027,22 +1026,6 @@ class Settings:
         modify anything in the settings, utilize the provided set and remove methods.
         """
         return self._map.top_map
-
-    @property
-    @deprecated(
-        "Settings._config has been deprecated and is a read-only view. Please use Settings.config or the set & remove methods instead.",
-        since="1.8.0",
-    )
-    def _config(self):
-        return self.config
-
-    @_config.setter
-    @deprecated(
-        "Setting of Settings._config has been deprecated. Please use the set & remove methods instead and get in touch if you have a usecase they don't cover.",
-        since="1.8.0",
-    )
-    def _config(self, value):
-        self._map.top_map = value
 
     @property
     def _overlay_layers(self):
