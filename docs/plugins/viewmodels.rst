@@ -143,8 +143,6 @@ terminalViewModel
    View model for the terminal tab, also holds terminal log entries.
 timelapseViewModel
    View model for the timelapse tab.
-usersViewModel
-   View model for the user management in the settings dialog.
 userSettingsViewModel
    View model for settings associated with the currently logged in user, used for
    the user settings dialog.
