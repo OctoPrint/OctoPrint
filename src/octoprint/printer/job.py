@@ -18,6 +18,7 @@ class FilamentEstimate(BaseModel):
 class PrintJob(BaseModel):
     storage: str
     path: str
+    plate: int = 1
     display: str
     size: int = 0
     date: Optional[datetime.datetime] = None

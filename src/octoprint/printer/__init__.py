@@ -712,12 +712,12 @@ class PrinterFilesMixin:
         return False
 
     def get_thumbnail(
-        self, path: str, sizehint: str = None, *args, **kwargs
+        self, path: str, platehint: int = None, sizehint: str = None, *args, **kwargs
     ) -> Optional[StorageThumbnail]:
         return None
 
     def download_thumbnail(
-        self, path: str, sizehint: str = None, *args, **kwargs
+        self, path: str, platehint: int = None, sizehint: str = None, *args, **kwargs
     ) -> Optional[tuple[StorageThumbnail, IO]]:
         return None
 

@@ -1847,6 +1847,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                         estimatedPrintTime=None,
                         filament=None,
                         user=None,
+                        plate=None,
                     )
                 )
                 return
@@ -1886,6 +1887,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                     estimatedPrintTime=estimatedPrintTime,
                     filament=filament,
                     user=user,
+                    plate=job.plate,
                 )
             )
             self._selected_job = job

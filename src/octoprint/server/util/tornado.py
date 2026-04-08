@@ -1468,11 +1468,18 @@ class StorageThumbnailDownloadHandler(
             if not self.SIZEHINT_PATTERN.fullmatch(sizehint):
                 sizehint = None
 
+        platehint = self.request.arguments.get("plate")
+        if platehint:
+            try:
+                platehint = int(platehint[0].decode("utf-8"))
+            except ValueError:
+                platehint = None
+
         if include_body:
             handle = None
             try:
                 thumbnail = self._file_manager.read_thumbnail(
-                    storage, path, sizehint=sizehint
+                    storage, path, platehint=platehint, sizehint=sizehint
                 )
                 if thumbnail is None:
                     raise tornado.web.HTTPError(404)
@@ -1498,7 +1505,9 @@ class StorageThumbnailDownloadHandler(
         else:
             assert self.request.method == "HEAD"
 
-            meta = self._file_manager.get_thumbnail(storage, path, sizehint=sizehint)
+            meta = self._file_manager.get_thumbnail(
+                storage, path, platehint=platehint, sizehint=sizehint
+            )
             if not meta:
                 raise tornado.web.HTTPError(404)
 

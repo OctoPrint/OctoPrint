@@ -73,6 +73,8 @@ $(function () {
         self.filedata = ko.observable(undefined);
         self.filepos = ko.observable(undefined);
 
+        self.plate = ko.observable(undefined);
+
         self.filename = ko.pureComputed(() => {
             return self.filedata() ? self.filedata()["name"] : undefined;
         });
@@ -100,7 +102,10 @@ $(function () {
         self.thumbnailLink = ko.pureComputed(() => {
             const data = self.filedata();
             if (data && data.refs && data.refs.thumbnail) {
-                return data.refs.thumbnail;
+                const plate = self.plate();
+                const url = new URL(data.refs.thumbnail);
+                url.searchParams.set("plate", plate || 1);
+                return url.toString();
             } else {
                 return false;
             }
@@ -461,6 +466,8 @@ $(function () {
             self.filament(result);
 
             self.user(data.user);
+
+            self.plate(data.plate);
         };
 
         self._processProgressData = function (data) {
