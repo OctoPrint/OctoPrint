@@ -111,7 +111,7 @@ class OctoPrintAnonymousIdentity(AnonymousIdentity):
 
 
 import octoprint._version  # noqa: E402
-import octoprint.access.groups as groups  # noqa: E402  # noqa: E402
+import octoprint.access.groups as groups  # noqa: E402
 import octoprint.access.permissions as permissions  # noqa: E402
 import octoprint.access.users as users  # noqa: E402
 import octoprint.events as events  # noqa: E402

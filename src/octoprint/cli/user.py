@@ -30,7 +30,7 @@ def cli(ctx):
     User management.
 
     Note that this currently only supports managing user accounts stored in the configured user manager, not any
-    user managers added through plugins and the "octoprint.users.factory" hook.
+    user managers added through plugins and the "octoprint.access.users.factory" hook.
     """
     try:
         logging.basicConfig(

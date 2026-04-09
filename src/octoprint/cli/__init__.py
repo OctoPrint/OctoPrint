@@ -249,41 +249,6 @@ def standard_options(hidden=False):
     return bulk_options(options)
 
 
-# ~~ helper for settings legacy options we still have to support on "octoprint"
-
-legacy_options = bulk_options(
-    [
-        hidden_option("--host", type=click.STRING, callback=set_ctx_obj_option),
-        hidden_option("--port", type=click.INT, callback=set_ctx_obj_option),
-        hidden_option("--logging", type=click.Path(), callback=set_ctx_obj_option),
-        hidden_option("--debug", "-d", is_flag=True, callback=set_ctx_obj_option),
-        hidden_option(
-            "--daemon",
-            type=click.Choice(["start", "stop", "restart"]),
-            callback=set_ctx_obj_option,
-        ),
-        hidden_option(
-            "--pid",
-            type=click.Path(),
-            default="/tmp/octoprint.pid",
-            callback=set_ctx_obj_option,
-        ),
-        hidden_option(
-            "--iknowwhatimdoing", "allow_root", is_flag=True, callback=set_ctx_obj_option
-        ),
-        hidden_option(
-            "--ignore-blocklist",
-            "--ignore-blacklist",  # legacy
-            "ignore_blocklist",
-            is_flag=True,
-            callback=set_ctx_obj_option,
-        ),
-    ]
-)
-"""Legacy options available directly on the "octoprint" command in earlier versions.
-   Kept available for reasons of backwards compatibility, but hidden from the
-   generated help pages."""
-
 # ~~ command groups from sub modules
 
 
