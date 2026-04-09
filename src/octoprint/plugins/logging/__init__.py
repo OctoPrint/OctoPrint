@@ -16,6 +16,8 @@ from octoprint.server.util.flask import no_firstrun_access, redirect_to_tornado
 from octoprint.settings import settings
 from octoprint.util import is_hidden_path, yaml
 
+VALID_LOG_LEVELS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+
 
 class LoggingPlugin(
     octoprint.plugin.AssetPlugin,
@@ -118,8 +120,6 @@ class LoggingPlugin(
         if not isinstance(json_data, dict):
             abort(400, description="Invalid log level configuration")
 
-        # TODO validate further
-
         self._set_logging_levels(json_data)
         return self.get_logging_levels_api()
 
@@ -203,7 +203,7 @@ class LoggingPlugin(
         )
 
     def _get_logging_file(self):
-        # TODO this might not be the logging config we are actually using here (command line parameter...)
+        # FIXME this might not be the logging config we are actually using here (command line parameter...)
         return os.path.join(self._settings.getBaseFolder("base"), "logging.yaml")
 
     def _get_logging_config(self):
@@ -227,6 +227,12 @@ class LoggingPlugin(
 
     def _set_logging_levels(self, new_levels):
         import logging
+
+        new_levels = {
+            key: value
+            for key, value in new_levels.items()
+            if self._is_managed_logger(key) and value in VALID_LOG_LEVELS
+        }  # ensure this is a mapping from managed components to valid log levels
 
         config = self._get_logging_config()
 
@@ -266,8 +272,7 @@ class LoggingPlugin(
         # set runtime logging levels now
         for logger, level in new_levels.items():
             self._logger.info(f"Setting logger {logger} level to {level}")
-            level_val = logging.getLevelName(level)
-            logging.getLogger(logger).setLevel(level_val)
+            logging.getLogger(logger).setLevel(getattr(logging, level))
 
     def _is_managed_logger(self, logger):
         return logger and (logger.startswith("octoprint") or logger.startswith("tornado"))

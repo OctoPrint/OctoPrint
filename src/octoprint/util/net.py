@@ -339,7 +339,7 @@ def download_file(url, folder, max_length=None, connect_timeout=3.05, read_timeo
         filename = secure_filename(filename)
         assert len(filename) > 0
 
-        # TODO check content-length against safety limit
+        # FIXME check content-length against safety limit
 
         path = os.path.abspath(os.path.join(folder, filename))
         assert path.startswith(folder)

@@ -133,7 +133,7 @@ class PrinterFileStorage(StorageInterface):
         return hash.hexdigest()
 
     def file_in_path(self, path, filepath):
-        return filepath.startswith(path + "/")
+        return filepath == path or filepath.startswith(path + "/")
 
     def file_exists(self, path):
         files = self._get_printer_files()
@@ -313,7 +313,7 @@ class PrinterFileStorage(StorageInterface):
             )
 
         try:
-            result = self._connection.copy_printer_folder(source, destination)  # TODO
+            result = self._connection.copy_printer_folder(source, destination)
             self._update_last_activity()
             return result
         except PrinterFilesError as exc:
@@ -419,7 +419,7 @@ class PrinterFileStorage(StorageInterface):
             )
 
         try:
-            result = self._connection.copy_printer_file(source, destination)  # TODO
+            result = self._connection.copy_printer_file(source, destination)
             self._update_last_activity()
             return result
         except PrinterFilesError as exc:
@@ -440,7 +440,7 @@ class PrinterFileStorage(StorageInterface):
             )
 
         try:
-            result = self._connection.move_printer_file(source, destination)  # TODO
+            result = self._connection.move_printer_file(source, destination)
             self._update_last_activity()
             return result
         except PrinterFilesError as exc:

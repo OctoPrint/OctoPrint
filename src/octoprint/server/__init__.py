@@ -110,23 +110,9 @@ class OctoPrintAnonymousIdentity(AnonymousIdentity):
             self.provides.add(need)
 
 
-import octoprint.access.groups as groups  # noqa: E402
-import octoprint.access.permissions as permissions  # noqa: E402
-
-# we set admin_permission to a GroupPermission with the default admin group
-admin_permission = octoprint.util.variable_deprecated(
-    "admin_permission has been deprecated, please use individual Permissions instead",
-    since="1.4.0",
-)(groups.GroupPermission(groups.ADMIN_GROUP))
-
-# we set user_permission to a GroupPermission with the default user group
-user_permission = octoprint.util.variable_deprecated(
-    "user_permission has been deprecated, please use individual Permissions instead",
-    since="1.4.0",
-)(groups.GroupPermission(groups.USER_GROUP))
-
 import octoprint._version  # noqa: E402
 import octoprint.access.groups as groups  # noqa: E402
+import octoprint.access.permissions as permissions  # noqa: E402
 import octoprint.access.users as users  # noqa: E402
 import octoprint.events as events  # noqa: E402
 import octoprint.filemanager.analysis  # noqa: E402
@@ -202,7 +188,7 @@ def load_user(userid):
     if userid is None:
         return None
 
-    if userid == "_api":  # TODO Remove in 2.1.0
+    if userid == "_api":  # TODO remove in 2.1.0
         return userManager.api_user_factory()
 
     if userid == "_internal":
@@ -973,12 +959,27 @@ class Server:
         global userManager
 
         # create user manager instance
-        user_manager_factories = self._plugin_manager.get_hooks(
+        #
+        # TODO remove deprecated hook in 3.0.0 and refactor accordingly
+        deprecated_user_factory_hooks = self._plugin_manager.get_hooks(
             "octoprint.users.factory"
-        )  # legacy, set first so that new wins
-        user_manager_factories.update(
-            self._plugin_manager.get_hooks("octoprint.access.users.factory")
         )
+        user_factory_hooks = self._plugin_manager.get_hooks(
+            "octoprint.access.users.factory"
+        )
+
+        for plugin in deprecated_user_factory_hooks:
+            if plugin not in user_factory_hooks:
+                self._logger.warning(
+                    f"Plugin {plugin} has registered deprecated hook octoprint.users.factory. It should be switched to using octoprint.access.users.factory"
+                )
+
+        user_manager_factories = {}
+        user_manager_factories.update(deprecated_user_factory_hooks)
+        user_manager_factories.update(
+            user_factory_hooks
+        )  # make sure this comes after the deprecated ones, to overwrite anything from that
+
         for name, factory in user_manager_factories.items():
             try:
                 userManager = factory(components, self._settings)
@@ -1167,7 +1168,7 @@ class Server:
             files = {"_data/" + name: os.path.join(root, name) for name in allowed}
             loaders.append(octoprint.util.jinja.SelectedFilesLoader(files))
 
-        # TODO: Remove this in 2.0.0
+        # TODO remove in 2.1.0
         warning_message = "Loading plugin template '{template}' from '{filename}' without plugin prefix, this is deprecated and will soon no longer be supported."
         loaders.append(
             octoprint.util.jinja.WarningLoader(
@@ -2177,17 +2178,6 @@ class Server:
                     ),
                     "content_type": "image/gif",
                 },
-            ),
-            # deprecated endpoints
-            (
-                r"/api/logs",
-                util.tornado.DeprecatedEndpointHandler,
-                {"url": "/plugin/logging/logs"},
-            ),
-            (
-                r"/api/logs/(.*)",
-                util.tornado.DeprecatedEndpointHandler,
-                {"url": "/plugin/logging/logs/{0}"},
             ),
         ]
 

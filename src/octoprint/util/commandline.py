@@ -7,12 +7,11 @@ import logging
 import queue
 import re
 import time
-import warnings
 from typing import Optional, Union
 
 import sarge
 
-from octoprint.util import to_bytes, to_unicode
+from octoprint.util import to_unicode
 from octoprint.util.platform import CLOSE_FDS
 
 # These regexes are based on the colorama package
@@ -28,34 +27,26 @@ _ANSI_PATTERN = "|".join([_ANSI_CSI_PATTERN, _ANSI_OSC_PATTERN])
 _ANSI_REGEX = re.compile(_ANSI_PATTERN)
 
 
-def clean_ansi(line: Union[str, bytes]) -> Union[str, bytes]:
+def clean_ansi(line: str) -> str:
     """
     Removes ANSI control codes from ``line``.
 
-    Note: This function also still supports an input of ``bytes``, leading to an
-    ``output`` of ``bytes``. This if for reasons of backwards compatibility only,
-    should no longer be used and considered to be deprecated and to be removed in
-    a future version of OctoPrint. A warning will be logged.
-
     Parameters:
-        line (str or bytes): the line to process
+        line (str): the line to process
 
     Returns:
-        (str or bytes) The line without any ANSI control codes
+        (str) The line without any ANSI control codes
 
     .. versionchanged:: 1.8.0
 
        Usage as ``clean_ansi(line: bytes) -> bytes`` is now deprecated and will be removed
        in a future version of OctoPrint.
+
+    .. versionchanged:: 2.0.0
+
+       ``clean_ansi(line: bytes) -> bytes`` is no longer supported.
     """
-    # TODO: bytes support is deprecated, remove in 2.0.0
-    if isinstance(line, bytes):
-        warnings.warn(
-            "Calling clean_ansi with bytes is deprecated, call with str instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return to_bytes(_ANSI_REGEX.sub("", to_unicode(line)))
+    assert isinstance(line, str)
     return _ANSI_REGEX.sub("", line)
 
 

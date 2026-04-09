@@ -312,20 +312,6 @@ Returns:
     value: The value of the variable with the deprecation warnings in place.
 """
 
-# TODO rename to_unicode to to_str and deprecate to_unicode in 2.0.0
-to_str = deprecated(
-    "to_str has been renamed to to_bytes and in a future version will become the new to_unicode",
-    includedoc="to_str has been renamed to to_bytes and in a future version will become the new to_unicode",
-    since="1.3.11",
-)(to_bytes)
-
-
-to_native_str = deprecated(
-    "to_native_str is no longer needed, use to_unicode instead",
-    includedoc="to_native_str is no longer needed, use to_unicode instead",
-    since="1.8.0",
-)(to_unicode)
-
 
 def get_formatted_size(num):
     """
@@ -651,12 +637,6 @@ def dict_sanitize(a, b):
     return result
 
 
-dict_clean = deprecated(
-    "dict_clean has been renamed to dict_sanitize",
-    includedoc="Replaced by :func:`dict_sanitize`",
-)(dict_sanitize)
-
-
 def dict_minimal_mergediff(source, target):
     """
     Recursively calculates the minimal dict that would be needed to be deep merged with
@@ -835,7 +815,7 @@ class fallback_dict(dict):
         self.custom[key] = value
 
     def __delitem__(self, key):
-        # TODO: mark as deleted and leave fallbacks alone?
+        # FIXME mark as deleted and leave fallbacks alone?
         for dictionary in self._all():
             if key in dictionary:
                 del dictionary[key]
@@ -1086,33 +1066,6 @@ def temppath(prefix=None, suffix=""):
 
 
 TemporaryDirectory = tempfile.TemporaryDirectory
-
-
-@deprecated("Please use open with '-sig' encoding instead", since="1.8.0")
-def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
-    # TODO Remove in 2.0.0
-    import codecs
-
-    assert "b" not in mode, "binary mode not support by bom_aware_open"
-
-    codec = codecs.lookup(encoding)
-    encoding = codec.name
-
-    if kwargs is None:
-        kwargs = {}
-
-    potential_bom_attribute = "BOM_" + codec.name.replace("utf-", "utf").upper()
-    if "r" in mode and hasattr(codecs, potential_bom_attribute):
-        # these encodings might have a BOM, so let's see if there is one
-        bom = getattr(codecs, potential_bom_attribute)
-
-        with open(filename, mode="rb") as f:
-            header = f.read(4)
-
-        if header.startswith(bom):
-            encoding += "-sig"
-
-    return open(filename, encoding=encoding, mode=mode, **kwargs)
 
 
 BOMS = {

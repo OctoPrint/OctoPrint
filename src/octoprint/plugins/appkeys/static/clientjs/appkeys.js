@@ -40,12 +40,15 @@
         );
     };
 
-    OctoPrintAppKeysClient.prototype.revokeKey = function (key, opts) {
-        console.log(
-            "revokeKey should be considered deprecated, use revokeKeyForApp instead"
-        );
-        return this.base.simpleApiCommand("appkeys", "revoke", {key: key}, opts);
-    };
+    OctoPrintAppKeysClient.prototype.revokeKey = OctoPrintClient.deprecated(
+        "OctoPrint.plugins.appkeys.revokeKey",
+        "OctoPrint.plugins.appkeys.revokeKeyForApp",
+        function (key, opts) {
+            return this.base.simpleApiCommand("appkeys", "revoke", {key: key}, opts);
+        },
+        "1.10.0",
+        "3.0.0"
+    ); // TODO remove in 3.0.0
 
     OctoPrintAppKeysClient.prototype.revokeKeyForApp = function (app, user, opts) {
         const params = {app: app};

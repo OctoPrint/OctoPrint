@@ -31,7 +31,7 @@ import octoprint.util.net
 
 
 # Tornado 6.5.x needs _chars_are_bytes hack to work around regression, see tornadoweb/tornado#3502
-# TODO: This will possibly require changes on upgrade to Tornado 6.6!
+# TODO this will possibly require changes on upgrade to Tornado 6.6!
 def header_line_to_dict(header: str) -> dict:
     return tornado.httputil.HTTPHeaders.parse(header, _chars_are_bytes=False)
 
@@ -1406,7 +1406,7 @@ class StorageFileDownloadHandler(
             f"attachment; filename=\"{filename}\"; filename*=UTF-8''{filename}",
         )
 
-        # TODO implement cache control via ETag and/or last modified, if possible for storage
+        # FIXME implement cache control via ETag and/or last modified, if possible for storage
         self.set_header("Cache-Control", "max-age=0, must-revalidate, private")
         self.set_header("Expires", "-1")
 

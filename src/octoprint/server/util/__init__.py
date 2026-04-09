@@ -205,7 +205,7 @@ def get_user_for_apikey(
 
     if global_apikey is not None and hmac.compare_digest(
         apikey, global_apikey
-    ):  # TODO Remove in 2.1.0
+    ):  # TODO remove in 2.1.0
         # global api key was used
         logging.getLogger(__name__).warning(
             "The global API key was just used. The global API key is deprecated and will cease to function with OctoPrint 2.1.0 (formerly known as 2.1.0)."

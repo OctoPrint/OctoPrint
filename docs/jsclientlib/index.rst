@@ -100,7 +100,6 @@ connection options (``baseurl`` and ``apikey``) directly in the constructor or s
    files.rst
    job.rst
    languages.rst
-   logs.rst
    printer.rst
    printerprofiles.rst
    settings.rst

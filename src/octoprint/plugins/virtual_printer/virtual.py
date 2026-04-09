@@ -2359,7 +2359,7 @@ class VirtualEEPROM:
                 "command": "M206",
                 "description": "Home offset:",
                 "params": {"X": 0.0, "Y": 0.0, "Z": 0.0},
-            },  # TODO below are not yet implemented in gcode, just settings
+            },  # FIXME below are not yet implemented in gcode, just settings
             "probe_offset": {
                 "command": "M851",
                 "description": "Z-Probe Offset (mm):",
@@ -2372,12 +2372,12 @@ class VirtualEEPROM:
             },
             "endstop": {
                 "command": "M666",
-                "description": "Enstop adjustment:",  # TODO description needed
+                "description": "Enstop adjustment:",  # FIXME description needed
                 "params": {"X": -1.0, "Y": 0.0, "Z": 0.0},
             },
             "delta": {
                 "command": "M665",
-                "description": "Delta config:",  # TODO description
+                "description": "Delta config:",  # FIXME description needed
                 "params": {
                     "B": 0.0,
                     "H": 100.0,
@@ -2415,7 +2415,7 @@ class VirtualEEPROM:
                     "J": 0.0,
                 },
             },
-            "material": {  # TODO This ones going to need some special handling...
+            "material": {  # FIXME this ones going to need some special handling...
                 "command": "M145",
                 "description": "Material heatup parameters:",
                 "params": {

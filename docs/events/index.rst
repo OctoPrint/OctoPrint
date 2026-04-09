@@ -365,15 +365,13 @@ UpdatedFiles
 
    Payload:
 
-   * ``type``: the type of file list that was modified. Only ``printables`` is supported here. See the deprecation
-     note below.
-
-     .. deprecated:: 1.2.0
-        The ``gcode`` modification type has been superseded by ``printables``. It is currently still available for
-        reasons of backwards compatibility and will also be sent on modification of ``printables``. It will however
-        be removed with 1.4.0.
+   * ``type``: the type of file list that was modified. Currently only ``printables`` is supported here.
 
    .. versionchanged:: 1.4.0
+
+   .. versionchanged:: 2.0.0
+
+      The ``gcode`` modifications type has been fully removed after being deprecated since its replacement by the ``printables`` type in 1.2.0.
 
 MetadataAnalysisStarted
    The metadata analysis of a file has started.

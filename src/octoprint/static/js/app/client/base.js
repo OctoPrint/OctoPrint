@@ -194,19 +194,6 @@
     };
 
     OctoPrintClient.prototype.getRequestHeaders = function (method, additional, opts) {
-        if (arguments.length <= 1) {
-            // versions prior 1.8.3 don't know method and opts
-            if (!_.isString(method)) {
-                additional = method;
-                console.warn(
-                    "Calling OctoPrintClient.getRequestHeaders with additional " +
-                        "headers as the first parameter is deprecated. Please " +
-                        "consult the docs about the current signature and adjust " +
-                        "your code accordingly."
-                );
-            }
-        }
-
         method = method || "GET";
         additional = additional || {};
         opts = opts || {};
@@ -485,55 +472,53 @@
     OctoPrintClient.InvalidArgumentError =
         OctoPrintClient.createCustomException("InvalidArgumentError");
 
-    OctoPrintClient.deprecated = function (deprecatedFct, newFct, fn) {
+    OctoPrintClient.deprecated = function (
+        deprecated,
+        replacement,
+        fn,
+        deprecationVersion,
+        removalVersion
+    ) {
+        const deprecationVersionTxt = deprecationVersion
+            ? ` as of version ${deprecationVersion}`
+            : "";
+        const removalVersionTxt = removalVersion
+            ? ` and is planned to be removed in version ${removalVersion}`
+            : "";
         return function () {
             console.warn(
-                deprecatedFct +
-                    " is deprecated, please use the new " +
-                    newFct +
-                    " function instead"
+                `${deprecated} is deprecated${deprecationVersionTxt}${removalVersionTxt}, please use ${replacement} instead`
             );
             return fn.apply(this, arguments);
         };
     };
 
-    OctoPrintClient.deprecatedMethod = function (
-        object,
-        oldNamespace,
-        oldFct,
-        newNamespace,
-        newFct,
-        fn
-    ) {
-        object[oldFct] = OctoPrintClient.deprecated(
-            oldNamespace + "." + oldFct,
-            newNamespace + "." + newFct,
-            fn
-        );
-    };
-
     OctoPrintClient.deprecatedVariable = function (
         object,
-        oldNamespace,
-        oldVar,
-        newNamespace,
-        newVar,
+        deprecated,
+        replacement,
         getter,
-        setter
+        setter,
+        deprecatedVersion,
+        removalVersion
     ) {
-        Object.defineProperty(object, oldVar, {
+        Object.defineProperty(object, deprecated, {
             get: function () {
                 return OctoPrintClient.deprecated(
-                    oldNamespace + "." + oldVar,
-                    newNamespace + "." + newVar,
-                    getter
+                    deprecated,
+                    replacement,
+                    getter,
+                    deprecatedVersion,
+                    removalVersion
                 )();
             },
             set: function (val) {
                 OctoPrintClient.deprecated(
-                    oldNamespace + "." + oldVar,
-                    newNamespace + "." + newVar,
-                    setter
+                    deprecated,
+                    replacement,
+                    setter,
+                    deprecatedVersion,
+                    removalVersion
                 )(val);
             }
         });

@@ -37,7 +37,6 @@ from octoprint.schema.config import Config
 from octoprint.util import (
     CaseInsensitiveSet,
     atomic_write,
-    deprecated,
     dict_merge,
     fast_deepcopy,
     generate_api_key,
@@ -90,7 +89,7 @@ def settings(init=False, basedir=None, configfile=None, overlays=None):
     return _instance
 
 
-# TODO: This is a temporary solution to get the default settings from the pydantic model.
+# FIXME This is a temporary solution to get the default settings from the pydantic model.
 _config = Config()
 default_settings = _config.model_dump(by_alias=True)
 """The default settings of the core application."""
@@ -389,7 +388,7 @@ class HierarchicalChainMap:
 
         # if we arrived here we might be trying to grab a dict, look for children
 
-        # TODO 2.0.0 remove this & make 'merged' the default
+        # TODO Remove this in 2.0.0 & make 'merged' the default
         if not merged and hasattr(current, "maps"):
             # we do something a bit odd here: if merged is not true, we don't include the
             # full contents of the key. Instead, we only include the contents of the key
@@ -1028,22 +1027,6 @@ class Settings:
         modify anything in the settings, utilize the provided set and remove methods.
         """
         return self._map.top_map
-
-    @property
-    @deprecated(
-        "Settings._config has been deprecated and is a read-only view. Please use Settings.config or the set & remove methods instead.",
-        since="1.8.0",
-    )
-    def _config(self):
-        return self.config
-
-    @_config.setter
-    @deprecated(
-        "Setting of Settings._config has been deprecated. Please use the set & remove methods instead and get in touch if you have a usecase they don't cover.",
-        since="1.8.0",
-    )
-    def _config(self, value):
-        self._map.top_map = value
 
     @property
     def _overlay_layers(self):

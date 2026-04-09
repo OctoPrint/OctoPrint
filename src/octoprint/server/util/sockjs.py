@@ -97,7 +97,7 @@ class PrinterStateConnection(
         "*": [],
     }
 
-    # TODO: Permissions should be overridable from plugins, this special case stuff here is a hack
+    # FIXME permissions should be overridable from plugins, this special case stuff here is a hack
     _emit_permissions = {
         "connected": [],
         "reauthRequired": [],

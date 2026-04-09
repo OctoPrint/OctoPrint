@@ -123,7 +123,7 @@ logsViewModel
    View model for the logfile settings dialog.
 loginStateViewModel
    View model for the current login state of the user, very interesting for plugins that need to
-   evaluate the current login state or information about the current user, e.g. associated roles.
+   evaluate the current login state or information about the current user, e.g. associated permissions.
 navigationViewModel
    View model for the navigation bar.
 printerProfilesViewModel
@@ -143,8 +143,6 @@ terminalViewModel
    View model for the terminal tab, also holds terminal log entries.
 timelapseViewModel
    View model for the timelapse tab.
-usersViewModel
-   View model for the user management in the settings dialog.
 userSettingsViewModel
    View model for settings associated with the currently logged in user, used for
    the user settings dialog.

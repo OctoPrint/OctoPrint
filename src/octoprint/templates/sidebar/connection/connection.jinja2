@@ -3,7 +3,7 @@
     <select id="connection_option"
             class="connection_parameter"
             data-test-id="connection-connector"
-            data-bind="options: connectorOptions, optionsText: 'name', optionsValue: 'connector', value: selectedConnector">
+            data-bind="options: connectorOptions, optionsText: 'name', optionsValue: 'connector', value: selectedConnector, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()">
     </select>
 
     {% for key in templates.connection_options.order %}

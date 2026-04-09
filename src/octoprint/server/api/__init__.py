@@ -64,7 +64,6 @@ from . import settings as api_settings  # noqa: F401,E402
 from . import slicing as api_slicing  # noqa: F401,E402
 from . import system as api_system  # noqa: F401,E402
 from . import timelapse as api_timelapse  # noqa: F401,E402
-from . import users as api_users  # noqa: F401,E402
 
 API_VERSION_PRE_2_0_0 = "0.1"
 
@@ -90,7 +89,9 @@ def pluginData(name):
 
     try:
         api_plugin = api_plugins[0]
-        if api_plugin.is_api_adminonly() and not current_user.is_admin:
+        if api_plugin.is_api_adminonly() and not current_user.has_permissions(
+            Permissions.ADMIN
+        ):
             abort(403)
 
         if api_plugin.is_api_protected():

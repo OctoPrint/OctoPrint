@@ -197,10 +197,6 @@ class BedFormFactor:
         ]
 
 
-BedTypes = BedFormFactor
-"""Deprecated name of :class:`BedFormFactors`"""
-
-
 class BedOrigin:
     """Valid values for bed origin"""
 

@@ -7,7 +7,7 @@ from unittest.mock import ANY, MagicMock, call, patch
 from octoprint.printer.standard import Printer
 
 
-@unittest.SkipTest  # TODO figure out where to move this test
+@unittest.SkipTest  # FIXME figure out where to move this test
 class ScriptsTestCase(unittest.TestCase):
     def setUp(self):
         # mock connection

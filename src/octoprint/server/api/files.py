@@ -20,7 +20,6 @@ import octoprint.filemanager.util
 import octoprint.slicing
 from octoprint.access.permissions import Permissions
 from octoprint.events import Events
-from octoprint.filemanager.destinations import FileDestinations
 from octoprint.filemanager.storage import (
     AnalysisDimensions,
     AnalysisFilamentUse,
@@ -697,19 +696,19 @@ def _verifyFolderExists(origin, foldername):
     return fileManager.folder_exists(origin, foldername)
 
 
-def _isBusy(target, path):  # TODO
+def _isBusy(target, path):
     currentOrigin, currentPath = _getCurrentFile()
     if (
         currentPath is not None
         and currentOrigin == target
-        and fileManager.file_in_path(FileDestinations.LOCAL, path, currentPath)
+        and fileManager.file_in_path(target, path, currentPath)
         and (printer.is_printing() or printer.is_paused())
     ):
         return True
 
     return any(
-        target == x[0] and fileManager.file_in_path(FileDestinations.LOCAL, path, x[1])
-        for x in fileManager.get_busy_files()
+        target == busy_storage and fileManager.file_in_path(target, path, busy_path)
+        for busy_storage, busy_path in fileManager.get_busy_files()
     )
 
 
@@ -783,9 +782,7 @@ def uploadGcodeFile(target):
                     canonFilename = request.values.get("filename")
 
                 futurePath = fileManager.sanitize_path(target, canonicalizedPath)
-                futureFilename = fileManager.sanitize_name(
-                    FileDestinations.LOCAL, canonFilename
-                )
+                futureFilename = fileManager.sanitize_name(target, canonFilename)
             except Exception:
                 _logger.exception(f"Error canonicalizing {upload_name} against {target}")
                 canonFilename = None

@@ -1555,20 +1555,6 @@ def permission_and_fresh_credentials_validator(request, permission):
     ensure_credentials_checked_recently()
 
 
-@deprecated(
-    "admin_validator is deprecated, please use new permission_validator", since=""
-)
-def admin_validator(request):
-    from octoprint.access.permissions import Permissions
-
-    return permission_validator(request, Permissions.ADMIN)
-
-
-@deprecated("user_validator is deprecated, please use new permission_validator", since="")
-def user_validator(request):
-    return True
-
-
 def get_flask_user_from_request(request):
     """
     Retrieves the current flask user from the request context. Uses API key if available, otherwise the current
@@ -1877,7 +1863,6 @@ def collect_core_assets(preferred_stylesheet="css"):
         "js/app/viewmodels/terminal.js",
         "js/app/viewmodels/timelapse.js",
         "js/app/viewmodels/uistate.js",
-        "js/app/viewmodels/users.js",
         "js/app/viewmodels/usersettings.js",
         "js/app/viewmodels/wizard.js",
         "js/app/viewmodels/about.js",
@@ -1899,7 +1884,6 @@ def collect_core_assets(preferred_stylesheet="css"):
         "js/app/client/slicing.js",
         "js/app/client/system.js",
         "js/app/client/timelapse.js",
-        "js/app/client/users.js",
         "js/app/client/util.js",
         "js/app/client/wizard.js",
     ]
