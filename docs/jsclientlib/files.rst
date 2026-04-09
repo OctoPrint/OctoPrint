@@ -3,18 +3,18 @@
 :mod:`OctoPrintClient.files`
 ----------------------------
 
-.. js:function:: OctoPrintClient.files.get(location, filename, opts)
+.. js:function:: OctoPrintClient.files.get(location, path, opts)
 
-   Retrieves information about the file ``filename`` at ``location``.
+   Retrieves information about the file or folder ``path`` at ``location``.
 
    See :ref:`Retrieve a specific file's information <sec-api-fileops-retrievefileinfo>` for more details.
 
-   :param string location: The location of the file
-   :param string filename: The name of the file
+   :param string location: The location of the file or folder
+   :param string path: The path of the file or folder
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.files.list(recursively, opts)
+.. js:function:: OctoPrintClient.files.list(recursively, force, opts)
 
    Retrieves a list of all files from the server.
 
@@ -52,7 +52,12 @@
 
    See :ref:`Retrieve all files <sec-api-fileops-retrieveall>` for more details.
 
+   .. versionchanged:: 2.0.0
+
+      ``force`` parameter added
+
    :param boolean recursively: Whether to list the files recursively (including all sub folders, true) or not (false, default)
+   :param boolean force: Whether to force the list to be refreshed, bypassing internal caching
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
@@ -80,7 +85,7 @@
 
 .. js:function:: OctoPrintClient.files.select(location, path, print, opts)
 
-   Selects a file at ``location`` named ``filename`` for printing. If ``print`` is supplied and
+   Selects a file at ``location`` named ``path`` for printing. If ``print`` is supplied and
    truthy, also starts printing the file immediately.
 
    See the ``select`` command in :ref:`Issue a file command <sec-api-fileops-filecommand>` for more details.
@@ -93,7 +98,7 @@
 
 .. js:function:: OctoPrintClient.files.analyse(location, path, parameters, opts)
 
-   (Re)analyses a file at ``location`` called ``filename``.
+   (Re)analyses a file at ``location`` called ``path``.
 
    See the ``analyse`` command in :ref:`Issue a file command <sec-api-fileops-filecommand>` for more details.
 
@@ -105,7 +110,7 @@
 
 .. js:function:: OctoPrintClient.files.refreshThumbnails(location, path, parameters, opts)
 
-   Refreshes the thumbnails for the file or folder at ``location`` called ``filename``.
+   Refreshes the thumbnails for the file or folder at ``location`` called ``path``.
 
    See the ``refresh_thumbnails`` command in :ref:`Issue a file command <sec-api-fileops-filecommand>` for more details.
 
@@ -303,6 +308,13 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
+.. js:function:: OctoPrintClient.files.bulkDownloadUrl(storage, files)
+
+   Requests a zip-based bulk download of the provided ``files`` on the defined ``storage``.
+
+   :param list files: The paths of the files to bulk download
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
 .. js:function:: OctoPrintClient.files.pathForEntry(entry)
 
    Utility function to retrieve the path within its location for a given ``entry``.
@@ -352,3 +364,23 @@
        element with ``children``
    :returns object or undefined: The retrieved entry, or ``undefined`` if the ``path`` could
        not be resolved
+
+.. js:function:: OctoPrint.files.sanitize(location, path, filename, opts)
+
+   Sanitizes the provided ``path`` and ``filename`` on the defined ``location``.
+
+   :param string location: The location/storage on which to run the sanitization request
+   :param string path: The path to sanitize
+   :param string filename: The file name to sanitize
+   :param object opts: Additional options for the sanitize request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
+.. js:function:: OctoPrint.files.exists(location, path, filename, opts)
+
+   Checks whether the provided ``path`` and ``filename`` exists on the defined ``location``.
+
+   :param string location: The location/storage on which to check
+   :param string path: The path to check
+   :param string filename: The file name to check
+   :param object opts: Additional options for the check request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response

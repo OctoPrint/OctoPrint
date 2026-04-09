@@ -94,6 +94,7 @@ connection options (``baseurl`` and ``apikey``) directly in the constructor or s
    :maxdepth: 3
 
    base.rst
+   access.rst
    browser.rst
    connection.rst
    control.rst
@@ -107,6 +108,5 @@ connection options (``baseurl`` and ``apikey``) directly in the constructor or s
    socket.rst
    system.rst
    timelapse.rst
-   users.rst
    util.rst
    wizard.rst
