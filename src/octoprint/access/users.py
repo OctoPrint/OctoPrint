@@ -1223,6 +1223,7 @@ class User(UserMixin):
             "needs": OctoPrintPermission.convert_needs_to_dict(self.needs),
             "apikey": self._apikey,
             "settings": self._settings,
+            "has_password": self.has_password(),
             # TODO: deprecated, remove in 1.5.0
             "admin": self.has_permission(Permissions.ADMIN),
             "user": not self.is_anonymous,

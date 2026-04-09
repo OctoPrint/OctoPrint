@@ -3,7 +3,7 @@
         <legend>{{ _("Password") }}</legend>
         <p>{{ _("If you do not wish to change your password, just leave the following fields empty.") }}</p>
         <div class="control-group"
-             data-bind="css: {error: access_currentPasswordMismatch()}">
+             data-bind="css: {error: access_currentPasswordMismatch()}, visible: access_currentPasswordRequired">
             <label class="control-label" for="userSettings-access_currentPassword">{{ _("Current Password") }}</label>
             <div class="controls">
                 <input type="password"

@@ -27,6 +27,7 @@ $(function () {
         self.access_repeatedPassword = ko.observable(undefined);
         self.access_currentPassword = ko.observable(undefined);
         self.access_currentPasswordMismatch = ko.observable(false);
+        self.access_currentPasswordRequired = ko.observable(true);
         self.access_apikey = ko.observable(undefined);
         self.interface_language = ko.observable(undefined);
 
@@ -39,11 +40,13 @@ $(function () {
             self.access_repeatedPassword(undefined);
             self.access_currentPassword(undefined);
             self.access_currentPasswordMismatch(false);
+            self.access_currentPasswordRequired(true);
             self.access_apikey(undefined);
             self.interface_language("_default");
 
             if (newUser !== undefined) {
                 self.access_apikey(newUser.apikey);
+                self.access_currentPasswordRequired(newUser.has_password);
                 if (
                     newUser.settings.hasOwnProperty("interface") &&
                     newUser.settings.interface.hasOwnProperty("language")

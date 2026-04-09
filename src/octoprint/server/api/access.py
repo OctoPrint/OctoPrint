@@ -263,18 +263,25 @@ def change_password_for_user(username):
     ):
         data = request.get_json()
 
-        if "password" not in data or not data["password"]:
+        new_password = data.get("password")
+        if new_password is None:
             abort(400, description="new password is missing")
 
-        if current_user.get_name() == username:
-            if "current" not in data or not data["current"]:
-                abort(400, description="current password is missing")
+        current_password = data.get("current")
 
-            if not userManager.check_password(username, data["current"]):
-                abort(403, description="Invalid current password")
+        if current_user.has_permission(Permissions.ADMIN):
+            if not credentials_checked_recently():
+                if current_password is None:
+                    abort(403, description="Please reauthenticate with your credentials")
+                if not userManager.check_password(username, current_password):
+                    abort(403, description="Invalid current password")
 
-        elif current_user.has_permission(Permissions.ADMIN):
-            ensure_credentials_checked_recently()
+        elif current_user.get_name() == username:
+            if current_user.has_password():
+                if current_password is None:
+                    abort(400, description="current password is missing")
+                if not userManager.check_password(username, current_password):
+                    abort(403, description="Invalid current password")
 
         else:
             # this should never happen
