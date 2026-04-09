@@ -621,6 +621,10 @@ class PrinterFilesMixin:
         pass
 
     def get_printer_file(self, path: str, refresh=False, *args, **kwargs) -> PrinterFile:
+        files = self.get_printer_files(refresh=refresh)
+        for f in files:
+            if f.path == path:
+                return f
         return None
 
     def get_printer_files(
