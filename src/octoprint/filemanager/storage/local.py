@@ -30,7 +30,7 @@ from octoprint.util import (
 from octoprint.util.files import sanitize_filename
 from octoprint.util.tz import LOCAL_TZ
 
-from . import (
+from .common import (
     AnalysisDimensions,
     AnalysisFilamentUse,
     AnalysisResult,

@@ -4,11 +4,11 @@ import tempfile
 import time
 from typing import IO, Optional
 
-from octoprint.filemanager import get_file_type
+import octoprint.filemanager
 from octoprint.filemanager.util import AbstractFileWrapper
 from octoprint.printer import PrinterFile, PrinterFilesError, PrinterFilesMixin
 
-from . import (
+from .common import (
     MetadataEntry,
     StorageCapabilities,
     StorageEntry,
@@ -178,7 +178,7 @@ class PrinterFileStorage(StorageInterface):
             if f.path == prefix:
                 continue
 
-            type_path = get_file_type(f.path)
+            type_path = octoprint.filemanager.get_file_type(f.path)
             if not type_path:
                 if f.path.endswith("/"):
                     type_path = ["folder"]
