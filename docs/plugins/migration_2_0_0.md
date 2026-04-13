@@ -135,7 +135,7 @@ In practice for plugins that means relacing any calls to `self._settings.get_plu
 #### `Printer.get_transport` no longer functional
 
 `get_transport` is no longer functional. There is no alternative implementation. Plugins 
-relying on it should please get in touch so we can figure out how to achieve what they so
+relying on it should please get in touch in the shape of a [feature request](https://github.com/OctoPrint/OctoPrint/issues) so we can figure out how to achieve what they so
 far have been doing by utilizing this method.
 
 (sec-plugins-octo_2_0_0-server-printer-internal)=
@@ -143,17 +143,30 @@ far have been doing by utilizing this method.
 
 Some internal attributes of the `octoprint.printer.Printer` class (injected as `self.
 _printer into plugin implementations) have been renamed. Plugins that accessed the 
-following (**private**) attributes will need to update the names. Please note that these 
-are *not* drop-in replacements, and if at all possible your plugin should rather not use 
-them at all but rather reply on the public documented API!
+following (**private**) attributes will need to update the names. Please note that these are
+*not* drop-in replacements!
+
+:::{attention} 
+Your plugin should not use private & undocumented properties on OctoPrint's internal classes. However
+looking at the plugins on the [official plugin repository](https://plugins.octoprint.org) it's
+clear that quite a number of plugins utilize these directly.
+
+This is supposed to be avoided, but clearly there's a reason why so many plugin authors have 
+decided to rely on undocumented implementation details.
+
+If this affects you, then please [open a feature request](https://github.com/OctoPrint/OctoPrint/issues) 
+on OctoPrint's repository and tell us what exactly you need that's currently missing from the plugin interface
+and documented internal APIs so that ideally we can make things *officially supported* and
+avoid issues like this in the future!
+:::
 
 The affected names are:
 
   - `_comm` -> `_connection`
-  - `_selectedFile` -> `_selected_job`
   - `_currentZ` -> `_last_z`
-  - `_printerProfileManager` -> `_printer_profile_manager`
   - `_fileManager` -> `_file_manager`
+  - `_printerProfileManager` -> `_printer_profile_manager`
+  - `_selectedFile` -> `_selected_job`
 
 (sec-plugins-octo_2_0_0-server-printer-log_format)=
 #### Format of terminal log lines changed
