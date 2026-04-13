@@ -997,6 +997,27 @@ class PrinterMixin(CommonPrinterMixin):
     def release_sd_card(self, *args, **kwargs):
         return self.unmount_storage(*args, **kwargs)
 
+    @deprecated(
+        message="can_modify_file has been deprecated and will be removed in 3.0.0. Please directly compare the job parameters and printing state instead.",
+        since="2.0.0",
+    )
+    def can_modify_file(self, path, sd, *args, **kwargs):
+        return not self.is_current_file(path, sd) and (
+            self.is_printing() or self.is_paused()
+        )
+
+    @deprecated(
+        message="is_current_file has been deprecated and will be removed in 3.0.0. Please directly compare the job parameters instead.",
+        since="2.0.0",
+    )
+    def is_current_file(self, path, sd, *args, **kwargs):
+        return (
+            self.current_job is not None
+            and self.current_job.path == path
+            and self.current_job.storage
+            == (FileDestinations.PRINTER if sd else FileDestinations.LOCAL)
+        )
+
 
 PrinterInterface = PrinterMixin
 
