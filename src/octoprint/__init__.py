@@ -623,6 +623,47 @@ def init_serial_compat_overlay(settings):
     settings.add_path_update_callback(["feature", "notifySuppressedCommands"], callback)
 
 
+def init_blocklist_compat_overlay(settings):
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    def set_overlay():
+        overlay = {
+            "feature": {
+                "autoUppercaseBlacklist": settings.get(
+                    ["feature", "autoUppercaseBlocklist"]
+                )
+            },
+        }
+
+        plugin_blocklist = settings.get(["server", "pluginBlocklist"])
+        if plugin_blocklist is not None:
+            overlay.update({"server": {"pluginBlacklist": {}}})
+            for key, value in plugin_blocklist.items():
+                overlay["server"]["pluginBlacklist"][key] = value
+
+        logger.info("Installing blocklist compat overlay for deprecated settings paths")
+        settings.add_overlay(
+            overlay,
+            key="blocklist_compat",
+            at_end=True,
+            deprecated=(
+                '"Blacklist" in settings keys has been changed to "blocklist".'
+                "This compatibility layer will be removed in a future "
+                "release."
+            ),
+            replace=True,
+        )
+
+    def callback(path, current_value, new_value):
+        set_overlay()
+
+    set_overlay()
+    settings.add_path_update_callback(["feature", "autoUppercaseBlacklist"], callback)
+    settings.add_path_update_callback(["server", "pluginBlacklist"], callback)
+
+
 def init_webcam_compat_overlay(settings, plugin_manager):
     import logging
 

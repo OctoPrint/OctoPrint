@@ -743,6 +743,18 @@ class SettingsTest(unittest.TestCase):
             settings.set(source_path, new_value, force=True)
             self.assertEqual(settings.get(["serial", serial_key]), new_value)
 
+    @ddt.data(
+        (["feature", "autoUppercaseBlacklist"], ["M115"]),
+        (["server", "pluginBlacklist", "url"], "https://example.com/blocklist.json"),
+        (["server", "pluginBlacklist", "ttl"], 5),
+        (["server", "pluginBlacklist", "timeout"], 3.05),
+    )
+    @ddt.unpack
+    def test_blocklist_compat_overlay(self, settings_key, expected):
+        with self.blocklist_compat_settings() as settings:
+            self.assertEqual(settings.get(settings_key), expected)
+            self.assertTrue(settings._is_deprecated_path(settings_key))
+
     def test_webcam_compat_overlay(self):
         from octoprint.schema.webcam import Webcam, WebcamCompatibility
 
@@ -938,6 +950,21 @@ class SettingsTest(unittest.TestCase):
                 force=True,
             )
             init_serial_compat_overlay(settings)
+            yield settings
+
+    @contextlib.contextmanager
+    def blocklist_compat_settings(self):
+        from octoprint import init_blocklist_compat_overlay
+
+        with self.mocked_basedir():
+            settings = octoprint.settings.Settings()
+            settings.set(["feature", "autoUppercaseBlocklist"], ["M115"], force=True)
+            settings.set(
+                ["server", "pluginBlocklist"],
+                {"url": "https://example.com/blocklist.json", "ttl": 5, "timeout": 3.05},
+                force=True,
+            )
+            init_blocklist_compat_overlay(settings)
             yield settings
 
     @contextlib.contextmanager

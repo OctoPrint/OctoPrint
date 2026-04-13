@@ -48,6 +48,7 @@ def init_platform_for_cli(ctx):
     """
 
     from octoprint import (
+        init_blocklist_compat_overlay,
         init_custom_events,
         init_platform,
         init_serial_compat_overlay,
@@ -95,6 +96,7 @@ def init_platform_for_cli(ctx):
 
     init_settings_plugin_config_migration_and_cleanup(plugin_manager)
     init_serial_compat_overlay(settings)
+    init_blocklist_compat_overlay(settings)
     init_webcam_compat_overlay(settings, plugin_manager)
 
     return components
