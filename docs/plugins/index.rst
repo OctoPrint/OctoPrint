@@ -18,3 +18,4 @@ Developing Plugins
    distributing.rst
    migration_python3.rst
    migration_pyproject_toml.rst
+   migration_2_0_0.md
