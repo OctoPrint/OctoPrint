@@ -29,6 +29,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinxcontrib.httpdomain",
     "sphinxcontrib.autodoc_pydantic",
+    "sphinx_reredirects",
     # custom
     "codeblockext",
     "pydanticext",
@@ -41,6 +42,10 @@ todo_include_todos = True
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "pyserial": ("https://pythonhosted.org/pyserial", None),
+}
+redirects = {
+    "plugins/python3_migration": "./migration_python3.html",
+    "plugins/pyproject_toml_migration": "./migration_pyproject_toml.html",
 }
 
 # Add any paths that contain templates here, relative to this directory.
