@@ -324,6 +324,10 @@ class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterRegistra
             state = self.state
         return state.value
 
+    @property
+    def job_status_interval(self):
+        return 1.0
+
     def is_closed_or_error(self, *args, **kwargs):
         return self.state in CLOSED_STATES or self.state in ERROR_STATES
 

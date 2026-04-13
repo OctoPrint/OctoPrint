@@ -117,6 +117,10 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         )
         return parameters
 
+    @property
+    def job_status_interval(self):
+        return self._plugin_settings.get_float(["timeout", "sdStatus"])
+
     def connect(self, *args, **kwargs):
         if self._comm is not None:
             return

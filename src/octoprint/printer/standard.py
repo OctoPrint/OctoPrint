@@ -226,7 +226,9 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
                 job_type = self._selected_job.storage
 
-        self._estimator = self._estimator_factory(job_type)
+        self._estimator = self._estimator_factory(
+            job_type, job_status_interval=self._connection.job_status_interval
+        )
 
     @property
     def firmware_info(self):
