@@ -62,7 +62,7 @@ def test_get_files(path, filters, recursive, level, expected):
     if filters:
         filter = filters[0]  # first item is for list_files use
 
-    with mock.patch("octoprint.filemanager.storage.printer.get_file_type") as gft:
+    with mock.patch("octoprint.filemanager.get_file_type") as gft:
         from octoprint.filemanager.storage.printer import PrinterFileStorage
 
         gft.return_value = ["machinecode", "gcode"]
@@ -88,7 +88,7 @@ def test_list_storage_entries(path, filters, recursive, level, expected):
     if filters:
         filter = filters[1]  # second item is for list_storage_entries use
 
-    with mock.patch("octoprint.filemanager.storage.printer.get_file_type") as gft:
+    with mock.patch("octoprint.filemanager.get_file_type") as gft:
         from octoprint.filemanager.storage.printer import PrinterFileStorage
 
         gft.return_value = ["machinecode", "gcode"]
