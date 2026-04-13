@@ -503,7 +503,7 @@
 .. js:function:: OctoPrintClient.deprecated(deprecated, replacement, fn, deprecationVersion, removalVersion)
 
    Wrapper for deprecated functions, automatically logging a deprecation warning to the console with log level ``warn``
-   when called, information that ``deprecated`` has been replaced by ``replacement`` since version ``deprecationVersion``
+   when called, informing that ``deprecated`` has been replaced by ``replacement`` since version ``deprecationVersion``
    and it will be removed in ``removalVersion``.
 
    ``deprecationVersion`` and ``removalVersion`` are optional. If either is left out the log message will
@@ -513,12 +513,50 @@
 
    .. code-block:: javascript
 
-      self.someOtherFunction = () => {}
-      self.someFunction = OctoPrintClient.deprecated("MyViewModel.someFunction", "MyViewModel.someOtherFunction", self.someOtherFunction, "2.0.0", "3.0.0");
+      self.someFunction = () => {}
+      self.someDeprecatedFunction = OctoPrintClient.deprecated(
+         "MyViewModel.someDeprecatedFunction", 
+         "MyViewModel.someOtherFunction", 
+         self.someOtherFunction, 
+         "2.0.0", 
+         "3.0.0"
+      );
 
    :param string deprecated: Name of the deprecated function
    :param string replacement: Name of the replacement
    :param function fn: Wrapped function
+   :param string deprecationVersion: Version when the deprecation happened
+   :param string removalVersion: Version when the removal is planned
+
+.. js:function:: OctoPrintClient.deprecatedVariable(object, deprecated, replacement, getter, setter, deprecatedVersion, removalVersion)
+
+   Wrapper for deprecated variables, automatically logging a deprecation warning to the console with log level ``warn``
+   when either setter or getter get used, informing that ``deprecated`` has been replaced by ``replacement`` since version ``deprecationVersion``
+   and it will be removed in ``removalVersion``.
+
+   ``deprecationVersion`` and ``removalVersion`` are optional. If either is left out the log message will
+   not contain the related info.
+
+   Example:
+
+   .. code-block:: javascript
+
+      self.someVariable = "foo"
+      self.someDeprecatedVariable = OctoPrintClient.deprecatedVariable(
+         self, 
+         "MyViewModel.someDeprecatedVariable", 
+         "MyViewModel.someVariable",
+         () => self.someVariable,
+         (val) => { self.someVariable = val },
+         "2.0.0",
+         "3.0.0"
+      )
+
+   :param object object: The object on which to create the deprecated variable
+   :param string deprecated: Name of the deprecated variable
+   :param string replacement: Name of the replacement
+   :param function getter: Getter function
+   :param function setter: Setter function
    :param string deprecationVersion: Version when the deprecation happened
    :param string removalVersion: Version when the removal is planned
 
