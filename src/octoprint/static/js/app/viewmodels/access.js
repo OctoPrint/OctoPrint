@@ -39,8 +39,9 @@ $(function () {
                 return user && user.name && user.name == access.loginState.username();
             };
             self.isCurrentUser = (user) => {
+                // TODO remove in 3.0.0
                 log.warn(
-                    "isCurrentUser(user) has been deprecated in favor of isUserMyself(user)"
+                    "isCurrentUser(user) has been deprecated in favor of isUserMyself(user) as of OctoPrint 2.0.0, it will be removed in OctoPrint 3.0.0"
                 );
                 return self.isUserMyself(user);
             };
