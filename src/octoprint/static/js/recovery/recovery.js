@@ -79,6 +79,7 @@ $(function () {
             OctoPrint.browser.passiveLogin().done((resp) => {
                 self.username(resp.name);
                 self.permitted(_.includes(resp.needs.role, "admin"));
+                self.credentialsRecheckSupported(response._credentials_recheck_supported);
                 self.credentialsSeen(resp._credentials_seen);
                 self.known(true);
 
