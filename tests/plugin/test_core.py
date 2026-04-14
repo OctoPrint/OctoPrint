@@ -56,7 +56,7 @@ class PluginTestCase(unittest.TestCase):
 
         logging.basicConfig(level=logging.DEBUG)
 
-        # TODO mock some defined entry_points
+        # FIXME mock some defined entry_points
 
         import os
 

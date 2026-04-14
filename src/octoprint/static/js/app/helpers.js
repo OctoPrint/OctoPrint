@@ -417,7 +417,7 @@ function ItemListHelper(
 }
 
 function formatSize(bytes) {
-    if (!bytes) return "-";
+    if (bytes === undefined || !Number.isFinite(bytes)) return "-";
 
     var units = ["B", "KB", "MB", "GB"];
     for (var i = 0; i < units.length; i++) {
@@ -430,10 +430,10 @@ function formatSize(bytes) {
 }
 
 function formatHuman(number) {
-    if (number === undefined) return "-";
+    if (number === undefined || !Number.isFinite(number)) return "-";
     if (number < 1000) return number;
-
-    return _.sprintf("%.1fK", number / 1000);
+    if (number < 1000000) return _.sprintf("%3.1fK", number / 1000);
+    return _.sprintf("%.1f%s", number / 1000000, "M");
 }
 
 function bytesFromSize(size) {

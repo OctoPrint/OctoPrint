@@ -19,7 +19,13 @@ import octoprint.timelapse
 from octoprint.plugin import plugin_manager
 from octoprint.settings import settings
 from octoprint.util import to_unicode
-from octoprint.util.net import is_loopback_address
+from octoprint.util.net import (
+    contains_trusted_source,
+    get_ipset_from_list,
+    is_loopback_address,
+    usable_trusted_proxies,
+    usable_trusted_proxies_from_settings,
+)
 
 from . import flask, sockjs, tornado, watchdog  # noqa: F401
 
@@ -206,10 +212,10 @@ def get_user_for_apikey(
 
     if global_apikey is not None and hmac.compare_digest(
         apikey, global_apikey
-    ):  # TODO Remove in 1.13.0
+    ):  # TODO remove in 2.1.0
         # global api key was used
         logging.getLogger(__name__).warning(
-            "The global API key was just used. The global API key is deprecated and will cease to function with OctoPrint 1.13.0."
+            "The global API key was just used. The global API key is deprecated and will cease to function with OctoPrint 2.1.0 (formerly known as 2.1.0)."
         )
         user = octoprint.server.userManager.api_user_factory()
 
@@ -251,30 +257,52 @@ def get_user_for_remote_user_header(
     """
     Tries to find a user based on the configured remote user request header.
 
-    Will only perform any action if the trustRemoteUser setting is enabled.
+    Will only perform any action if one or more trusted authentication proxies
+    are configured.
     """
-    if not settings().getBoolean(["accessControl", "trustRemoteUser"]):
+    s = settings()
+
+    trusted_auth_proxies = s.get(["accessControl", "trustedAuthProxies"])
+    if not trusted_auth_proxies:
         return None
 
-    header = request.headers.get(settings().get(["accessControl", "remoteUserHeader"]))
+    header = request.headers.get(s.get(["accessControl", "remoteUserHeader"]))
     if header is None:
         return None
 
+    trusted_auth_proxies = get_ipset_from_list(
+        usable_trusted_proxies(trusted_auth_proxies, add_localhost=False)
+    )
+    trusted_proxies = get_ipset_from_list(usable_trusted_proxies_from_settings(s))
+
+    orig_remote_addr = request.environ.get("ORIG_REMOTE_ADDR")
+    forwarded_for = request.headers.get("X-Forwarded-For")
+
+    request_via_trusted_proxy_chain_incl_auth_proxy = (
+        orig_remote_addr in trusted_proxies
+        and contains_trusted_source(trusted_auth_proxies, forwarded_for, trusted_proxies)
+    )
+    request_directly_from_auth_proxy = orig_remote_addr in trusted_auth_proxies
+
+    if not (
+        request_via_trusted_proxy_chain_incl_auth_proxy
+        or request_directly_from_auth_proxy
+    ):
+        return None  # don't eval the header if this request is not coming from our trusted auth proxy
+
     user = octoprint.server.userManager.find_user(userid=header)
 
-    if user is None and settings().getBoolean(["accessControl", "addRemoteUsers"]):
+    if user is None and s.getBoolean(["accessControl", "addRemoteUsers"]):
         octoprint.server.userManager.add_user(
             header, None, active=True
         )  # create new user with disabled password login
         user = octoprint.server.userManager.find_user(userid=header)
 
-    if user and settings().getBoolean(["accessControl", "trustRemoteGroups"]):
-        groupHeader = request.headers.get(
-            settings().get(["accessControl", "remoteGroupsHeader"])
-        )
+    if user and s.getBoolean(["accessControl", "trustRemoteGroups"]):
+        groupHeader = request.headers.get(s.get(["accessControl", "remoteGroupsHeader"]))
         if groupHeader:
             groups = groupHeader.split(",")
-            mapping = settings().get(["accessControl", "remoteGroupsMapping"])
+            mapping = s.get(["accessControl", "remoteGroupsMapping"])
             if mapping:
                 groups = [mapping.get(group, group) for group in groups]
             octoprint.server.userManager.change_user_groups(header, groups)

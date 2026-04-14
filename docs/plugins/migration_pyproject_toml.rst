@@ -51,7 +51,7 @@ or ``uv tool run``:
 
 Note that it requires Python 3.9 and newer.
 
-OctoPrint 1.12.0 will also include it and offer its functionality on its command line:
+OctoPrint 2.0.0 will also include it and offer its functionality on its command line:
 
 .. code-block::
 

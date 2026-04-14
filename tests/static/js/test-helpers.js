@@ -12,7 +12,11 @@ QUnit.cases(
 
             // unknown units
             {title: "UnknownPBSuffix", input: "1 PB", expected: undefined},
-            {title: "UnknownSuffixSpace", input: "234.5 unknown", expected: undefined},
+            {
+                title: "UnknownSuffixSpace",
+                input: "234.5 unknown",
+                expected: undefined
+            },
             {title: "UnknownSuffix", input: "234.5unknown", expected: undefined},
 
             // conversion
@@ -20,14 +24,22 @@ QUnit.cases(
             {title: "WholeByteAbbreviatedSuffix", input: "1b", expected: 1},
             {title: "WholeByteAbbreviatedSuffixSpace", input: "1 B", expected: 1},
             {title: "WholeByteWordSuffix", input: "1 byte", expected: 1},
-            {title: "WholeByteWordSuffixCapitalization", input: "1 bYtES", expected: 1},
+            {
+                title: "WholeByteWordSuffixCapitalization",
+                input: "1 bYtES",
+                expected: 1
+            },
             {title: "WholeFractionalBytesNoSuffix", input: "1.1", expected: 1.1},
             {title: "FractionalBytesNoSuffix", input: ".1", expected: 0.1},
             {title: "OneKilobyte", input: "1 KB", expected: 1024},
             {title: "TwoKilobytes", input: "2 KB", expected: 2048},
             {title: "OneMegabyte", input: "1 MB", expected: Math.pow(1024, 2)},
             {title: "WholeMB", input: "500mb", expected: 500 * Math.pow(1024, 2)},
-            {title: "DecimalMB", input: "500.2mb", expected: 500.2 * Math.pow(1024, 2)},
+            {
+                title: "DecimalMB",
+                input: "500.2mb",
+                expected: 500.2 * Math.pow(1024, 2)
+            },
             {title: "OneGigabyte", input: "1 GB", expected: Math.pow(1024, 3)},
             {title: "OneTerabyte", input: "1 TB", expected: Math.pow(1024, 4)}
         ];
@@ -55,16 +67,34 @@ QUnit.cases(
 
         var params = [
             {title: "UndefinedSize", input: undefined, expected: "-"},
+            {title: "NaN", input: NaN, expected: "-"},
+            {title: "Text", input: "text", expected: "-"},
             {title: "EmptySize", input: "", expected: "-"},
             {title: "WholeByte", input: 1, expected: "1.0B"},
             {title: "FractionalBytes", input: 1.1, expected: "1.1B"},
             {title: "OneKilobyte", input: 1024, expected: "1.0KB"},
             {title: "TwoKilobytes", input: 2048, expected: "2.0KB"},
             {title: "FractionalKilobytes", input: 2.2 * 1024, expected: "2.2KB"},
-            {title: "FractionalMB", input: 23.5 * Math.pow(1024, 2), expected: "23.5MB"},
-            {title: "FractionalGB", input: 23.5 * Math.pow(1024, 3), expected: "23.5GB"},
-            {title: "FractionalTB", input: 23.5 * Math.pow(1024, 4), expected: "23.5TB"},
-            {title: "PetabyteAsTB", input: 2 * Math.pow(1024, 5), expected: "2048.0TB"}
+            {
+                title: "FractionalMB",
+                input: 23.5 * Math.pow(1024, 2),
+                expected: "23.5MB"
+            },
+            {
+                title: "FractionalGB",
+                input: 23.5 * Math.pow(1024, 3),
+                expected: "23.5GB"
+            },
+            {
+                title: "FractionalTB",
+                input: 23.5 * Math.pow(1024, 4),
+                expected: "23.5TB"
+            },
+            {
+                title: "PetabyteAsTB",
+                input: 2 * Math.pow(1024, 5),
+                expected: "2048.0TB"
+            }
         ];
 
         var param, i;
@@ -767,9 +797,14 @@ QUnit.cases(
                 expected: "-"
             },
             {
+                title: "NaN",
+                input: undefined,
+                expected: "-"
+            },
+            {
                 title: "Text",
                 input: "text",
-                expected: "-NaNK"
+                expected: "-"
             },
             {
                 title: "Zero",
@@ -787,9 +822,34 @@ QUnit.cases(
                 expected: "1.0K"
             },
             {
-                title: "ThousandTen",
+                title: "ThousandHundred",
                 input: 1100,
                 expected: "1.1K"
+            },
+            {
+                title: "Million",
+                input: 1000000,
+                expected: "1.0M"
+            },
+            {
+                title: "MillionOne",
+                input: 1000001,
+                expected: "1.0M"
+            },
+            {
+                title: "MillionThousand",
+                input: 1001000,
+                expected: "1.0M"
+            },
+            {
+                title: "MillionHundredThousand",
+                input: 1100000,
+                expected: "1.1M"
+            },
+            {
+                title: "Billion",
+                input: 1000000000,
+                expected: "1000.0M"
             },
             {
                 title: "Decimal",

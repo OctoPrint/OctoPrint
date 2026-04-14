@@ -126,6 +126,36 @@
     </div>
 
     <div class="control-group">
+        <label class="control-label">{{ _("Display notifications for suppressed commands") }}</label>
+        <div class="controls">
+            <label class="radio">
+                <input type="radio"
+                       name="notifySuppressedCommandsGroup"
+                       value="info"
+                       data-bind="checked: settings.feature.notifySuppressedCommands"
+                       id="settings-serialNotifySuppressedCommands-info">
+                {{ _("Show notifications of severity \"info\" and \"warning\"") }}
+            </label>
+            <label class="radio">
+                <input type="radio"
+                       name="notifySuppressedCommandsGroup"
+                       value="warn"
+                       data-bind="checked: settings.feature.notifySuppressedCommands"
+                       id="settings-serialNotifySuppressedCommands-warn">
+                {{ _("Show notifications of severity \"warning\"") }}
+            </label>
+            <label class="radio">
+                <input type="radio"
+                       name="notifySuppressedCommandsGroup"
+                       value="never"
+                       data-bind="checked: settings.feature.notifySuppressedCommands"
+                       id="settings-serialNotifySuppressedCommands-never">
+                {{ _("Never show notifications") }}
+            </label>
+        </div>
+    </div>
+
+    <div class="control-group">
         <label class="control-label">{{ _("Analyze gcode for time and model size estimates") }}</label>
         <div class="controls">
             <label class="radio">

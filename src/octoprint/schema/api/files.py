@@ -186,7 +186,7 @@ class ApiStorageData(BaseModelExtra):
 ReadGcodeFilesResponse = dict[str, ApiStorageData]
 
 
-class ReadGcodeFilesResponse_pre_1_12(BaseModel):
+class ReadGcodeFilesResponse_pre_2_0_0(BaseModel):
     files: list[Union[ApiStorageFile, ApiStorageFolder]]
     """List of files and folders from all storages"""
     free: int
@@ -198,7 +198,7 @@ class ReadGcodeFilesResponse_pre_1_12(BaseModel):
 ReadGcodeFilesForOriginResponse = ApiStorageData
 
 
-class ReadGcodeFilesForOriginResponse_pre_1_12(BaseModel):
+class ReadGcodeFilesForOriginResponse_pre_2_0_0(BaseModel):
     files: list[Union[ApiStorageFile, ApiStorageFolder]]
     """List of files and folders from storage"""
     free: Optional[int] = None
@@ -238,7 +238,7 @@ class UploadResponse(BaseModel):
     """
 
 
-class UploadResponse_pre_1_12(BaseModel):
+class UploadResponse_pre_2_0_0(BaseModel):
     files: Optional[dict[str, ApiAddedEntry]] = None
     """
     (File only) Information regarding the file that was just uploaded, mapped by the storage that it was uploaded to.

@@ -350,14 +350,12 @@ $(function () {
                 self.username(data.name);
                 self.currentUser(data);
 
-                // TODO: deprecated, remove in 1.5.0
-                self.isUser(data.user);
-                self.isAdmin(data.admin);
+                self.isUser(data.groups.includes("users"));
+                self.isAdmin(data.groups.includes("admins"));
             } else {
                 self.username(undefined);
                 self.currentUser(undefined);
 
-                // TODO: deprecated, remove in 1.5.0
                 self.isUser(false);
                 self.isAdmin(false);
             }

@@ -16,7 +16,7 @@ from werkzeug.local import LocalProxy
 from octoprint.access.groups import Group, GroupChangeListener
 from octoprint.access.permissions import OctoPrintPermission, Permissions
 from octoprint.settings import settings as s
-from octoprint.util import atomic_write, deprecated, generate_api_key, to_bytes, yaml
+from octoprint.util import atomic_write, generate_api_key, to_bytes, yaml
 from octoprint.util import get_fully_qualified_classname as fqcn
 
 NOLOGIN_PWHASH = "nologin"
@@ -79,7 +79,7 @@ class UserManager(GroupChangeListener):
     def anonymous_user_factory(self):
         return AnonymousUser([self._group_manager.guest_group])
 
-    def api_user_factory(self):  # TODO Remove in 1.13.0
+    def api_user_factory(self):  # TODO remove in 2.1.0
         return ApiUser([self._group_manager.admin_group, self._group_manager.user_group])
 
     def internal_user_factory(self):
@@ -397,124 +397,6 @@ class UserManager(GroupChangeListener):
                     extra={"callback": fqcn(listener)},
                 )
 
-    # ~~ Deprecated methods follow
-
-    # TODO: Remove deprecated methods in OctoPrint 1.5.0
-
-    @deprecated(
-        "changeUserRoles has been replaced by change_user_permissions",
-        includedoc="Replaced by :func:`change_user_permissions`",
-        since="1.4.0",
-    )
-    def changeUserRoles(self, username, roles):
-        user = self.find_user(username)
-        if user is None:
-            raise UnknownUser(username)
-
-        removed_roles = set(user._roles) - set(roles)
-        self.removeRolesFromUser(username, removed_roles, user=user)
-
-        added_roles = set(roles) - set(user._roles)
-        self.addRolesToUser(username, added_roles, user=user)
-
-    @deprecated(
-        "addRolesToUser has been replaced by add_permissions_to_user",
-        includedoc="Replaced by :func:`add_permissions_to_user`",
-        since="1.4.0",
-    )
-    def addRolesToUser(self, username, roles, user=None):
-        if user is None:
-            user = self.find_user(username)
-
-        if user is None:
-            raise UnknownUser(username)
-
-        if "admin" in roles:
-            self.add_groups_to_user(username, self._group_manager.admin_group)
-
-        if "user" in roles:
-            self.remove_groups_from_user(username, self._group_manager.user_group)
-
-    @deprecated(
-        "removeRolesFromUser has been replaced by remove_permissions_from_user",
-        includedoc="Replaced by :func:`remove_permissions_from_user`",
-        since="1.4.0",
-    )
-    def removeRolesFromUser(self, username, roles, user=None):
-        if user is None:
-            user = self.find_user(username)
-
-        if user is None:
-            raise UnknownUser(username)
-
-        if "admin" in roles:
-            self.remove_groups_from_user(username, self._group_manager.admin_group)
-            self.remove_permissions_from_user(username, Permissions.ADMIN)
-
-        if "user" in roles:
-            self.remove_groups_from_user(username, self._group_manager.user_group)
-
-    checkPassword = deprecated(
-        "checkPassword has been renamed to check_password",
-        includedoc="Replaced by :func:`check_password`",
-        since="1.4.0",
-    )(check_password)
-    addUser = deprecated(
-        "addUser has been renamed to add_user",
-        includedoc="Replaced by :func:`add_user`",
-        since="1.4.0",
-    )(add_user)
-    changeUserActivation = deprecated(
-        "changeUserActivation has been renamed to change_user_activation",
-        includedoc="Replaced by :func:`change_user_activation`",
-        since="1.4.0",
-    )(change_user_activation)
-    changeUserPassword = deprecated(
-        "changeUserPassword has been renamed to change_user_password",
-        includedoc="Replaced by :func:`change_user_password`",
-        since="1.4.0",
-    )(change_user_password)
-    getUserSetting = deprecated(
-        "getUserSetting has been renamed to get_user_setting",
-        includedoc="Replaced by :func:`get_user_setting`",
-        since="1.4.0",
-    )(get_user_setting)
-    getAllUserSettings = deprecated(
-        "getAllUserSettings has been renamed to get_all_user_settings",
-        includedoc="Replaced by :func:`get_all_user_settings`",
-        since="1.4.0",
-    )(get_all_user_settings)
-    changeUserSetting = deprecated(
-        "changeUserSetting has been renamed to change_user_setting",
-        includedoc="Replaced by :func:`change_user_setting`",
-        since="1.4.0",
-    )(change_user_setting)
-    changeUserSettings = deprecated(
-        "changeUserSettings has been renamed to change_user_settings",
-        includedoc="Replaced by :func:`change_user_settings`",
-        since="1.4.0",
-    )(change_user_settings)
-    removeUser = deprecated(
-        "removeUser has been renamed to remove_user",
-        includedoc="Replaced by :func:`remove_user`",
-        since="1.4.0",
-    )(remove_user)
-    findUser = deprecated(
-        "findUser has been renamed to find_user",
-        includedoc="Replaced by :func:`find_user`",
-        since="1.4.0",
-    )(find_user)
-    getAllUsers = deprecated(
-        "getAllUsers has been renamed to get_all_users",
-        includedoc="Replaced by :func:`get_all_users`",
-        since="1.4.0",
-    )(get_all_users)
-    hasBeenCustomized = deprecated(
-        "hasBeenCustomized has been renamed to has_been_customized",
-        includedoc="Replaced by :func:`has_been_customized`",
-        since="1.4.0",
-    )(has_been_customized)
-
 
 class LoginStatusListener:
     def on_user_logged_in(self, user):
@@ -594,13 +476,21 @@ class FilebasedUserManager(UserManager):
                 else:
                     groups = {self._group_manager.user_group}
 
-                # migrate from roles to permissions
-                if "roles" in attributes and "permissions" not in attributes:
-                    self._logger.info(
-                        f"Migrating user {name} to new granular permission system"
-                    )
+                if "roles" in attributes:
+                    roles = attributes.pop("roles")  # deletes outdated roles
 
-                    groups |= set(self._migrate_roles_to_groups(attributes["roles"]))
+                    if "permissions" not in attributes:
+                        # this is still an old user entry predating the permission system,
+                        # migrate the roles
+                        self._logger.info(
+                            f"Migrating user {name} to new granular permission system"
+                        )
+
+                        if "admin" in roles:
+                            groups.add(
+                                self._group_manager.admin_group
+                            )  # user group is already in there, see above
+
                     self._dirty = True
 
                 apikey = None
@@ -650,8 +540,6 @@ class FilebasedUserManager(UserManager):
                 "permissions": self._from_permissions(*user._permissions),
                 "apikey": user._apikey,
                 "settings": user._settings,
-                # TODO: deprecated, remove in 1.5.0
-                "roles": user._roles,
             }
 
         with atomic_write(
@@ -660,13 +548,6 @@ class FilebasedUserManager(UserManager):
             yaml.save_to_file(data, file=f, pretty=True)
             self._dirty = False
         self._load()
-
-    def _migrate_roles_to_groups(self, roles):
-        # If admin is inside the roles, just return admin group
-        if "admin" in roles:
-            return [self._group_manager.admin_group, self._group_manager.user_group]
-        else:
-            return [self._group_manager.user_group]
 
     def _refresh_groups(self, user):
         user._groups = self._to_groups(*(g.key for g in user.groups))
@@ -865,7 +746,7 @@ class FilebasedUserManager(UserManager):
             self._settings.save()
 
     def signature_key_for_user(self, username, secret):
-        if username == "_internal" or username == "_api":  # TODO Remove _api in 1.13.0
+        if username == "_internal" or username == "_api":  # TODO remove _api in 2.1.0
             return super().signature_key_for_user(username, secret)
         if username not in self._users:
             raise UnknownUser(username)
@@ -1017,76 +898,6 @@ class FilebasedUserManager(UserManager):
     def _from_permissions(self, *permissions):
         return list({permission.key for permission in permissions})
 
-    # ~~ Deprecated methods follow
-
-    # TODO: Remove deprecated methods in OctoPrint 1.5.0
-
-    generateApiKey = deprecated(
-        "generateApiKey has been renamed to generate_api_key",
-        includedoc="Replaced by :func:`generate_api_key`",
-        since="1.4.0",
-    )(generate_api_key)
-    deleteApiKey = deprecated(
-        "deleteApiKey has been renamed to delete_api_key",
-        includedoc="Replaced by :func:`delete_api_key`",
-        since="1.4.0",
-    )(delete_api_key)
-    addUser = deprecated(
-        "addUser has been renamed to add_user",
-        includedoc="Replaced by :func:`add_user`",
-        since="1.4.0",
-    )(add_user)
-    changeUserActivation = deprecated(
-        "changeUserActivation has been renamed to change_user_activation",
-        includedoc="Replaced by :func:`change_user_activation`",
-        since="1.4.0",
-    )(change_user_activation)
-    changeUserPassword = deprecated(
-        "changeUserPassword has been renamed to change_user_password",
-        includedoc="Replaced by :func:`change_user_password`",
-        since="1.4.0",
-    )(change_user_password)
-    getUserSetting = deprecated(
-        "getUserSetting has been renamed to get_user_setting",
-        includedoc="Replaced by :func:`get_user_setting`",
-        since="1.4.0",
-    )(get_user_setting)
-    getAllUserSettings = deprecated(
-        "getAllUserSettings has been renamed to get_all_user_settings",
-        includedoc="Replaced by :func:`get_all_user_settings`",
-        since="1.4.0",
-    )(get_all_user_settings)
-    changeUserSetting = deprecated(
-        "changeUserSetting has been renamed to change_user_setting",
-        includedoc="Replaced by :func:`change_user_setting`",
-        since="1.4.0",
-    )(change_user_setting)
-    changeUserSettings = deprecated(
-        "changeUserSettings has been renamed to change_user_settings",
-        includedoc="Replaced by :func:`change_user_settings`",
-        since="1.4.0",
-    )(change_user_settings)
-    removeUser = deprecated(
-        "removeUser has been renamed to remove_user",
-        includedoc="Replaced by :func:`remove_user`",
-        since="1.4.0",
-    )(remove_user)
-    findUser = deprecated(
-        "findUser has been renamed to find_user",
-        includedoc="Replaced by :func:`find_user`",
-        since="1.4.0",
-    )(find_user)
-    getAllUsers = deprecated(
-        "getAllUsers has been renamed to get_all_users",
-        includedoc="Replaced by :func:`get_all_users`",
-        since="1.4.0",
-    )(get_all_users)
-    hasBeenCustomized = deprecated(
-        "hasBeenCustomized has been renamed to has_been_customized",
-        includedoc="Replaced by :func:`has_been_customized`",
-        since="1.4.0",
-    )(has_been_customized)
-
 
 ##~~ Exceptions
 
@@ -1113,72 +924,6 @@ class UnknownRole(Exception):
 
 class CorruptUserStorage(Exception):
     pass
-
-
-##~~ Refactoring helpers
-
-
-class MethodReplacedByBooleanProperty:
-    def __init__(self, name, message, getter):
-        self._name = name
-        self._message = message
-        self._getter = getter
-
-    @property
-    def _attr(self):
-        return self._getter()
-
-    def __call__(self):
-        from warnings import warn
-
-        warn(DeprecationWarning(self._message.format(name=self._name)), stacklevel=2)
-        return self._attr
-
-    def __eq__(self, other):
-        return self._attr == other
-
-    def __ne__(self, other):
-        return self._attr != other
-
-    def __bool__(self):
-        # Python 3
-        return self._attr
-
-    def __nonzero__(self):
-        # Python 2
-        return self._attr
-
-    def __hash__(self):
-        return hash(self._attr)
-
-    def __repr__(self):
-        return "MethodReplacedByProperty({}, {}, {})".format(
-            self._name, self._message, self._getter
-        )
-
-    def __str__(self):
-        return str(self._attr)
-
-
-# TODO: Remove compatibility layer in OctoPrint 1.5.0
-class FlaskLoginMethodReplacedByBooleanProperty(MethodReplacedByBooleanProperty):
-    def __init__(self, name, getter):
-        message = (
-            "{name} is now a property in Flask-Login versions >= 0.3.0, which OctoPrint now uses. "
-            + "Use {name} instead of {name}(). This compatibility layer will be removed in OctoPrint 1.5.0."
-        )
-        MethodReplacedByBooleanProperty.__init__(self, name, message, getter)
-
-
-# TODO: Remove compatibility layer in OctoPrint 1.5.0
-class OctoPrintUserMethodReplacedByBooleanProperty(MethodReplacedByBooleanProperty):
-    def __init__(self, name, getter):
-        message = (
-            "{name} is now a property for consistency reasons with Flask-Login versions >= 0.3.0, which "
-            + "OctoPrint now uses. Use {name} instead of {name}(). This compatibility layer will be removed "
-            + "in OctoPrint 1.5.0."
-        )
-        MethodReplacedByBooleanProperty.__init__(self, name, message, getter)
 
 
 ##~~ User object
@@ -1212,6 +957,10 @@ class User(UserMixin):
 
         self._settings = settings
 
+    @property
+    def is_active(self):
+        return self._active
+
     def as_dict(self):
         from octoprint.access.permissions import OctoPrintPermission
 
@@ -1224,10 +973,6 @@ class User(UserMixin):
             "apikey": self._apikey,
             "settings": self._settings,
             "has_password": self.has_password(),
-            # TODO: deprecated, remove in 1.5.0
-            "admin": self.has_permission(Permissions.ADMIN),
-            "user": not self.is_anonymous,
-            "roles": self._roles,
         }
 
     def has_password(self):
@@ -1254,20 +999,6 @@ class User(UserMixin):
 
     def get_name(self):
         return self._username
-
-    @property
-    def is_anonymous(self):
-        return FlaskLoginMethodReplacedByBooleanProperty("is_anonymous", lambda: False)
-
-    @property
-    def is_authenticated(self):
-        return FlaskLoginMethodReplacedByBooleanProperty("is_authenticated", lambda: True)
-
-    @property
-    def is_active(self):
-        return FlaskLoginMethodReplacedByBooleanProperty(
-            "is_active", lambda: self._active
-        )
 
     def get_all_settings(self):
         return self._settings
@@ -1426,45 +1157,6 @@ class User(UserMixin):
             )
         )
 
-    # ~~ Deprecated methods & properties follow
-
-    # TODO: Remove deprecated methods & properties in OctoPrint 1.5.0
-
-    asDict = deprecated(
-        "asDict has been renamed to as_dict",
-        includedoc="Replaced by :func:`as_dict`",
-        since="1.4.0",
-    )(as_dict)
-
-    @property
-    @deprecated("is_user is deprecated, please use has_permission", since="1.4.0")
-    def is_user(self):
-        return OctoPrintUserMethodReplacedByBooleanProperty(
-            "is_user", lambda: not self.is_anonymous
-        )
-
-    @property
-    @deprecated("is_admin is deprecated, please use has_permission", since="1.4.0")
-    def is_admin(self):
-        return OctoPrintUserMethodReplacedByBooleanProperty(
-            "is_admin", lambda: self.has_permission(Permissions.ADMIN)
-        )
-
-    @property
-    @deprecated("roles is deprecated, please use has_permission", since="1.4.0")
-    def roles(self):
-        return self._roles
-
-    @property
-    def _roles(self):
-        """Helper for the deprecated self.roles and serializing to yaml"""
-        if self.has_permission(Permissions.ADMIN):
-            return ["user", "admin"]
-        elif not self.is_anonymous:
-            return ["user"]
-        else:
-            return []
-
 
 class AnonymousUser(AnonymousUserMixin, User):
     def __init__(self, groups):
@@ -1472,19 +1164,11 @@ class AnonymousUser(AnonymousUserMixin, User):
 
     @property
     def is_anonymous(self):
-        return FlaskLoginMethodReplacedByBooleanProperty("is_anonymous", lambda: True)
+        return True
 
     @property
     def is_authenticated(self):
-        return FlaskLoginMethodReplacedByBooleanProperty(
-            "is_authenticated", lambda: False
-        )
-
-    @property
-    def is_active(self):
-        return FlaskLoginMethodReplacedByBooleanProperty(
-            "is_active", lambda: self._active
-        )
+        return False
 
     def check_password(self, passwordHash):
         return True
@@ -1520,13 +1204,6 @@ class SessionUser(wrapt.ObjectProxy):
     def touch(self):
         self._self_touched = time.monotonic()
 
-    @deprecated(
-        "SessionUser.get_session() has been deprecated, use SessionUser.session instead",
-        since="1.3.5",
-    )
-    def get_session(self):
-        return self.session
-
     def update_user(self, user):
         self.__wrapped__ = user
 
@@ -1544,7 +1221,7 @@ class SessionUser(wrapt.ObjectProxy):
 ##~~ User object to use when global api key is used to access the API
 
 
-class ApiUser(User):  # TODO Remove in 1.13.0
+class ApiUser(User):  # TODO remove in 2.1.0
     def __init__(self, groups):
         User.__init__(self, "_api", "", True, [], groups)
 

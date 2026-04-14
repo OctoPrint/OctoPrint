@@ -13,6 +13,15 @@
        The default setting here makes the client slowly back off after the first couple of very
        fast connection attempts don't succeed, and give up after 10 tries.
 
+   ``OctoPrintClient.socket.options.connectTimeout``
+       Initial connect timeout, in seconds. This defines how long this socket class abstraction will wait
+       for sockjs to get to a connected state, regardless of which transport
+       connects.
+
+   ``OctoPrintClient.socket.options.transportTimeout``
+       Timeout until falling back on another transport, in seconds. This defines how long sockjs will wait on the
+       initial websocket to connect before falling back to a worse (but possibly working) transport.
+
    ``OctoPrintClient.socket.options.rateSlidingWindowSize``
        Number of last rate measurements to take into account for timing analysis and
        communication throttling. See :ref:`Communication Throttling <sec-jsclient-socket-throttling>`

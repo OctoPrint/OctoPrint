@@ -34,7 +34,7 @@ from octoprint.server.util.flask import (
     with_revalidation_checking,
 )
 from octoprint.settings import valid_boolean_trues
-from octoprint.util import RepeatedTimer, deprecated, to_bytes
+from octoprint.util import RepeatedTimer, to_bytes
 from octoprint.util.net import download_file
 from octoprint.util.pip import (
     OUTPUT_SUCCESS,
@@ -874,39 +874,6 @@ class PluginManagerPlugin(
 
             plugin = self._plugin_manager.plugins[plugin_name]
             return self.command_toggle(plugin, command)
-
-    @deprecated(
-        "Deprecated API endpoint api/plugin/pluginmanager used. "
-        "Please switch clients to plugin/pluginmanager/*",
-        since="1.6.0",
-    )
-    def on_api_get(self, r):
-        if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE.can():
-            abort(403)
-
-        refresh_repository = (
-            request.values.get("refresh_repository", "false") in valid_boolean_trues
-        )
-        if refresh_repository or not self._is_repository_cache_valid():
-            self._repository_available = self._refresh_repository()
-
-        refresh_notices = (
-            request.values.get("refresh_notices", "false") in valid_boolean_trues
-        )
-        if refresh_notices or not self._is_notices_cache_valid():
-            self._notices_available = self._refresh_notices()
-
-        refresh_orphan = (
-            request.values.get("refresh_orphans", "false") in valid_boolean_trues
-        )
-        if refresh_orphan:
-            self._get_orphans(refresh=True)
-
-        result = {}
-        result.update(**self._plugin_response())
-        result.update(**self._orphan_response())
-        result.update(**self._repository_response())
-        return jsonify(**result)
 
     def is_api_protected(self):
         return True

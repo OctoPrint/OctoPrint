@@ -266,19 +266,23 @@ def init_logging(
 
     import os
 
+    from octoprint.logging import (
+        LOGGING_DATE_FORMAT,
+        LOGGING_SIMPLE_FORMAT,
+        LOGGING_TIMED_MESSAGE_ONLY_FORMAT,
+        LOGGING_TIMING_CSV_FORMAT,
+    )
     from octoprint.util import dict_merge
 
     # default logging configuration
     if default_config is None:
-        simple_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        date_format = "%Y-%m-%d %H:%M:%S"
         default_config = {
             "version": 1,
             "formatters": {
-                "simple": {"format": simple_format},
+                "simple": {"format": LOGGING_SIMPLE_FORMAT},
                 "colored": {
                     "()": "colorlog.ColoredFormatter",
-                    "format": "%(log_color)s" + simple_format + "%(reset)s",
+                    "format": f"%(log_color)s{LOGGING_SIMPLE_FORMAT}%(reset)s",
                     "reset": True,
                     "log_colors": {
                         "DEBUG": "cyan",
@@ -287,16 +291,15 @@ def init_logging(
                         "CRITICAL": "bold_red",
                     },
                 },
-                "serial": {"format": "%(asctime)s - %(message)s"},
                 "tornado": {
                     "()": "tornado.log.LogFormatter",
                     "color": False,
-                    "format": simple_format,
-                    "datefmt": date_format,
+                    "format": LOGGING_SIMPLE_FORMAT,
+                    "datefmt": LOGGING_DATE_FORMAT,
                 },
-                "auth": {"format": "%(asctime)s - %(message)s"},
-                "timings": {"format": "%(asctime)s - %(message)s"},
-                "timingscsv": {"format": "%(asctime)s;%(func)s;%(timing)f"},
+                "auth": {"format": LOGGING_TIMED_MESSAGE_ONLY_FORMAT},
+                "timings": {"format": LOGGING_TIMED_MESSAGE_ONLY_FORMAT},
+                "timingscsv": {"format": LOGGING_TIMING_CSV_FORMAT},
             },
             "handlers": {
                 "console": {
@@ -314,16 +317,6 @@ def init_logging(
                     "filename": os.path.join(
                         settings.getBaseFolder("logs"), "octoprint.log"
                     ),
-                },
-                "serialFile": {
-                    "class": "octoprint.logging.handlers.SerialLogHandler",
-                    "level": "DEBUG",
-                    "formatter": "serial",
-                    "backupCount": 3,
-                    "filename": os.path.join(
-                        settings.getBaseFolder("logs"), "serial.log"
-                    ),
-                    "delay": True,
                 },
                 "tornadoFile": {
                     "class": "octoprint.logging.handlers.TornadoLogHandler",
@@ -375,11 +368,6 @@ def init_logging(
                 },
             },
             "loggers": {
-                "SERIAL": {
-                    "level": "INFO",
-                    "handlers": ["serialFile"],
-                    "propagate": False,
-                },
                 "AUTH": {
                     "level": "INFO",
                     "handlers": ["authFile"],
@@ -561,6 +549,119 @@ def init_settings_plugin_config_migration_and_cleanup(plugin_manager):
     plugin_manager.implementation_post_inits = [
         settings_plugin_config_migration_and_cleanup
     ]
+
+
+def init_serial_compat_overlay(settings):
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    def set_overlay():
+        serial_connector = settings.get(["plugins", "serial_connector"])
+        if serial_connector is None:
+            settings.remove_overlay("serial_compat")
+            return
+
+        send_checksum = serial_connector.pop("sendChecksum", None)
+        error_handling = serial_connector.pop("errorHandling", None)
+
+        serial_compat = {
+            # Connection params (moved to printerConnection.*)
+            "port": settings.get(
+                ["printerConnection", "preferred", "parameters", "port"]
+            ),
+            "baudrate": settings.get(
+                ["printerConnection", "preferred", "parameters", "baudrate"]
+            ),
+            "autoconnect": settings.getBoolean(["printerConnection", "autoconnect"]),
+            "autorefresh": settings.getBoolean(["printerConnection", "autorefresh"]),
+            "autorefreshInterval": settings.getInt(
+                ["printerConnection", "autorefreshInterval"]
+            ),
+            # Moved to feature.*
+            "notifySuppressedCommands": settings.get(
+                ["feature", "notifySuppressedCommands"]
+            ),
+            # Old boolean keys derived from new enums
+            "alwaysSendChecksum": send_checksum == "always",
+            "neverSendChecksum": send_checksum == "never",
+            "disconnectOnErrors": error_handling == "disconnect",
+            "ignoreErrorsFromFirmware": error_handling == "ignore",
+            # Old names (blacklisted -> blocklisted)
+            "blacklistedPorts": serial_connector.get("blocklistedPorts"),
+            "blacklistedBaudrates": serial_connector.get("blocklistedBaudrates"),
+        }
+
+        for key, value in serial_connector.items():
+            if key not in serial_compat:
+                serial_compat[key] = value
+
+        overlay = {"serial": serial_compat}
+
+        logger.info(
+            "Installing serial compat overlay for deprecated serial.* settings path"
+        )
+        settings.add_overlay(
+            overlay,
+            key="serial_compat",
+            at_end=True,
+            deprecated=(
+                "Serial settings have been moved. Use plugins.serial_connector.*, "
+                "printerConnection.*, or feature.notifySuppressedCommands as "
+                "appropriate. This compatibility layer will be removed in a future "
+                "release."
+            ),
+            replace=True,
+        )
+
+    def callback(path, current_value, new_value):
+        set_overlay()
+
+    set_overlay()
+    settings.add_path_update_callback(["plugins", "serial_connector"], callback)
+    settings.add_path_update_callback(["printerConnection"], callback)
+    settings.add_path_update_callback(["feature", "notifySuppressedCommands"], callback)
+
+
+def init_blocklist_compat_overlay(settings):
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    def set_overlay():
+        overlay = {
+            "feature": {
+                "autoUppercaseBlacklist": settings.get(
+                    ["feature", "autoUppercaseBlocklist"]
+                )
+            },
+        }
+
+        plugin_blocklist = settings.get(["server", "pluginBlocklist"])
+        if plugin_blocklist is not None:
+            overlay.update({"server": {"pluginBlacklist": {}}})
+            for key, value in plugin_blocklist.items():
+                overlay["server"]["pluginBlacklist"][key] = value
+
+        logger.info("Installing blocklist compat overlay for deprecated settings paths")
+        settings.add_overlay(
+            overlay,
+            key="blocklist_compat",
+            at_end=True,
+            deprecated=(
+                '"Blacklist" in settings keys has been changed to "blocklist".'
+                "This compatibility layer will be removed in a future "
+                "release."
+            ),
+            replace=True,
+        )
+
+    def callback(path, current_value, new_value):
+        set_overlay()
+
+    set_overlay()
+    settings.add_path_update_callback(["feature", "autoUppercaseBlacklist"], callback)
+    settings.add_path_update_callback(["server", "pluginBlacklist"], callback)
 
 
 def init_webcam_compat_overlay(settings, plugin_manager):

@@ -14,17 +14,11 @@ $(function () {
             return !!self.errorString();
         });
 
-        self.resendCount = ko.observable(0);
-        self.resendTotalTransmitted = ko.observable(0);
-        self.resendRatio = ko.observable(0);
-        self.resendRatioCritical = ko.pureComputed(function () {
-            return false;
-            /*return (
-                self.resendRatio() >= self.settings.serial_resendRatioThreshold() &&
-                self.resendTotalTransmitted() >= self.settings.serial_resendRatioStart()
-            );*/ // TODO: Replace with error level or something, independent from serial
-        });
-        self.resendRatioNotification = undefined;
+        self.healthErrorCount = ko.observable(0);
+        self.healthTotalCount = ko.observable(0);
+        self.healthRatio = ko.observable(0);
+        self.healthRatioCritical = ko.observable(false);
+        self.healthRatioNotification = undefined;
 
         self.isErrorOrClosed = ko.observable(undefined);
         self.isOperational = ko.observable(undefined);
@@ -79,6 +73,8 @@ $(function () {
         self.filedata = ko.observable(undefined);
         self.filepos = ko.observable(undefined);
 
+        self.plate = ko.observable(undefined);
+
         self.filename = ko.pureComputed(() => {
             return self.filedata() ? self.filedata()["name"] : undefined;
         });
@@ -106,7 +102,10 @@ $(function () {
         self.thumbnailLink = ko.pureComputed(() => {
             const data = self.filedata();
             if (data && data.refs && data.refs.thumbnail) {
-                return data.refs.thumbnail;
+                const plate = self.plate();
+                const url = new URL(data.refs.thumbnail);
+                url.searchParams.set("plate", plate || 1);
+                return url.toString();
             } else {
                 return false;
             }
@@ -326,7 +325,7 @@ $(function () {
         self.userString = ko.pureComputed(function () {
             var user = self.user();
             if (user === "_api") {
-                // TODO Remove in 1.13.0
+                // TODO Remove in 2.1.0
                 user = "API client";
             } else if (user === "_internal") {
                 user = "Internal client";
@@ -379,9 +378,9 @@ $(function () {
             self._processToolData(data.currentTool);
             self._processZData(data.currentZ);
             self._processBusyFiles(data.busyFiles);
-            self._processResends(data.resends);
+            self._processHealth(data.health);
 
-            self._checkResendRatioCriticality();
+            self._checkHealthRatioCriticality();
         };
 
         self._processStateData = function (data) {
@@ -467,6 +466,8 @@ $(function () {
             self.filament(result);
 
             self.user(data.user);
+
+            self.plate(data.plate);
         };
 
         self._processProgressData = function (data) {
@@ -499,10 +500,11 @@ $(function () {
             self.busyFiles(busyFiles);
         };
 
-        self._processResends = function (data) {
-            self.resendCount(data.count);
-            self.resendTotalTransmitted(data.transmitted);
-            self.resendRatio(data.ratio);
+        self._processHealth = function (data) {
+            self.healthErrorCount(data.count);
+            self.healthTotalCount(data.transmitted);
+            self.healthRatio(data.ratio);
+            self.healthRatioCritical(data.critical);
         };
 
         self._loadFileData = (origin, path) => {
@@ -516,30 +518,30 @@ $(function () {
                 });
         };
 
-        self._checkResendRatioCriticality = function () {
-            if (self.resendRatioCritical()) {
-                if (self.resendRatioNotification === undefined) {
+        self._checkHealthRatioCriticality = function () {
+            if (self.healthRatioCritical()) {
+                if (self.healthRatioNotification === undefined) {
                     var message = gettext(
-                        "<p>%(ratio)d%% of transmitted lines have triggered resend " +
-                            "requests. The communication with the printer is unreliable " +
-                            "and this will cause print artefacts and failures.</p><p>Please " +
+                        "<p>%(ratio)d%% of transmitted lines have triggered errors. " +
+                            "The communication with the printer is unreliable " +
+                            "and this will likely cause print artefacts and failures.</p><p>Please " +
                             "see <a href='%(url)s' target='_blank'>this FAQ entry</a> " +
                             "on tips on how to solve this.</p>"
                     );
                     message = _.sprintf(message, {
-                        ratio: self.resendRatio(),
+                        ratio: self.healthRatio(),
                         url: "https://faq.octoprint.org/communication-errors"
                     });
-                    self.resendRatioNotification = new PNotify({
-                        title: gettext("Critical resend ratio!"),
+                    self.healthRatioNotification = new PNotify({
+                        title: gettext("Critical communication health!"),
                         text: message,
                         type: "error",
                         hide: false
                     });
                 }
-            } else if (self.resendRatioNotification !== undefined) {
-                self.resendRatioNotification.remove();
-                self.resendRatioNotification = undefined;
+            } else if (self.healthRatioNotification !== undefined) {
+                self.healthRatioNotification.remove();
+                self.healthRatioNotification = undefined;
             }
         };
 

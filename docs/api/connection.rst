@@ -11,7 +11,7 @@ Get connection settings
 
 .. md-tab-set::
 
-   .. md-tab-item:: API version 1.12.0+
+   .. md-tab-item:: API version 2.0.0+
 
       .. http:get:: /api/connection
 
@@ -27,7 +27,7 @@ Get connection settings
              GET /api/connection HTTP/1.1
              Host: example.com
              Authorization: Bearer abcdef...
-             X-OctoPrint-Api-Version: 1.12.0
+             X-OctoPrint-Api-Version: 2.0.0
  
          .. sourcecode:: http
  
@@ -94,7 +94,7 @@ Get connection settings
  
          :statuscode 200: No error
 
-   .. md-tab-item:: API version pre 1.12.0
+   .. md-tab-item:: API version pre 2.0.0
 
       .. http:get:: /api/connection
 
@@ -106,8 +106,8 @@ Get connection settings
          .. note::
  
             This version of the API doesn't yet support other connectors than the serial connector. If you want to
-            support OctoPrint's printer connector model as available from 1.12.0 onward, you need to :ref:`version <sec-api-general-versioning>`
-            your API requests accordingly to access the 1.12.0+ version of this API!
+            support OctoPrint's printer connector model as available from 2.0.0 onward, you need to :ref:`version <sec-api-general-versioning>`
+            your API requests accordingly to access the 2.0.0+ version of this API!
  
          **Example**
  
@@ -149,7 +149,7 @@ Issue a connection command
 
 .. md-tab-set::
 
-   .. md-tab-item:: API version 1.12.0+
+   .. md-tab-item:: API version 2.0.0+
 
       .. http:post:: /api/connection
 
@@ -189,7 +189,7 @@ Issue a connection command
              Host: example.com
              Content-Type: application/json
              Authorization: Bearer abcdef...
-             X-OctoPrint-Api-Version: 1.12.0
+             X-OctoPrint-Api-Version: 2.0.0
  
              {
                "command": "connect",
@@ -215,7 +215,7 @@ Issue a connection command
              Host: example.com
              Content-Type: application/json
              Authorization: Bearer abcdef...
-             X-OctoPrint-Api-Version: 1.12.0
+             X-OctoPrint-Api-Version: 2.0.0
  
              {
                "command": "disconnect"
@@ -233,7 +233,7 @@ Issue a connection command
              Host: example.com
              Content-Type: application/json
              Authorization: Bearer abcdef...
-             X-OctoPrint-Api-Version: 1.12.0
+             X-OctoPrint-Api-Version: 2.0.0
  
              {
                "command": "repair"
@@ -257,7 +257,7 @@ Issue a connection command
                                      options.
          :statuscode 412:           It was not possible to connect to the printer due to unmet preconditions (e.g. port unavailable, host unavailable, ...)
 
-   .. md-tab-item:: API version pre 1.12.0
+   .. md-tab-item:: API version pre 2.0.0
 
       .. http:post:: /api/connection
 

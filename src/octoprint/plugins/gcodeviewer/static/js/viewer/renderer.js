@@ -80,7 +80,6 @@ GCODE.renderer = (function () {
     var offsetModelX = 0,
         offsetModelY = 0;
 
-    // TODO: remove in 1.7.0
     var offsetBedX = 0,
         offsetBedY = 0;
 

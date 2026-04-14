@@ -43,37 +43,8 @@
 
     //~~ wrapper for backwards compatibility
 
-    var DeprecatedOctoPrintLogsClient = function (base) {
-        this.base = base;
-        this.wrapped = this.base.plugins.logging;
-    };
-
-    DeprecatedOctoPrintLogsClient.prototype.list = function (opts) {
-        log.warn(
-            "OctoPrintClient.logs.list has been deprecated as of OctoPrint 1.3.7, use OctoPrintClient.plugins.logging.listLogs instead"
-        );
-        return this.wrapped.listLogs(opts);
-    };
-
-    DeprecatedOctoPrintLogsClient.prototype.delete = function (file, opts) {
-        log.warn(
-            "OctoPrintClient.logs.delete has been deprecated as of OctoPrint 1.3.7, use OctoPrintClient.plugins.logging.deleteLog instead"
-        );
-        return this.wrapped.deleteLog(file, opts);
-    };
-
-    DeprecatedOctoPrintLogsClient.prototype.download = function (file, opts) {
-        log.warn(
-            "OctoPrintClient.logs.download has been deprecated as of OctoPrint 1.3.7, use OctoPrintClient.plugins.logging.downloadLog instead"
-        );
-        return this.wrapped.downloadLog(file, opts);
-    };
-
     // register plugin component
     OctoPrintClient.registerPluginComponent("logging", OctoPrintLoggingClient);
-
-    // also register deprecated client under old endpoint
-    OctoPrintClient.registerComponent("logs", DeprecatedOctoPrintLogsClient);
 
     return OctoPrintLoggingClient;
 });

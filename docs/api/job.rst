@@ -4,7 +4,7 @@
 Job operations
 **************
 
-.. versionchanged:: 1.12.0
+.. versionchanged:: 2.0.0
 
    API versioning
 
@@ -178,7 +178,7 @@ Retrieve information about the current job
 
 .. md-tab-set::
 
-   .. md-tab-item:: API version 1.12.0+
+   .. md-tab-item:: API version 2.0.0+
 
       .. http:get:: /api/job
 
@@ -230,7 +230,7 @@ Retrieve information about the current job
  
          :statuscode 200: No error
 
-   .. md-tab-item:: API version pre 1.12.0
+   .. md-tab-item:: API version pre 2.0.0
 
       .. http:get:: /api/job
 
@@ -297,7 +297,7 @@ Job information response
 
 .. _sec-api-job-datamodel-response-pre-1_12:
 
-Job information response (pre 1.12.0)
+Job information response (pre 2.0.0)
 -------------------------------------
 
-.. pydantic-table:: octoprint.schema.api.job.ApiJobResponse_pre_1_12
+.. pydantic-table:: octoprint.schema.api.job.ApiJobResponse_pre_2_0_0

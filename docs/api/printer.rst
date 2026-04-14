@@ -4,7 +4,7 @@
 Printer operations
 ******************
 
-.. versionchanged:: 1.12.0
+.. versionchanged:: 2.0.0
 
    API versioning
 
@@ -67,7 +67,7 @@ Retrieve the current printer state
 
 .. md-tab-set::
 
-   .. md-tab-item:: API version 1.12.0+
+   .. md-tab-item:: API version 2.0.0+
 
       .. http:get:: /api/printer
       
@@ -98,7 +98,7 @@ Retrieve the current printer state
             GET /api/printer?history=true&limit=2 HTTP/1.1
             Host: example.com
             Authorization: Bearer abcdef...
-            X-OctoPrint-Api-Version: 1.12.0
+            X-OctoPrint-Api-Version: 2.0.0
       
          .. sourcecode:: http
       
@@ -183,7 +183,7 @@ Retrieve the current printer state
             GET /api/printer?exclude=temperature,storage HTTP/1.1
             Host: example.com
             Authorization: Bearer abcdef...
-            X-OctoPrint-Api-Version: 1.12.0
+            X-OctoPrint-Api-Version: 2.0.0
       
          .. sourcecode:: http
       
@@ -216,7 +216,7 @@ Retrieve the current printer state
          :statuscode 200: No error
          :statuscode 409: If the printer is not operational.
 
-   .. md-tab-item:: API version pre 1.12.0
+   .. md-tab-item:: API version pre 2.0.0
 
       .. http:get:: /api/printer
       
@@ -233,7 +233,7 @@ Retrieve the current printer state
          Clients can specify a list of attributes to not return in the response (e.g. if they don't need it) via the
          ``exclude`` query parameter.
       
-         Returns a :http:statuscode:`200` with a :ref:`sec-api-printer-datamodel-fullstate-pre-1_12_0` in the
+         Returns a :http:statuscode:`200` with a :ref:`sec-api-printer-datamodel-fullstate-pre-2_0_0` in the
          body upon success.
       
          Requires the ``STATUS`` permission.
@@ -1124,7 +1124,7 @@ Issue a Storage command
         to initialize it.
 
    refresh
-     Refreshes the list of files stored on the printer's SD card. Will return a :http:statuscode:`409` if the card
+     Refreshes the list of files stored on the printer's internal storage. Will return a :http:statuscode:`409` if the card
      has not been initialized yet (see the ``init`` command and :ref:`sec-api-printer-storagestate`).
 
    release
@@ -1275,24 +1275,24 @@ Retrieve information about the last error
         "error": "MINTEMP triggered, OMG, kill() called - Not SD printing",
         "faq": "firmware-mintemp",
         "logs": [
-          "Send: N2685 G1 X147.748 Y108.411 E627.83763*85",
-          "Recv: ok",
-          "Send: N2686 G1 X148.522 Y108.286 E627.8963*98",
-          "Recv: ok",
-          "Send: N2687 G1 X148.866 Y108.174 E627.92338*87",
-          "Recv: ok",
-          "Send: N2688 G1 X149.494 Y107.868 E627.97566*91",
-          "Recv: ok",
-          "Send: N2689 G1 X149.731 Y107.779 E627.9946*96",
-          "Recv: ok",
-          "Send: N2690 G1 X149.69 Y108.032 E628.01378*101",
-          "Recv: ok",
-          "Send: N2691 G1 X147.252 Y112.252 E628.3785*107",
-          "Recv: ok",
-          "Send: N2692 G1 X145.082 Y112.253 E628.54089*93",
-          "Recv: ok",
-          "Recv: Error: MINTEMP triggered, kill() called",
-          "Recv: Not SD printing",
+          ">>> N2685 G1 X147.748 Y108.411 E627.83763*85",
+          "<<< ok",
+          ">>> N2686 G1 X148.522 Y108.286 E627.8963*98",
+          "<<< ok",
+          ">>> N2687 G1 X148.866 Y108.174 E627.92338*87",
+          "<<< ok",
+          ">>> N2688 G1 X149.494 Y107.868 E627.97566*91",
+          "<<< ok",
+          ">>> N2689 G1 X149.731 Y107.779 E627.9946*96",
+          "<<< ok",
+          ">>> N2690 G1 X149.69 Y108.032 E628.01378*101",
+          "<<< ok",
+          ">>> N2691 G1 X147.252 Y112.252 E628.3785*107",
+          "<<< ok",
+          ">>> N2692 G1 X145.082 Y112.253 E628.54089*93",
+          "<<< ok",
+          "<<< Error: MINTEMP triggered, kill() called",
+          "<<< Not SD printing",
           "Changing monitoring state from \"Printing\" to \"Error\""
         ],
         "reason": "firmware"
@@ -1384,7 +1384,7 @@ Data model
 
 .. _sec-api-printer-datamodel-fullstate:
 
-Full State Response (1.12.0+)
+Full State Response (2.0.0+)
 -----------------------------
 
 .. list-table::
@@ -1408,9 +1408,9 @@ Full State Response (1.12.0+)
      - :ref:`Printer State <sec-api-datamodel-printer-state>`
      - The printer's general state
 
-.. _sec-api-printer-datamodel-fullstate-pre-1_12_0:
+.. _sec-api-printer-datamodel-fullstate-pre-2_0_0:
 
-Full State Response (pre 1.12.0)
+Full State Response (pre 2.0.0)
 --------------------------------
 
 .. list-table::

@@ -483,7 +483,7 @@ class PluginSettings:
             "setInt": "set_int",
             "setFloat": "set_float",
             "setBoolean": "set_boolean",
-        }
+        }  # TODO *finally* remove in 3.0.0
 
     def _prefix_path(self, path=None):
         if path is None:
@@ -505,7 +505,7 @@ class PluginSettings:
         """
         if path == ["api", "key"]:
             self._logger.warning(
-                f'DeprecationWarning: Detected access to deprecated settings path ["api", "key"] by plugin {self.plugin_key}. The global api key is deprecated, will be removed in 1.13.0 and should no longer be used. Plugins should instead use OctoPrintPlugin.plugin_apikey.'
+                f'DeprecationWarning: Detected access to deprecated settings path ["api", "key"] by plugin {self.plugin_key}. The global api key is deprecated, will be removed in 2.1.0 and should no longer be used. Plugins should instead use OctoPrintPlugin.plugin_apikey.'
             )
         return self.settings.get(path, **kwargs)
 
@@ -536,7 +536,7 @@ class PluginSettings:
         """
         if path == ["api", "key"]:
             self._logger.warning(
-                f'DeprecationWarning: Detected access to deprecated settings path ["api", "key"] by plugin {self.plugin_key}. The global api key is deprecated, will be removed in 1.13.0 and should no longer be used. Plugins should instead use OctoPrintPlugin.plugin_apikey.'
+                f'DeprecationWarning: Detected access to deprecated settings path ["api", "key"] by plugin {self.plugin_key}. The global api key is deprecated, will be removed in 2.1.0 and should no longer be used. Plugins should instead use OctoPrintPlugin.plugin_apikey.'
             )
         self.settings.set(path, value, **kwargs)
 
@@ -588,17 +588,6 @@ class PluginSettings:
         filename += ".log"
         return os.path.join(self.settings.getBaseFolder("logs"), filename)
 
-    @deprecated(
-        "PluginSettings.get_plugin_data_folder has been replaced by OctoPrintPlugin.get_plugin_data_folder",
-        includedoc="Replaced by :func:`~octoprint.plugin.types.OctoPrintPlugin.get_plugin_data_folder`",
-        since="1.2.0",
-    )
-    def get_plugin_data_folder(self):
-        path = os.path.join(self.settings.getBaseFolder("data"), self.plugin_key)
-        if not os.path.isdir(path):
-            os.makedirs(path)
-        return path
-
     def get_all_data(self, **kwargs):
         merged = kwargs.get("merged", True)
         asdict = kwargs.get("asdict", True)
@@ -628,7 +617,7 @@ class PluginSettings:
             if item in self.deprecated_access_methods:
                 new = self.deprecated_access_methods[item]
                 decorator = deprecated(
-                    f"{item} has been renamed to {new}",
+                    f"{item} has been renamed to {new}. Please adjust your code, this compatibility layer will be removed in OctoPrint 3.0.0!",
                     stacklevel=2,
                 )
                 item = new

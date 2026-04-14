@@ -13,7 +13,7 @@ class PrintTimeEstimator:
     Subclass this and register via the octoprint.printer.estimation.factory hook to provide your own implementation.
     """
 
-    def __init__(self, job_type):
+    def __init__(self, job_type, job_status_interval: float = 1.0):
         self.stats_weighing_until = settings().getFloat(
             ["estimation", "printTime", "statsWeighingUntil"]
         )
@@ -39,8 +39,8 @@ class PrintTimeEstimator:
 
             if job_type == "printer":
                 # we are interesting in a rolling window of roughly the last 15s, so the number of entries has to be derived
-                # by that divided by the sd status polling interval
-                interval = settings().getFloat(["serial", "timeout", "sdStatus"])
+                # by that divided by the printer's job status interval
+                interval = job_status_interval
                 if interval is None or interval <= 0:
                     interval = 1.0
                 rolling_window = int(15 // interval)

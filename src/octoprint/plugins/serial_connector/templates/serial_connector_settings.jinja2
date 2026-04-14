@@ -472,16 +472,6 @@
                         <div class="controls">
                             <label class="checkbox">
                                 <input type="checkbox"
-                                       data-bind="checked: settings.settings.plugins.serial_connector.ignoreIdenticalResends"
-                                       id="settings-serialIgnoreIdenticalResends">
-                                {{ _("Ignore consecutive resend requests for the same line") }} <span class="label">{{ _("Repetier") }}</span>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <div class="controls">
-                            <label class="checkbox">
-                                <input type="checkbox"
                                        data-bind="checked: settings.settings.plugins.serial_connector.repetierTargetTemp"
                                        id="settings-serialRepetierTargetTemp">
                                 {{ _("Support <code>TargetExtr%%n</code>/<code>TargetBed</code> target temperature format") }} <span class="label">{{ _("Repetier") }}</span>
@@ -938,35 +928,6 @@
                         {{ _("Sanity check tool commands") }}  <span class="label label-important">{{ _("Warning") }}</span>
                         <span class="help-block">{{ _("If enabled, OctoPrint will not send tool commands to your printer that exceed the number of extruders configured in the active printer profile, or for which the firmware has reported an \"invalid extruder\" error. Only uncheck this if OctoPrint or your firmware mistakenly mark valid tools as invalid and be sure to investigate the reason for that, it might be a misconfiguration you need to correct for proper operation.") }}</span>
                     </label>
-                </div>
-                <div class="control-group">
-                    <label class="control-label">{{ _("Display notifications for suppressed commands") }}</label>
-                    <div class="controls">
-                        <label class="radio">
-                            <input type="radio"
-                                   name="notifySuppressedCommandsGroup"
-                                   value="info"
-                                   data-bind="checked: settings.settings.plugins.serial_connector.notifySuppressedCommands"
-                                   id="settings-serialNotifySuppressedCommands-info">
-                            {{ _("Show notifications of severity \"info\" and \"warning\"") }}
-                        </label>
-                        <label class="radio">
-                            <input type="radio"
-                                   name="notifySuppressedCommandsGroup"
-                                   value="warn"
-                                   data-bind="checked: settings.settings.plugins.serial_connector.notifySuppressedCommands"
-                                   id="settings-serialNotifySuppressedCommands-warn">
-                            {{ _("Show notifications of severity \"warning\"") }}
-                        </label>
-                        <label class="radio">
-                            <input type="radio"
-                                   name="notifySuppressedCommandsGroup"
-                                   value="never"
-                                   data-bind="checked: settings.settings.plugins.serial_connector.notifySuppressedCommands"
-                                   id="settings-serialNotifySuppressedCommands-never">
-                            {{ _("Never show notifications") }}
-                        </label>
-                    </div>
                 </div>
             </fieldset>
             <fieldset>

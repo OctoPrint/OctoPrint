@@ -31,7 +31,7 @@ class ApiJobInfo(BaseModel):
     """The user who started the job, if known"""
 
 
-class ApiJobInfo_pre_1_12(ApiJobInfo):
+class ApiJobInfo_pre_2_0_0(ApiJobInfo):
     lastPrintTime: Optional[float] = None
     """The last print time in seconds"""
 
@@ -72,6 +72,6 @@ class ApiJobResponse(BaseModel):
     """Error, if any"""
 
 
-class ApiJobResponse_pre_1_12(ApiJobResponse):
-    job: ApiJobInfo_pre_1_12
+class ApiJobResponse_pre_2_0_0(ApiJobResponse):
+    job: ApiJobInfo_pre_2_0_0
     """Information about the current job"""

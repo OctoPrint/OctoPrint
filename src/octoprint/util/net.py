@@ -6,7 +6,7 @@ import os
 import socket
 import sys
 from collections.abc import Generator
-from typing import Optional
+from typing import Optional, Union
 
 import ifaddr
 import netaddr
@@ -192,7 +192,7 @@ def is_loopback_address(address):
         ip = netaddr.IPAddress(address)
         return ip.is_loopback()
     except Exception:
-        logging.get_logger(__name__).exception(
+        logging.getLogger(__name__).exception(
             f"Error while trying to determine whether {address} is a loopback address"
         )
         return False
@@ -339,7 +339,7 @@ def download_file(url, folder, max_length=None, connect_timeout=3.05, read_timeo
         filename = secure_filename(filename)
         assert len(filename) > 0
 
-        # TODO check content-length against safety limit
+        # FIXME check content-length against safety limit
 
         path = os.path.abspath(os.path.join(folder, filename))
         assert path.startswith(folder)
@@ -350,24 +350,71 @@ def download_file(url, folder, max_length=None, connect_timeout=3.05, read_timeo
     return path
 
 
-def get_http_client_ip(remote_addr, forwarded_for, trusted_proxies):
+def get_ipset_from_list(addresses) -> netaddr.IPSet:
+    if not addresses:
+        return netaddr.IPSet()
+
+    addresses = [x for x in addresses if x]
+
     try:
-        trusted_ip_set = netaddr.IPSet(trusted_proxies)
+        ip_set = netaddr.IPSet(addresses)
     except netaddr.AddrFormatError:
         # something's wrong with one of these addresses, let's add them one by one
-        trusted_ip_set = netaddr.IPSet()
-        for trusted_proxy in trusted_proxies:
+        ip_set = netaddr.IPSet()
+        for addr in addresses:
             try:
-                trusted_ip_set.add(trusted_proxy)
+                ip_set.add(addr)
             except netaddr.AddrFormatError:
                 logging.getLogger(__name__).error(
-                    f"Trusted proxy {trusted_proxy} is not a correctly formatted IP address or subnet"
+                    f"Address {addr} is not a correctly formatted IP address or subnet"
                 )
 
-    if forwarded_for is not None and sanitize_address(remote_addr) in trusted_ip_set:
-        for addr in (
-            sanitize_address(addr.strip()) for addr in reversed(forwarded_for.split(","))
-        ):
-            if addr not in trusted_ip_set:
+    return ip_set
+
+
+def get_forwarded_for_addresses(forwarded_for: str) -> list[str]:
+    if forwarded_for is None or len(forwarded_for) == 0:
+        return []
+    return [sanitize_address(addr.strip()) for addr in reversed(forwarded_for.split(","))]
+
+
+def get_trusted_forwarded_for_addresses(
+    forwarded_for: str, trusted_proxies: Union[list[str], netaddr.IPSet]
+) -> list[str]:
+    if not isinstance(trusted_proxies, netaddr.IPSet):
+        trusted_proxies = get_ipset_from_list(trusted_proxies)
+
+    trusted_ff = []
+    for addr in get_forwarded_for_addresses(forwarded_for):
+        if addr not in trusted_proxies:
+            break
+        trusted_ff.append(addr)
+    return trusted_ff
+
+
+def get_http_client_ip(
+    remote_addr: str, forwarded_for: str, trusted_proxies: Union[list[str], netaddr.IPSet]
+) -> str:
+    if not isinstance(trusted_proxies, netaddr.IPSet):
+        trusted_proxies = get_ipset_from_list(trusted_proxies)
+
+    if sanitize_address(remote_addr) in trusted_proxies:
+        for addr in get_forwarded_for_addresses(forwarded_for):
+            if addr not in trusted_proxies:
                 return addr
     return sanitize_address(remote_addr)
+
+
+def contains_trusted_source(
+    trusted: netaddr.IPSet, forwarded_for: str, trusted_proxies: netaddr.IPSet
+) -> bool:
+    if not trusted:
+        return False
+
+    trusted_forward_for = get_trusted_forwarded_for_addresses(
+        forwarded_for, trusted_proxies
+    )
+    if not trusted_forward_for:
+        return False
+
+    return any(source in trusted for source in trusted_forward_for)

@@ -1,7 +1,15 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+from enum import Enum
+
 from octoprint.schema import BaseModel
+
+
+class SuppressionNotificationLevelEnum(str, Enum):
+    info = "info"
+    warn = "warn"
+    never = "never"
 
 
 class FeatureConfig(BaseModel):
@@ -50,3 +58,6 @@ class FeatureConfig(BaseModel):
 
     enableDragDropUpload: bool = True
     """Enable drag and drop upload overlay"""
+
+    notifySuppressedCommands: SuppressionNotificationLevelEnum = "warn"
+    """Whether to notify about any commands suppressed on sending to the printer. `never` will never notify, `warn` only notify on warnings, `info` also on info"""

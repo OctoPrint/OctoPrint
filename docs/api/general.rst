@@ -15,7 +15,7 @@ authorization workflow implemented by the bundled :ref:`Application Keys Plugin 
 
 Clients are advised to implement the :ref:`Application Keys Plugin workflow <sec-bundledplugins-appkeys-workflow>` first and
 fallback on directing the user to manually supply the user specific API key. The global key is deprecated, will be removed 
-in 1.13.0 and should no longer be used.
+in 2.1.0 and should no longer be used.
 
 The API key must either be supplied in the custom HTTP header ``X-Api-Key``, e.g.
 
@@ -58,19 +58,19 @@ will be denied with a :http:statuscode:`403`.
    :align: center
    :alt: Global API key in the API settings
 
-   The global API key can be found in the "API" settings. However, it is deprecated and will be removed in 1.13.0.
+   The global API key can be found in the "API" settings. However, it is deprecated and will be removed in 2.1.0.
 
 .. _sec-api-general-versioning:
 
 API Versioning
 ==============
 
-.. versionadded:: 1.12.0
+.. versionadded:: 2.0.0
 
 OctoPrint supports requesting a certain API version on requests by setting the ``X-OctoPrint-Api-Version`` header
 accordingly. API versions hereby the implementation as present in OctoPrint's server versions.
 
-If the header is left out, the API will behave according to its documented pre-1.12.0 behaviour. If the header is set, the API will 
+If the header is left out, the API will behave according to its documented pre-2.0.0 behaviour. If the header is set, the API will 
 follow the behaviour found in that OctoPrint version.
 
 Example without explicit version:
@@ -88,18 +88,18 @@ Example without explicit version:
 
    {
      "api": "0.1",
-     "server": "1.12.0",
-     "text": "OctoPrint 1.12.0"
+     "server": "2.0.0",
+     "text": "OctoPrint 2.0.0"
    }
 
-Example with a requested API version of 1.12.0:
+Example with a requested API version of 2.0.0:
 
 .. sourcecode:: http
 
    GET /api/version HTTP/1.1
    Host: example.com
    Authorization: Bearer abcdef...
-   X-OctoPrint-Api-Version: 1.12.0
+   X-OctoPrint-Api-Version: 2.0.0
 
 .. sourcecode:: http
 
@@ -107,8 +107,8 @@ Example with a requested API version of 1.12.0:
    Content-Type: application/json
 
    {
-     "server": "1.12.0",
-     "text": "OctoPrint 1.12.0"
+     "server": "2.0.0",
+     "text": "OctoPrint 2.0.0"
    }
 
 Clients should move to defining the specific versions they support from now on, to make it possible to implement new functionality in

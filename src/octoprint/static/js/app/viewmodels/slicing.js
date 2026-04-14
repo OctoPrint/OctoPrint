@@ -16,7 +16,14 @@ $(function () {
         self.defaultProfile = undefined;
 
         self.destinationFilename = ko.observable();
-        self.gcodeFilename = self.destinationFilename; // TODO: for backwards compatibility, mark deprecated ASAP
+
+        self.gcodeFilename = OctoPrintClient.deprecated(
+            "SlicingViewModel.gcodeFilename",
+            "SlicingViewModel.destinationFilename",
+            self.destinationFilename,
+            "2.0.0",
+            "2.2.0"
+        ); // TODO remove in 2.2.0
 
         self.title = ko.observable();
         self.slicer = ko.observable();

@@ -511,7 +511,7 @@ def configure_timelapse(config=None, persist=False):
     )
 
     type = config["type"]
-    if not timelapse_precondition and timelapse_precondition:
+    if not timelapse_precondition and timelapse_enabled:
         logger.warning(
             "Essential timelapse settings unconfigured (snapshot URL or FFMPEG path) "
             "but timelapse enabled."

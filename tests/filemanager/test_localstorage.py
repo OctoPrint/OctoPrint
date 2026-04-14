@@ -51,7 +51,7 @@ class LocalStorageTest(unittest.TestCase):
             elif (
                 name.lower().endswith(".gco")
                 or name.lower().endswith(".gcode")
-                or name.lower.endswith(".g")
+                or name.lower().endswith(".g")
             ):
                 return ["machinecode", "gcode"]
             else:
@@ -259,12 +259,11 @@ class LocalStorageTest(unittest.TestCase):
 
         empty_folder = self._add_and_verify_folder("empty", "empty")
 
-        try:
+        with self.assertRaises(StorageError):
             self.storage.remove_folder(content_folder, recursive=False)
-        except Exception:
-            self.assertTrue(os.path.exists(os.path.join(self.basefolder, content_folder)))
-            self.assertTrue(os.path.isdir(os.path.join(self.basefolder, content_folder)))
-            self.assertTrue(os.path.exists(os.path.join(self.basefolder, other_stl_name)))
+        self.assertTrue(os.path.exists(os.path.join(self.basefolder, content_folder)))
+        self.assertTrue(os.path.isdir(os.path.join(self.basefolder, content_folder)))
+        self.assertTrue(os.path.exists(os.path.join(self.basefolder, other_stl_name)))
 
         self.storage.remove_folder(content_folder, recursive=True)
         self.assertFalse(os.path.exists(os.path.join(self.basefolder, content_folder)))
@@ -484,7 +483,7 @@ class LocalStorageTest(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             file_list = self.storage.list_files(filter=filter_machinecode)
 
-        self.assertTrue(3, len(file_list))
+        self.assertEqual(3, len(file_list))
         self.assertTrue("bp_case.gcode" in file_list)
         self.assertTrue("content" in file_list)
         self.assertTrue("empty" in file_list)
@@ -516,7 +515,8 @@ class LocalStorageTest(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             file_list = self.storage.list_files(recursive=False)
 
-        self.assertTrue(3, len(file_list))
+        self.assertEqual(4, len(file_list))
+        self.assertTrue("bp_case.stl" in file_list)
         self.assertTrue("bp_case.gcode" in file_list)
         self.assertTrue("content" in file_list)
         self.assertTrue("empty" in file_list)
@@ -596,7 +596,7 @@ class LocalStorageTest(unittest.TestCase):
 
         entries = self.storage.list_storage_entries(filter=filter_machinecode)
 
-        self.assertTrue(3, len(entries))
+        self.assertEqual(3, len(entries))
         self.assertTrue("bp_case.gcode" in entries)
         self.assertTrue("content" in entries)
         self.assertTrue("empty" in entries)
@@ -629,7 +629,8 @@ class LocalStorageTest(unittest.TestCase):
 
         entries = self.storage.list_storage_entries(recursive=False)
 
-        self.assertTrue(3, len(entries))
+        self.assertEqual(4, len(entries))
+        self.assertTrue("bp_case.stl" in entries)
         self.assertTrue("bp_case.gcode" in entries)
         self.assertTrue("content" in entries)
         self.assertTrue("empty" in entries)

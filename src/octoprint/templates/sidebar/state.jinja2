@@ -5,12 +5,12 @@
 <span data-bind="visible: hasErrorString" class="text-error"><span data-test-id="error-string" data-bind="text: errorString"></span>
 <br>
 </span>
-<span data-bind="visible: isOperational"><span title="{{ _('Count of resend requests, transmitted lines and resend ratio') |edq }}">{{ _("Resend ratio") }}</span>: <strong data-bind="css: {'text-error': resendRatioCritical}"><span title="{{ _('resend requests') |edq }}"
-      data-bind="text: formatHuman(resendCount())"></span> / <span title="{{ _('transmitted lines') |edq }}"
-       data-bind="text: formatHuman(resendTotalTransmitted())"></span> (<span title="{{ _('resend ratio') |edq }}" data-bind="text: resendRatio"></span>%) <a href="https://faq.octoprint.org/communication-errors"
+<span data-bind="visible: isOperational"><span title="{{ _('Calculated from transmission errors vs total amount of data transferred') |edq }}">{{ _("Error ratio") }}</span>: <strong data-bind="css: {'text-error': healthRatioCritical}"><span title="{{ _('errors') |edq }}"
+      data-bind="text: formatHuman(healthErrorCount())"></span> / <span title="{{ _('transmissions') |edq }}"
+       data-bind="text: formatHuman(healthTotalCount())"></span> (<span title="{{ _('error ratio') |edq }}" data-bind="text: healthRatio"></span>%) <a href="https://faq.octoprint.org/communication-errors"
     target="_blank"
     class="text-error"
-    data-bind="visible: resendRatioCritical"><i class="fas fa-question-circle"></i></a></strong>
+    data-bind="visible: healthRatioCritical"><i class="fas fa-question-circle"></i></a></strong>
 <br>
 </span>
 <hr>

@@ -212,7 +212,7 @@ octoprint.access.permissions
    * ``description``: A human readable description of the permission.
    * ``permissions``: A list of permissions this permission includes, by key.
    * ``roles``: A list of roles this permission includes. Roles are simple strings you define. Usually one role will
-     suffice.
+     suffice. Note: Not to be confused with the deprecated and removed user roles predating the permissions system.
    * ``dangerous``: Whether this permission should be considered dangerous (``True``) or not (``False``)
    * ``default_groups``: A list of standard groups this permission should be apply to by default. Standard groups
      are ``octoprint.access.ADMIN_GROUP``, ``octoprint.access.USER_GROUP``, ``octoprint.access.READONLY_GROUP`` and ``octoprint.access.GUEST_GROUP``

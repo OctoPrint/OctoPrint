@@ -699,7 +699,7 @@ class FileManager:
         return self._storage(destination).folder_exists(path)
 
     @deprecated(
-        "list_files has been deprecated in favor of list_storage_entries", since="1.12.0"
+        "list_files has been deprecated in favor of list_storage_entries", since="2.0.0"
     )
     def list_files(
         self,
@@ -733,7 +733,7 @@ class FileManager:
         return result
 
     @deprecated(
-        "get_file has been deprecated in favor of get_storage_entry", since="1.12.0"
+        "get_file has been deprecated in favor of get_storage_entry", since="2.0.0"
     )
     def get_file(self, location: str, path: str) -> dict:
         return self._storage(location).get_file(path)
@@ -1291,19 +1291,19 @@ class FileManager:
     def has_analysis(self, location, path):
         return self._storage(location).has_analysis(path)
 
-    def get_metadata(self, location, path):
+    def get_metadata(self, location: str, path: str) -> dict:
         return self._storage(location).get_metadata(path)
 
     @deprecated(
         "add_link has been deprecated and will be removed in a future version",
-        since="1.12.0",
+        since="2.0.0",
     )
     def add_link(self, location, path, rel, data):
         self._storage(location).add_link(path, rel, data)
 
     @deprecated(
         "add_link has been deprecated and will be removed in a future version",
-        since="1.12.0",
+        since="2.0.0",
     )
     def remove_link(self, location, path, rel, data):
         self._storage(location).remove_link(path, rel, data)
@@ -1385,13 +1385,19 @@ class FileManager:
     def has_thumbnail(self, location, path) -> bool:
         return self._storage(location).has_thumbnail(path)
 
-    def get_thumbnail(self, location, path, sizehint=None) -> Optional[StorageThumbnail]:
-        return self._storage(location).get_thumbnail(path, sizehint=sizehint)
+    def get_thumbnail(
+        self, location, path, platehint: int = None, sizehint: str = None
+    ) -> Optional[StorageThumbnail]:
+        return self._storage(location).get_thumbnail(
+            path, platehint=platehint, sizehint=sizehint
+        )
 
     def read_thumbnail(
-        self, location, path, sizehint=None
+        self, location, path, platehint: int = None, sizehint: str = None
     ) -> tuple[StorageThumbnail, IO]:
-        return self._storage(location).read_thumbnail(path, sizehint=sizehint)
+        return self._storage(location).read_thumbnail(
+            path, platehint=platehint, sizehint=sizehint
+        )
 
     def refresh_thumbnails(
         self, location, path, force: bool = False, recursive: bool = False

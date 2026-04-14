@@ -188,9 +188,6 @@ $(function () {
                     data.extruder.count.subscribe(self._updateExtruderCount);
                 }
             }
-            self.settings.printerProfiles
-                .currentProfileData()
-                .extruder.count.subscribe(self._updateExtruderCount);
         });
         self._updateExtrusionAmount = function () {
             const data = self.settings.printerProfiles.currentProfileData();

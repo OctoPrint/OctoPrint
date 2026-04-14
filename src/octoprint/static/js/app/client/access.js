@@ -129,8 +129,7 @@
             password: user.password,
             groups: user.hasOwnProperty("groups") ? user.groups : [],
             permissions: user.hasOwnProperty("permissions") ? user.permissions : [],
-            active: user.hasOwnProperty("active") ? !!user.active : true,
-            admin: user.hasOwnProperty("admin") ? !!user.admin : false
+            active: user.hasOwnProperty("active") ? !!user.active : true
         };
 
         return this.base.postJson(this.url(), data, opts);
@@ -147,11 +146,23 @@
     OctoPrintAccessUsersClient.prototype.update = function (
         name,
         active,
-        admin,
         permissions,
         groups,
         opts
     ) {
+        if (typeof permissions == "boolean") {
+            // old parameter order: name, active, *admin*, permissions, groups, opts
+            // -> shift all parameters from permissions onward left by 1
+            //
+            // TODO remove in 3.0.0
+            console.log(
+                "Calling OctoPrint.access.users with admin flag is deprecated and will be removed in OctoPrint 3.0.0. Use permissions or groups instead."
+            );
+            permissions = groups;
+            groups = opts;
+            opts = arguments.length >= 6 ? arguments[5] : {};
+        }
+
         if (!name) {
             throw new OctoPrintClient.InvalidArgumentError("user name must be set");
         }
@@ -159,8 +170,7 @@
         var data = {
             active: !!active,
             groups: groups,
-            permissions: permissions,
-            admin: !!admin
+            permissions: permissions
         };
         return this.base.putJson(this.url(name), data, opts);
     };

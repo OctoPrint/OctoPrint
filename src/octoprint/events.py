@@ -529,7 +529,7 @@ class SystemEventSubscription(EventSubscription):
 
         if "shell" not in kwargs:
             self._logger.warning(
-                "Deprecation warning: You have a system command event subscription that doesn't define the 'shell' argument. For now this will continue to mean that 'shell' will be set to 'True' on the resulting command call. As that is a potential security issue, OctoPrint 1.13.0 will change this behaviour and default to 'shell=False'. If you don't want this, you have to add 'shell: true' to your event subscription."
+                "Deprecation warning: You have a system command event subscription that doesn't define the 'shell' argument. For now this will continue to mean that 'shell' will be set to 'True' on the resulting command call. As that is a potential security issue, OctoPrint 2.1.0 will change this behaviour and default to 'shell=False'. If you don't want this, you have to add 'shell: true' to your event subscription."
             )
         self.shell = kwargs.get("shell", True)
         self.cwd = kwargs.get("cwd", None)

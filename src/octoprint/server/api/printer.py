@@ -55,7 +55,7 @@ def printerState():
         result.update({"temperature": _get_temperature_data(processor)})
 
     # add storage information
-    if api_version_matches(">=1.12.0"):
+    if api_version_matches(">=2.0.0"):
         storage_key = "storage"
     else:
         storage_key = "sd"
@@ -435,7 +435,7 @@ def printerCommand():
         for command in commands:
             commandToSend = command
             if len(parameters) > 0:
-                if api_version_matches(">=1.12.0"):
+                if api_version_matches(">=2.0.0"):
                     commandToSend = command.format(**parameters)
                 else:
                     commandToSend = command % parameters

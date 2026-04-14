@@ -4,15 +4,15 @@
 Version information
 *******************
 
-.. versionchanged:: 1.12.0
+.. versionchanged:: 2.0.0
 
    API versioning
 
-   For requested versions of 1.12.0 or higher the ``api`` key on the response has been dropped.
+   For requested versions of 2.0.0 or higher the ``api`` key on the response has been dropped.
 
 .. md-tab-set::
 
-   .. md-tab-item:: API version 1.12.0+
+   .. md-tab-item:: API version 2.0.0+
 
       .. http:get:: /api/version
 
@@ -28,7 +28,7 @@ Version information
             GET /api/version HTTP/1.1
             Host: example.com
             Authorization: Bearer abcdef...
-            X-OctoPrint-Api-Version: 1.12.0
+            X-OctoPrint-Api-Version: 2.0.0
 
          .. sourcecode:: http
 
@@ -36,13 +36,13 @@ Version information
             Content-Type: application/json
 
             {
-              "server": "1.12.0",
-              "text": "OctoPrint 1.12.0"
+              "server": "2.0.0",
+              "text": "OctoPrint 2.0.0"
             }
 
          :statuscode 200: No error
 
-   .. md-tab-item:: API version pre 1.12.0
+   .. md-tab-item:: API version pre 2.0.0
 
       .. http:get:: /api/version
 
@@ -67,8 +67,8 @@ Version information
 
             {
               "api": "0.1",
-              "server": "1.12.0",
-              "text": "OctoPrint 1.12.0"
+              "server": "2.0.0",
+              "text": "OctoPrint 2.0.0"
             }
 
          :statuscode 200: No error

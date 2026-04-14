@@ -178,7 +178,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             on_add_log=self._send_add_log_callbacks,
             on_add_message=self._send_add_message_callbacks,
             on_get_progress=self._update_progress_data_callback,
-            on_get_resends=self._update_resend_data_callback,
+            on_get_health=self._update_health_data_callback,
         )
         self._stateMonitor.reset(
             state=self._dict(
@@ -201,7 +201,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                 printTimeLeftOrigin=None,
             ),
             offsets=self._dict(),
-            resends=self._dict(count=0, ratio=0),
+            health=self._dict(count=0, transmitted=0, ratio=0),
         )
 
         eventManager().subscribe(
@@ -226,7 +226,9 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
                 job_type = self._selected_job.storage
 
-        self._estimator = self._estimator_factory(job_type)
+        self._estimator = self._estimator_factory(
+            job_type, job_status_interval=self._connection.job_status_interval
+        )
 
     @property
     def firmware_info(self):
@@ -953,10 +955,13 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         self._connection.cancel_print(user=user, tags=tags, params=params)
 
     def get_state_string(self, state=None, *args, **kwargs):
-        if self._connection is None:
-            return "Offline"
-        else:
-            return self._connection.get_state_string(state=state)
+        if state is None:
+            state = self._state
+        if self._connection is not None:
+            return self._connection.get_state_string(
+                state=state
+            )  # get the connector's custom state string
+        return state.value
 
     def get_state_id(self, state=None, *args, **kwargs):
         if state is None:
@@ -1070,7 +1075,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
     @util.deprecated(
         message="get_sd_files has been deprecated and will be removed in a future version. Please use the PrinterStorage instead.",
         includedoc="Functionality moved to :class:`~octoprint.filemanager.storage.printer.PrinterStorage`",
-        since="1.12.0",
+        since="2.0.0",
     )
     def get_sd_files(self, *args, **kwargs):
         if not self.is_storage_mounted():
@@ -1088,7 +1093,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
     @util.deprecated(
         message="add_sd_file has been deprecated and will be removed in a future version. Please use the PrinterStorage instead.",
         includedoc="Functionality moved to :class:`~octoprint.filemanager.storage.printer.PrinterStorage`",
-        since="1.12.0",
+        since="2.0.0",
     )
     def add_sd_file(
         self, filename, path, on_success=None, on_failure=None, *args, **kwargs
@@ -1165,7 +1170,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
     @util.deprecated(
         message="delete_sd_file has been deprecated and will be removed in a future version. Please use the PrinterStorage instead.",
         includedoc="Functionality moved to :class:`~octoprint.filemanager.storage.printer.PrinterStorage`",
-        since="1.12.0",
+        since="2.0.0",
     )
     def delete_sd_file(self, filename, *args, **kwargs):
         if not self.is_storage_mounted():
@@ -1176,7 +1181,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
     @util.deprecated(
         message="refresh_sd_files has been deprecated and will be removed in a future version. Please use the PrinterStorage instead.",
         includedoc="Functionality moved to :class:`~octoprint.filemanager.storage.printer.PrinterStorage`",
-        since="1.12.0",
+        since="2.0.0",
     )
     def refresh_sd_files(self, blocking=False, *args, **kwargs):
         if not self.is_storage_mounted():
@@ -1206,15 +1211,23 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                     if self._selected_job is not None:
                         payload = self._payload_for_print_job_event()
                         if payload:
-                            job_progress = self._connection.job_progress
-                            error_info = self._connection.error_info
+                            job_progress = (
+                                self._connection.job_progress
+                                if self._connection
+                                else None
+                            )
+                            error_info = (
+                                self._connection.error_info if self._connection else None
+                            )
 
                             payload["reason"] = "error"
                             payload["error"] = (
                                 error_info.error if error_info else "unknown"
                             )
-                            payload["time"] = job_progress.elapsed
-                            payload["progress"] = job_progress.progress
+                            payload["time"] = job_progress.elapsed if job_progress else 0
+                            payload["progress"] = (
+                                job_progress.progress if job_progress else 0
+                            )
 
                             def finalize():
                                 self._file_manager.log_print(
@@ -1407,8 +1420,8 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
         payload = self._payload_for_print_job_event()
         if payload:
-            job_progress = self._connection.job_progress
-            payload["time"] = job_progress.elapsed
+            job_progress = self._connection.job_progress if self._connection else None
+            payload["time"] = job_progress.elapsed if job_progress else 0
             eventManager().fire(
                 Events.CHART_MARKED,
                 {"type": "done", "label": "Done"},
@@ -1487,7 +1500,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             action_user=user,
         )
         if payload:
-            payload["time"] = job_progress.elapsed
+            payload["time"] = job_progress.elapsed if job_progress else 0
 
             eventManager().fire(Events.PRINT_CANCELLED, payload)
             eventManager().fire(
@@ -1670,12 +1683,13 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         self._stateMonitor.set_temp_offsets(offsets)
 
     def _set_state(self, state, state_string=None, error_string=None):
+        self._state = state
+
         if state_string is None:
             state_string = self.get_state_string()
         if error_string is None:
             error_string = self.get_error()
 
-        self._state = state
         self._stateMonitor.set_state(
             self._dict(
                 text=state_string, flags=self._get_state_flags(), error=error_string
@@ -1683,8 +1697,8 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         )
 
         payload = {
-            "state_id": self.get_state_id(self._state),
-            "state_string": self.get_state_string(self._state),
+            "state_id": self.get_state_id(),
+            "state_string": state_string,
         }
         eventManager().fire(Events.PRINTER_STATE_CHANGED, payload)
 
@@ -1786,8 +1800,8 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             printTimeLeftOrigin=printTimeLeftOrigin,
         )
 
-    def _update_resend_data_callback(self):
-        NO_RESULT = self._dict(count=0, transmitted=0, ratio=0)
+    def _update_health_data_callback(self):
+        NO_RESULT = self._dict(count=0, transmitted=0, ratio=0, critical=False)
 
         if self._connection is None:
             return NO_RESULT
@@ -1800,6 +1814,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             count=communication_health.errors,
             transmitted=communication_health.total,
             ratio=round(communication_health.ratio * 100),
+            critical=communication_health.critical,
         )
 
     def _add_temperature_data(self, temperatures=None):
@@ -1834,6 +1849,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                         estimatedPrintTime=None,
                         filament=None,
                         user=None,
+                        plate=None,
                     )
                 )
                 return
@@ -1873,6 +1889,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                     estimatedPrintTime=estimatedPrintTime,
                     filament=filament,
                     user=user,
+                    plate=job.plate,
                 )
             )
             self._selected_job = job
@@ -1981,31 +1998,35 @@ class StateMonitor:
         on_add_log=None,
         on_add_message=None,
         on_get_progress=None,
-        on_get_resends=None,
+        on_get_health=None,
+        **kwargs,
     ):
+        if on_get_health is None:
+            on_get_health = kwargs.get("on_get_resends")
+
         self._interval = interval
         self._update_callback = on_update
         self._on_add_temperature = on_add_temperature
         self._on_add_log = on_add_log
         self._on_add_message = on_add_message
         self._on_get_progress = on_get_progress
-        self._on_get_resends = on_get_resends
+        self._on_get_health = on_get_health
 
         self._state = None
         self._job_data = None
         self._offsets = {}
         self._progress = None
-        self._resends = None
+        self._health = None
         self._current_z = None
         self._current_t = None
 
         self._progress_dirty = False
-        self._resends_dirty = False
+        self._health_dirty = False
 
         self._change_event = threading.Event()
         self._state_lock = threading.Lock()
         self._progress_lock = threading.Lock()
-        self._resends_lock = threading.Lock()
+        self._health_lock = threading.Lock()
 
         self._last_update = time.monotonic()
         self._worker = threading.Thread(target=self._work)
@@ -2017,10 +2038,10 @@ class StateMonitor:
             return self._on_get_progress()
         return self._progress
 
-    def _get_current_resends(self):
-        if callable(self._on_get_resends):
-            return self._on_get_resends()
-        return self._resends
+    def _get_current_health(self):
+        if callable(self._on_get_health):
+            return self._on_get_health()
+        return self._health
 
     def reset(
         self,
@@ -2028,15 +2049,19 @@ class StateMonitor:
         job_data=None,
         progress=None,
         offsets=None,
-        resends=None,
+        health=None,
         z=None,
         t=None,
+        **kwargs,
     ):
+        if health is None:
+            health = kwargs.get("resends")
+
         self.set_state(state)
         self.set_job_data(job_data)
         self.set_progress(progress)
         self.set_temp_offsets(offsets)
-        self.set_resends(resends)
+        self.set_health(health)
         self.set_current_z(z)
         self.set_current_t(t)
 
@@ -2046,8 +2071,8 @@ class StateMonitor:
 
     def add_log(self, log):
         self._on_add_log(log)
-        with self._resends_lock:
-            self._resends_dirty = True
+        with self._health_lock:
+            self._health_dirty = True
         self._change_event.set()
 
     def add_message(self, message):
@@ -2074,10 +2099,10 @@ class StateMonitor:
             self._progress = progress
             self._change_event.set()
 
-    def set_resends(self, resend_ratio):
-        with self._resends_lock:
-            self._resends_dirty = False
-            self._resends = resend_ratio
+    def set_health(self, health):
+        with self._health_lock:
+            self._health_dirty = False
+            self._health = health
             self._change_event.set()
 
     def set_temp_offsets(self, offsets):
@@ -2125,17 +2150,17 @@ class StateMonitor:
                 self._progress = self._get_current_progress()
                 self._progress_dirty = False
 
-        with self._resends_lock:
-            if self._resends_dirty:
-                self._resends = self._get_current_resends()
-                self._resends_dirty = False
+        with self._health_lock:
+            if self._health_dirty:
+                self._health = self._get_current_health()
+                self._health_dirty = False
 
         return {
             "state": self._state,
             "job": self._job_data,
             "progress": self._progress,
             "offsets": self._offsets,
-            "resends": self._resends,
+            "health": self._health,
             "currentZ": self._current_z,
             "currentTool": self._current_t,
         }

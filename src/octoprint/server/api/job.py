@@ -80,7 +80,7 @@ def jobState():
     response = _get_api_job_response()
 
     job_info = response.job
-    job_info_pre_1_12 = apischema.ApiJobInfo_pre_1_12(
+    job_info_pre_2_0_0 = apischema.ApiJobInfo_pre_2_0_0(
         file=job_info.file,
         estimatedPrintTime=job_info.estimatedPrintTime,
         lastPrintTime=None,
@@ -88,19 +88,19 @@ def jobState():
         user=job_info.user,
     )
 
-    response_pre_1_12 = apischema.ApiJobResponse_pre_1_12(
-        job=job_info_pre_1_12,
+    response_pre_2_0_0 = apischema.ApiJobResponse_pre_2_0_0(
+        job=job_info_pre_2_0_0,
         progress=response.progress,
         state=response.state,
         error=response.error,
     )
 
-    return jsonify(**response_pre_1_12.model_dump(by_alias=True))
+    return jsonify(**response_pre_2_0_0.model_dump(by_alias=True))
 
 
-@jobState.version(">=1.12.0")
+@jobState.version(">=2.0.0")
 @Permissions.STATUS.require(403)
-def jobState_post_1_12():
+def jobState_post_2_0_0():
     return jsonify(**_get_api_job_response().model_dump(by_alias=True, exclude_none=True))
 
 

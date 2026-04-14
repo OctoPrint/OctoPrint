@@ -16,14 +16,6 @@
 
    Connects to the printer, optionally using the provided connection ``data`` as parameters.
 
-   If ``data`` is provided it's expected to be an object specifying one or more of
-
-     * ``port``
-     * ``baudrate``
-     * ``printerProfile``
-     * ``save``
-     * ``autoconnect``
-
    See :ref:`Issue a connection command <sec-api-connection-command>` for more details.
 
    :param object data: Connection data to use

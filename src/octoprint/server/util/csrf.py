@@ -56,8 +56,7 @@ def validate_csrf_tokens(cookie, header):
     s = URLSafeTimedSerializer(secret, salt="octoprint-csrf-token")
 
     try:
-        # TODO: set max age for values, once we have a REST based heartbeat
-        # that takes care of regular cookie refresh
+        # FIXME set max age for values, once we have a REST based heartbeat that takes care of regular cookie refresh
         value_cookie = s.loads(cookie)
         value_header = s.loads(header)
         return hmac.compare_digest(value_cookie, value_header)

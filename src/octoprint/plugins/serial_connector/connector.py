@@ -51,6 +51,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
     _file_manager: "FileManager" = None
     _plugin_settings: "PluginSettings" = None
     _plugin_manager: "PluginManager" = None
+    _serial_logger: logging.Logger = None
     # /injected
 
     @classmethod
@@ -116,16 +117,21 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         )
         return parameters
 
+    @property
+    def job_status_interval(self):
+        return self._plugin_settings.get_float(["timeout", "sdStatus"])
+
     def connect(self, *args, **kwargs):
         if self._comm is not None:
             return
 
-        from octoprint.logging.handlers import SerialLogHandler
+        from . import SerialLogHandler
 
         SerialLogHandler.arm_rollover()
-        if not logging.getLogger("SERIAL").isEnabledFor(logging.DEBUG):
+
+        if not self._serial_logger.isEnabledFor(logging.DEBUG):
             # if serial.log is not enabled, log a line to explain that to reduce "serial.log is empty" in tickets...
-            logging.getLogger("SERIAL").info(
+            self._serial_logger.info(
                 "serial.log is currently not enabled, you can enable it via Settings > Serial Connection > Log communication to serial.log"
             )
 
@@ -168,10 +174,19 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
     @property
     def communication_health(self) -> CommunicationHealth:
         if self._comm is None:
-            return CommunicationHealth(errors=0, total=0)
+            return CommunicationHealth(errors=0, total=0, critical=False)
+
+        ratio_start = self._plugin_settings.get_int(["resendRatioStart"])
+        ratio_threshold = self._plugin_settings.get_int(["resendRatioThreshold"])
+
+        total = self._comm.transmitted_lines
+        resends = self._comm.received_resends
+        critical = total >= ratio_start and (resends * 100 / total) >= ratio_threshold
 
         return CommunicationHealth(
-            errors=self._comm.received_resends, total=self._comm.transmitted_lines
+            errors=self._comm.received_resends,
+            total=self._comm.transmitted_lines,
+            critical=critical,
         )
 
     def commands(self, *commands, tags=None, force=False, **kwargs):
@@ -434,10 +449,11 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         self._comm.cancelPrint(user=user, tags=tags)
 
     def log_lines(self, *lines):
-        serial_logger = logging.getLogger("SERIAL")
-        self.on_comm_log("\n".join(lines))
         for line in lines:
-            serial_logger.debug(line)
+            self._serial_logger.debug(line)
+        self._listener.on_printer_logs(
+            util.to_unicode("\n".join(lines), "utf-8", errors="replace")
+        )
 
     def get_state_string(self, state: ConnectedPrinterState = None):
         if state is None:
@@ -617,9 +633,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
     # ~~ comm.MachineComPrintCallback implementation
 
     def on_comm_log(self, message):
-        self._listener.on_printer_logs(
-            util.to_unicode(message, "utf-8", errors="replace")
-        )
+        self.log_lines(message)
 
     def on_comm_temperature_update(self, tools, bed, chamber, custom=None):
         if custom is None:
@@ -650,6 +664,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         error_str = None
         if self._comm is not None:
             error_str = self._comm.getErrorString()
+            self._port, self._baudrate = self._comm.getConnection()
 
         self.set_state(state, error=error_str)  # this will call the listener
 

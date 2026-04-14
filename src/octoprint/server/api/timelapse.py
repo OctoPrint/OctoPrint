@@ -12,7 +12,7 @@ from flask import abort, jsonify, request, url_for
 import octoprint.timelapse
 import octoprint.util as util
 from octoprint.access.permissions import Permissions
-from octoprint.server import NO_CONTENT, admin_permission, printer
+from octoprint.server import NO_CONTENT, printer
 from octoprint.server.api import api
 from octoprint.server.util.flask import (
     get_json_command_from_request,
@@ -198,7 +198,7 @@ def deleteTimelapse(filename):
         try:
             os.remove(full_path)
         except Exception as ex:
-            logging.getLogger(__file__).exception(
+            logging.getLogger(__name__).exception(
                 f"Error deleting timelapse file {full_path}"
             )
             abort(500, description=f"Unexpected error: {ex}")
@@ -213,7 +213,7 @@ def deleteTimelapse(filename):
             os.remove(thumb_path)
         except Exception as ex:
             # Do not treat this as an error, log and ignore
-            logging.getLogger(__file__).warning(
+            logging.getLogger(__name__).warning(
                 f"Unable to delete thumbnail {thumb_path} ({ex})"
             )
 
@@ -333,7 +333,7 @@ def setTimelapseConfig():
                     abort(400, description="renderAfterPrint is invalid")
 
         if (
-            admin_permission.can()
+            Permissions.ADMIN.can()
             and "save" in data
             and data["save"] in valid_boolean_trues
         ):

@@ -40,9 +40,10 @@ $(function () {
             });
         };
 
-        self.currentConnector = ko.observable(undefined);
-        self.currentConnectorParameters = {};
         self.currentConnectorCapabilities = ko.observable({});
+
+        self.preferredConnectorName = ko.observable("-");
+        self.preferredConnectorParameters = ko.observableArray([]);
 
         self.lastConnector = undefined;
         self.lastConnectorParameters = {};
@@ -62,9 +63,43 @@ $(function () {
         self.isReady = ko.observable(undefined);
         self.isLoading = ko.observable(undefined);
 
+        self.connectionParametersValidated = ko.observable(true);
         self.enableConnect = ko.pureComputed(function () {
-            //return self.enablePort() || !self.isErrorOrClosed();  // TODO: This needs to be checked against other connectors too
-            return true;
+            return self.connectionParametersValidated() || !self.isErrorOrClosed();
+        });
+        self.reevaluateConnectionParameters = (connector) => {
+            window.setTimeout(() => {
+                log.debug(`Reevaluating connection parameters for ${connector}...`);
+                let reevaluateResult = undefined;
+                callViewModels(
+                    self.allViewModels,
+                    "onReevaluateConnectionParameters",
+                    (method) => {
+                        if (reevaluateResult !== undefined) return;
+
+                        const result = method(connector);
+                        if (result === undefined || result === null) return;
+
+                        reevaluateResult = result;
+                        self.connectionParametersValidated(result);
+                    }
+                );
+            }, 10);
+        };
+        self.setConnectionInputsEnabled = (enabled) => {
+            self.doOnAllInputs((element) => {
+                if (enabled) {
+                    $(element).removeClass("disabled").attr("disabled", false);
+                } else {
+                    $(element).addClass("disabled").attr("disabled", true);
+                }
+            });
+        };
+
+        self.selectedConnector.subscribe(self.reevaluateConnectionParameters);
+
+        self.isErrorOrClosed.subscribe((disconnected) => {
+            self.setConnectionInputsEnabled(disconnected);
         });
 
         self.buttonText = ko.pureComputed(function () {
@@ -77,12 +112,29 @@ $(function () {
         });
 
         self.enableAutoConnect = ko.pureComputed(function () {
-            return self.enableConnect() && self.isErrorOrClosed();
+            return self.enableSaveSettings() && self.saveSettings();
         });
 
         self.previousIsOperational = undefined;
 
         self.refreshVisible = ko.observable(true);
+
+        self.doOnAllInputsForConnector = (connector, callback) => {
+            const container = $(`#connection_options_${connector}`);
+            ["input", "select", "textarea"].forEach((tag) => {
+                $(`${tag}[data-connection-parameter]`, container).each(
+                    (index, element) => {
+                        callback(element, connector);
+                    }
+                );
+            });
+        };
+        self.doOnAllInputs = (callback) => {
+            self.connectorOptions().forEach((c) => {
+                const connector = c.connector;
+                self.doOnAllInputsForConnector(connector, callback);
+            });
+        };
 
         self.requestData = function () {
             if (!self.loginState.hasPermission(self.access.permissions.CONNECTION)) {
@@ -95,7 +147,61 @@ $(function () {
         self.fromResponse = function (response) {
             const connectors = response.options.connectors;
             const currentConnector = response.current.connector;
+
+            // preferred connection
+
             const preferredConnector = response.options.preferredConnector.connector;
+            const preferredConnectorParameters =
+                response.options.preferredConnector.parameters;
+            const preferredConnectorData = connectors.find(
+                (c) => c.connector === preferredConnector
+            );
+
+            if (preferredConnectorData) {
+                self.preferredConnectorName(preferredConnectorData.name);
+            } else {
+                // fallback
+                self.preferredConnectorName(`<code>${preferredConnector}</code>`);
+            }
+
+            let preferredConnectorParametersRendered = false;
+            callViewModels(
+                self.allViewModels,
+                "onRenderParametersForConnector",
+                (method) => {
+                    if (preferredConnectorParametersRendered) return;
+
+                    const result = method(
+                        preferredConnector,
+                        preferredConnectorParameters
+                    );
+                    if (result === false || !Array.isArray(result)) return;
+
+                    preferredConnectorParametersRendered = true;
+                    self.preferredConnectorParameters(
+                        result
+                            .filter(
+                                // make sure everything has name & value
+                                (item) =>
+                                    item.name !== undefined && item.value !== undefined
+                            )
+                            .map((item) => `${item.name}: ${item.value}`)
+                    );
+                }
+            );
+
+            if (!preferredConnectorParametersRendered) {
+                // fallback
+                const params = [];
+                for (const key in preferredConnectorParameters) {
+                    params.push(
+                        `<code>${key}</code>: <code>${JSON.stringify(preferredConnectorParameters[key])}</code>`
+                    );
+                }
+                self.preferredConnectorParameters(params);
+            }
+
+            // available connectors, parameters & capabilities
 
             self.connectorOptions(connectors);
 
@@ -107,40 +213,38 @@ $(function () {
 
             self.currentConnectorCapabilities(response.current.capabilities);
 
+            // determine active parameters
+
+            let selectedConnector;
             let activeParameters;
             if (currentConnector && connectorParameters[currentConnector]) {
-                self.selectedConnector(currentConnector);
+                selectedConnector = currentConnector;
                 activeParameters = response.current.parameters;
 
                 // also set last connector here
                 self.lastConnector = currentConnector;
                 self.lastConnectorParameters = response.current.parameters;
             } else if (self.lastConnector && connectorParameters[self.lastConnector]) {
-                self.selectedConnector(self.lastConnector);
+                selectedConnector = self.lastConnector;
                 activeParameters = self.lastConnectorParameters;
             } else if (preferredConnector && connectorParameters[preferredConnector]) {
-                self.selectedConnector(preferredConnector);
-                activeParameters = response.options.preferredConnector.parameters;
+                selectedConnector = preferredConnector;
+                activeParameters = preferredConnectorParameters;
             } else {
-                self.selectedConnector(connectors[0].connector);
+                selectedConnector = connectors[0].connector;
                 activeParameters = undefined;
             }
 
-            // connectors
+            // set parameters on connection form & inform viewmodels of received data
 
             if (activeParameters) {
-                const container = $(`#connection_options_${self.selectedConnector()}`);
-                _.each(["input", "select", "textarea"], (tag) => {
-                    $(`${tag}[data-connection-parameter]`, container).each(
-                        (index, element) => {
-                            const jqueryElement = $(element);
-                            const parameter = jqueryElement.data("connection-parameter");
-                            const value = activeParameters[parameter];
-                            if (value !== undefined) {
-                                jqueryElement.val(value);
-                            }
-                        }
-                    );
+                self.doOnAllInputsForConnector(selectedConnector, (element) => {
+                    const jqueryElement = $(element);
+                    const parameter = jqueryElement.data("connection-parameter");
+                    const value = activeParameters[parameter];
+                    if (value !== undefined) {
+                        jqueryElement.val(value);
+                    }
                 });
             }
 
@@ -151,11 +255,31 @@ $(function () {
                 response.options.preferredConnector
             ]);
 
+            // add listeners to inputs to detect changes & reevaluate connection availability
+
+            const event = "input.revalidate";
+            self.doOnAllInputs((element, connector) => {
+                $(element)
+                    .off(event)
+                    .on(event, () => {
+                        log.debug(
+                            `Change detected on ${element}, associated connector ${connector} vs ${self.selectedConnector()}`
+                        );
+                        if (self.selectedConnector() === connector) {
+                            self.reevaluateConnectionParameters(connector);
+                        }
+                    });
+            });
+
+            self.selectedConnector(selectedConnector);
+
+            self.setConnectionInputsEnabled(self.isErrorOrClosed());
+
             // printer profile
 
-            const printerProfiles = response.options.printerProfiles;
+            const printerProfiles = response.options.profiles;
             const preferredProfile = response.options.preferredProfile;
-            const currentProfile = response.current.printerProfile;
+            const currentProfile = response.current.profile;
 
             if (!self.currentProfile() && printerProfiles) {
                 if (printerProfiles.indexOf(currentProfile) >= 0) {
@@ -169,6 +293,7 @@ $(function () {
             }
 
             self.saveSettings(false);
+            self.autoconnect(false);
             self.connectionOptionsLastUpdated(new Date().getTime());
         };
 
@@ -217,15 +342,10 @@ $(function () {
                 const profile = self.currentProfile();
 
                 const parameters = {};
-                const container = $(`#connection_options_${connector}`);
-                _.each(["input", "select", "textarea"], (tag) => {
-                    $(`${tag}[data-connection-parameter]`, container).each(
-                        (index, element) => {
-                            const jqueryElement = $(element);
-                            const parameter = jqueryElement.data("connection-parameter");
-                            parameters[parameter] = jqueryElement.val();
-                        }
-                    );
+                self.doOnAllInputsForConnector(connector, (element) => {
+                    const jqueryElement = $(element);
+                    const parameter = jqueryElement.data("connection-parameter");
+                    parameters[parameter] = jqueryElement.val();
                 });
 
                 const data = {
@@ -236,6 +356,9 @@ $(function () {
                 };
 
                 if (self.saveSettings()) data["save"] = true;
+
+                self.autoconnect(false);
+                self.saveSettings(false);
 
                 OctoPrint.connection.connect(data).done(function () {
                     self.settings.requestData();
@@ -254,7 +377,7 @@ $(function () {
                                 "<p>Disconnecting while a print is in progress will prevent OctoPrint from " +
                                 "completing the print. If you're printing from an SD card attached directly " +
                                 "to the printer, any attempt to restart OctoPrint or reconnect to the printer " +
-                                "could interrupt the print.<p>"
+                                "could interrupt the print.</p>"
                         ),
                         question: gettext(
                             "Are you sure you want to disconnect from the printer?"
@@ -312,6 +435,6 @@ $(function () {
             "printerProfilesViewModel",
             "accessViewModel"
         ],
-        elements: ["#connection_wrapper"]
+        elements: ["#connection_wrapper", "#settings_printerconnection"]
     });
 });

@@ -3,7 +3,6 @@ __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms
 
 import datetime
 import time
-import warnings
 
 import pytest
 from frozendict import frozendict
@@ -15,16 +14,6 @@ class SomeClass: ...
 
 
 class SomeSubclass(frozendict): ...
-
-
-def test_deprecated_dump():
-    warnings.simplefilter("always")
-    with warnings.catch_warnings(record=True) as w:
-        assert json.dump({"foo": "bar"}) == '{"foo":"bar"}'
-
-        assert len(w) == 1
-        assert issubclass(w[-1].category, DeprecationWarning)
-        assert "dump has been renamed to dumps" in str(w[-1].message)
 
 
 @pytest.mark.parametrize(
@@ -44,7 +33,7 @@ def test_encoding_loads():
 
 
 def test_encoding_dumps_typeerror():
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError, match="Unserializable type"):
         json.encoding.dumps(SomeClass())
 
 

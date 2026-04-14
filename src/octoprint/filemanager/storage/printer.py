@@ -4,11 +4,11 @@ import tempfile
 import time
 from typing import IO, Optional
 
-from octoprint.filemanager import get_file_type
+import octoprint.filemanager
 from octoprint.filemanager.util import AbstractFileWrapper
 from octoprint.printer import PrinterFile, PrinterFilesError, PrinterFilesMixin
 
-from . import (
+from .common import (
     MetadataEntry,
     StorageCapabilities,
     StorageEntry,
@@ -133,7 +133,7 @@ class PrinterFileStorage(StorageInterface):
         return hash.hexdigest()
 
     def file_in_path(self, path, filepath):
-        return filepath.startswith(path + "/")
+        return filepath == path or filepath.startswith(path + "/")
 
     def file_exists(self, path):
         files = self._get_printer_files()
@@ -178,7 +178,7 @@ class PrinterFileStorage(StorageInterface):
             if f.path == prefix:
                 continue
 
-            type_path = get_file_type(f.path)
+            type_path = octoprint.filemanager.get_file_type(f.path)
             if not type_path:
                 if f.path.endswith("/"):
                     type_path = ["folder"]
@@ -313,7 +313,7 @@ class PrinterFileStorage(StorageInterface):
             )
 
         try:
-            result = self._connection.copy_printer_folder(source, destination)  # TODO
+            result = self._connection.copy_printer_folder(source, destination)
             self._update_last_activity()
             return result
         except PrinterFilesError as exc:
@@ -419,7 +419,7 @@ class PrinterFileStorage(StorageInterface):
             )
 
         try:
-            result = self._connection.copy_printer_file(source, destination)  # TODO
+            result = self._connection.copy_printer_file(source, destination)
             self._update_last_activity()
             return result
         except PrinterFilesError as exc:
@@ -440,7 +440,7 @@ class PrinterFileStorage(StorageInterface):
             )
 
         try:
-            result = self._connection.move_printer_file(source, destination)  # TODO
+            result = self._connection.move_printer_file(source, destination)
             self._update_last_activity()
             return result
         except PrinterFilesError as exc:
@@ -448,9 +448,9 @@ class PrinterFileStorage(StorageInterface):
 
     def has_analysis(self, path):
         metadata = self.get_metadata(path)
-        return metadata and metadata.analysis
+        return metadata and "analysis" in metadata
 
-    def get_metadata(self, path, default=None):
+    def get_metadata(self, path: str, default=None) -> dict:
         if not self.capabilities.metadata:
             return None
 
@@ -463,13 +463,19 @@ class PrinterFileStorage(StorageInterface):
     def has_thumbnail(self, path) -> bool:
         return self._connection.has_thumbnail(path)
 
-    def get_thumbnail(self, path, sizehint=None) -> Optional[StorageThumbnail]:
-        return self._connection.get_thumbnail(path, sizehint=sizehint)
+    def get_thumbnail(
+        self, path, platehint=None, sizehint=None
+    ) -> Optional[StorageThumbnail]:
+        return self._connection.get_thumbnail(
+            path, platehint=platehint, sizehint=sizehint
+        )
 
     def read_thumbnail(
-        self, path, sizehint=None
+        self, path, platehint=None, sizehint=None
     ) -> Optional[tuple[StorageThumbnail, IO]]:
-        return self._connection.download_thumbnail(path, sizehint=sizehint)
+        return self._connection.download_thumbnail(
+            path, platehint=platehint, sizehint=sizehint
+        )
 
     def refresh_thumbnails(
         self, path, force: bool = False, recursive: bool = False
@@ -487,7 +493,10 @@ class PrinterFileStorage(StorageInterface):
             return None
 
         metadata = self._connection.get_printer_file_metadata(path)
-        return metadata.model_extra.get(key)
+        if metadata is None or metadata.additional is None:
+            return None
+
+        return metadata.additional.get(key)
 
     def set_additional_metadata(self, path, key, data, overwrite=False, merge=False):
         if not self.capabilities.metadata:
@@ -500,16 +509,19 @@ class PrinterFileStorage(StorageInterface):
         if metadata is None:
             metadata = MetadataEntry()
 
-        if key in metadata.model_extra:
+        if metadata.additional is None:
+            metadata.additional = {}
+
+        if key in metadata.additional:
             if not overwrite:
                 return
 
             if merge:
                 import octoprint.util
 
-                data = octoprint.util.dict_merge(metadata.model_extra[key], data)
+                data = octoprint.util.dict_merge(metadata.additional[key], data)
 
-        metadata.model_extra[key] = data
+        metadata.additional[key] = data
         self._connection.set_printer_file_metadata(path, metadata)
         self._update_last_activity()
 
@@ -524,8 +536,11 @@ class PrinterFileStorage(StorageInterface):
         if metadata is None:
             metadata = MetadataEntry()
 
+        if metadata.additional is None:
+            metadata.additional = {}
+
         try:
-            del metadata.model_extra[key]
+            del metadata.additional[key]
             self._update_last_activity()
         except KeyError:
             pass

@@ -57,6 +57,8 @@ class VirtualPrinterPlugin(
                 "AUTOREPORT_TEMP": True,
                 "AUTOREPORT_SD_STATUS": True,
                 "AUTOREPORT_POS": False,
+                "BUSY_PROTOCOL": False,
+                "CHAMBER_TEMPERATURE": False,
                 "EMERGENCY_PARSER": True,
                 "EXTENDED_M20": False,
                 "LFN_WRITE": False,

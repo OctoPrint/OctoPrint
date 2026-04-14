@@ -4,6 +4,38 @@ $(function () {
 
         self.settings = parameters[0];
 
+        //~~ serial log warning in navbar
+
+        self.serialLogWarning = ko.pureComputed(() => {
+            return (
+                self.settings &&
+                self.settings.settings &&
+                self.settings.settings.plugins &&
+                self.settings.settings.plugins.serial_connector &&
+                self.settings.settings.plugins.serial_connector.log()
+            );
+        });
+
+        self.serialLogPopoverContent = function () {
+            var content =
+                "<p>" +
+                _.sprintf(
+                    gettext(
+                        "You currently have <code>%(logfile)s</code> enabled. Please remember to turn it off " +
+                            "again once you are done debugging whatever issue prompted you to turn it on."
+                    ),
+                    {logfile: "serial.log"}
+                ) +
+                "</p><p>" +
+                gettext(
+                    "It can negatively impact print performance and also take up a lot of storage space " +
+                        "depending on how long you keep it enabled and thus should only be used for " +
+                        "debugging."
+                ) +
+                "</p>";
+            return content;
+        };
+
         //~~ connection related
 
         self.lastUpdated = ko.observable(false);
@@ -20,9 +52,6 @@ $(function () {
         );
         self.portCaption = ko.pureComputed(() =>
             self.validPort() ? "AUTO" : gettext("No serial port found")
-        );
-        self.enablePort = ko.pureComputed(
-            () => self.validPort() && self.isErrorOrClosed()
         );
 
         self.onConnectionDataReceived = (parameters, current, last, preferred) => {
@@ -82,6 +111,27 @@ $(function () {
             }
 
             self.lastUpdated(new Date().getTime());
+        };
+
+        self.onRenderParametersForConnector = (connector, parameters) => {
+            if (connector !== "serial") return false;
+
+            return [
+                {
+                    name: gettext("Port"),
+                    value: !parameters.port ? "AUTO" : parameters.port
+                },
+                {
+                    name: gettext("Baudrate"),
+                    value: !parameters.baudrate ? "AUTO" : parameters.baudrate
+                }
+            ];
+        };
+
+        self.onReevaluateConnectionParameters = (connector) => {
+            if (connector !== "serial") return null;
+
+            return self.validPort();
         };
 
         //~~ Settings related
@@ -211,6 +261,10 @@ $(function () {
     OCTOPRINT_VIEWMODELS.push({
         construct: SerialConnectorViewModel,
         dependencies: ["settingsViewModel"],
-        elements: ["#connection_options_serial", "#settings_plugin_serial_connector"]
+        elements: [
+            "#connection_options_serial",
+            "#settings_plugin_serial_connector",
+            "#navbar_plugin_serial_connector_seriallog"
+        ]
     });
 });

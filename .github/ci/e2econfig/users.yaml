@@ -7,9 +7,6 @@ admin:
     - users
   password: $argon2id$v=19$m=65536,t=3,p=4$XMsZY8y5dw4B4JxzTum9tw$sk228xXwRjgHpKdIFam6vkwkRelSokHqmCZpQSH69NY
   permissions: []
-  roles:
-    - user
-    - admin
   settings: {}
 mfa:
   active: true
@@ -18,8 +15,6 @@ mfa:
     - users
   password: $argon2id$v=19$m=65536,t=3,p=4$7j1nzHmvFSJkTClFaO0dAw$eE1eH3Dv0Orqe1CTWmoQFaZepoTDr8+K6g+jO6Rjyd4
   permissions: []
-  roles:
-    - user
   settings: {}
 user:
   active: true
@@ -28,6 +23,4 @@ user:
     - users
   password: $argon2id$v=19$m=65536,t=3,p=4$2/vfG2PsHSOktHbuXUvJeQ$x/NmCwo4r1ccv2C7e/CHlPRqkj8+L7Y9bQ8kutizFFA
   permissions: []
-  roles:
-    - user
   settings: {}

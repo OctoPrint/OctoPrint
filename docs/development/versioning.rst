@@ -22,6 +22,24 @@ determination, the version number will also contain the git hash within the loca
 allow for an exact determination of the active code base (e.g. ``1.2.9.dev68+g46c7a9c``). Additionally,
 instances with active uncommitted changes will contain ``.dirty`` in the local version identifier.
 
+.. _sec-development_versions-mapping:
+
+Version mapping
+---------------
+
+.. _sec-development-versions-mapping-2_0_0:
+
+Version mapping for 1.12.0+ to 2.0.0+
+.....................................
+
+What was originally planned to be released as OctoPrint 1.12.0 turned into 2.0.0. Due to this, some deprecation
+warnings and other information about forthcoming versions changed. If you see warnings or other kinds of information 
+about changes upcoming for OctoPrint 1.12.0, 1.13.0 and so on, the mapping is the following for now:
+
+* 1.12.0 → 2.0.0
+* 1.13.0 → 2.1.0
+* ... and so on
+
 .. rubric:: Footnotes
 
 .. [#f1] Up until 1.4.2, the PATCH version segment was the one increasing most often

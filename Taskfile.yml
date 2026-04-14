@@ -29,6 +29,11 @@ tasks:
     cmds:
       - pip-check -H
 
+  scan-deps:
+    desc: Scan dependencies in pyproject.toml for potential bound updates
+    cmds:
+      - python tools/scan-deps.py
+
   pre-commit:
     desc: Run pre-commit on all files
     cmds:
@@ -65,6 +70,19 @@ tasks:
       - |
         cd tests/playwright
         npx playwright install
+
+  test-qunit:
+    desc: Runs QUnit tests via puppeteer
+    cmds:
+      - |
+        cd tests/static/js
+        npx node-qunit-puppeteer test-helpers.html
+        npx node-qunit-puppeteer test-client-base.html
+
+  test-qunit-install:
+    desc: Install QUnit test dependencies
+    cmds:
+      - npx puppeteer install chrome
 
   ### Build related
 

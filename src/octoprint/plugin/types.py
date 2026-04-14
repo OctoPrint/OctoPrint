@@ -699,7 +699,7 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
         if not getattr(self, "__autoescape_warning_logged", False):
             self._logger.warning(
                 "The templates of this plugin are currently not being autoescaped. This has potential security implications. "
-                "For that reason OctoPrint 1.13.0 will globally enforce autoescaping. Plugin authors seeing this should read https://faq.octoprint.org/plugin-autoescape."
+                "For that reason OctoPrint 2.1.0 will globally enforce autoescaping. Plugin authors seeing this should read https://faq.octoprint.org/plugin-autoescape."
             )
             setattr(self, "__autoescape_warning_logged", True)
         return False
@@ -1486,7 +1486,7 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 
     .. note::
 
-       As of OctoPrint 1.12.0, endpoints provided through a ``BlueprintPlugin`` do now automatically fall under
+       As of OctoPrint 2.0.0, endpoints provided through a ``BlueprintPlugin`` do now automatically fall under
        OctoPrint's :ref:`CSRF protection <sec-api-general-csrf>`. You can exempt certain endpoints from CSRF protection by decorating them with
        ``@octoprint.plugin.BlueprintPlugin.csrf_exempt``.
 
@@ -1515,7 +1515,7 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
     ``BlueprintPlugin`` implements :class:`~octoprint.plugins.core.RestartNeedingPlugin`.
 
     .. versionchanged:: 1.8.3
-    .. versionchanged:: 1.12.0
+    .. versionchanged:: 2.0.0
     """
 
     @staticmethod
@@ -1715,11 +1715,11 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
     # noinspection PyMethodMayBeStatic
     def is_blueprint_csrf_protected(self):
         """
-        Whether a blueprint's endpoints are :ref:`CSRF protected <sec-api-general-csrf>`. As of 1.12.0, this defaults to ``True``
+        Whether a blueprint's endpoints are :ref:`CSRF protected <sec-api-general-csrf>`. As of 2.0.0, this defaults to ``True``
         and thus enforces protection unless a plugin opts out by returning False here.
 
         .. versionadded:: 1.8.3
-        .. versionchanged:: 1.12.0
+        .. versionchanged:: 2.0.0
         """
         return True
 
@@ -1816,7 +1816,7 @@ class SettingsPlugin(OctoPrintPlugin):
        therefore you **must** make sure that you specify sensitive information accordingly to limit access as required!
 
        You should also protect any fields like server commands or endpoint URLs pinged by your plugin by enforcing a fresh
-       credential check and potential reauthentication. Since version 1.12.0 you can do this via
+       credential check and potential reauthentication. Since version 2.0.0 you can do this via
        :meth:`~octoprint.plugin.SettingsPlugin.get_settings_reauth_requirements`.
     """
 
@@ -2247,7 +2247,7 @@ class SettingsPlugin(OctoPrintPlugin):
         will make OctoPrint check whether the credentials are still fresh, and if not abort the settings
         save request, returning an :http:statuscode:`403`.
 
-        .. versionadded:: 1.12.0
+        .. versionadded:: 2.0.0
         """
         return {}
 

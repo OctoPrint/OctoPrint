@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Optional
 
 from octoprint.schema import BaseModel
 
@@ -96,6 +95,9 @@ class SerialCapabilities(BaseModel):
     busy_protocol: bool = True
     """Whether to shorten the communication timeout if the firmware seems to support the busy protocol."""
 
+    chamber_temp: bool = True
+    """Whether to process chamber temperature data from the firmware if its support is detected."""
+
     emergency_parser: bool = True
     """Whether to send emergency commands out of band if the firmware seems to support the emergency parser."""
 
@@ -107,26 +109,11 @@ class SerialCapabilities(BaseModel):
 
 
 class SerialConfig(BaseModel):
-    port: Optional[str] = None
-    """The default port to use to connect to the printer. If unset or set to ``AUTO``, the port will be auto-detected."""
-
-    baudrate: Optional[int] = None
-    """The default baudrate to use to connect to the printer. If unset or set to 0, the baudrate will be auto-detected."""
-
     exclusive: bool = True
     """Whether to request exclusive access to the serial port."""
 
     lowLatency: bool = False
     """Whether to request low latency mode on the serial port."""
-
-    autoconnect: bool = False
-    """Whether to try to automatically connect to the printer on startup."""
-
-    autorefresh: bool = True
-    """Whether to automatically refresh the port list while no connection is established."""
-
-    autorefreshInterval: int = 1
-    """Interval in seconds at which to refresh the port list while no connection is established."""
 
     log: bool = False
     """Whether to log whole communication to ``serial.log`` (warning: might decrease performance)."""
@@ -260,12 +247,6 @@ class SerialConfig(BaseModel):
     supportWait: bool = True
     """Whether to support ``wait`` responses from the printer and interpret them as a call to send more commands."""
 
-    ignoreIdenticalResends: bool = False
-    """Whether to ignore identical resends from the printer (``true``, repetier) or not (``false``)."""
-
-    identicalResendsCountdown: int = 7
-    """If ``ignoreIdenticalResends`` is true, how many consecutive identical resends to ignore."""
-
     supportFAsCommand: bool = False
     """Whether to support ``F`` on its own as a valid GCODE command (``true``) or not (``false``)."""
 
@@ -292,9 +273,6 @@ class SerialConfig(BaseModel):
 
     sanityCheckTools: bool = True
     """Whether to sanity check the tool count."""
-
-    notifySuppressedCommands: InfoWarnNeverEnum = "warn"
-    """Whether to notify about any suppressed commands."""
 
     capabilities: SerialCapabilities = SerialCapabilities()
 

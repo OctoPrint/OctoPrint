@@ -522,9 +522,9 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                         "View model " +
                             viewModel.name +
                             " is using legacy event handler " +
-                            type +
-                            ", new handler is called " +
-                            legacyEventHandlers[type]
+                            legacyEventHandlers[type] +
+                            ", new handler is called onEvent" +
+                            camelCaseType
                     );
                     viewModel[legacyEventHandlers[type]](payload);
                 }

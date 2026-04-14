@@ -20,6 +20,8 @@ _entry = namedtuple("DirEntry", "name, path, is_file, is_dir, stat")
 @ddt.ddt
 class TimelapseTest(unittest.TestCase):
     def setUp(self):
+        self.addCleanup(self.cleanUp)
+
         # mock settings
         self.settings_patcher = mock.patch("octoprint.timelapse.settings")
         self.settings_getter = self.settings_patcher.start()
@@ -41,7 +43,13 @@ class TimelapseTest(unittest.TestCase):
 
         self.now = time.time()
 
+        # mock callback for timelapse render progress
+        self.callback = mock.MagicMock()
+        self.callback.sendRenderProgress = mock.MagicMock()
+        octoprint.timelapse.register_callback(self.callback)
+
     def cleanUp(self):
+        octoprint.timelapse.unregister_callback(self.callback)
         self.settings_patcher.stop()
         self.plugin_manager_patcher.stop()
 
@@ -233,13 +241,6 @@ class TimelapseTest(unittest.TestCase):
         progress2Str = "frame=  274 fps=270 q=2.0 size=    2748kB time=00:00:10.88 bitrate=2069.1kbits/s dup=164 drop=0 "  # 10s elapsed
         expectedProgress2 = 10 / 18 * 100
 
-        # Callback mock
-        callback = mock.MagicMock()
-        callback.sendRenderProgress = mock.MagicMock()
-
-        # Register mock callback
-        octoprint.timelapse.register_callback(callback)
-
         r = octoprint.timelapse.TimelapseRenderJob("", "", "", "")
         self.assertEqual(r._parsed_duration, 0)
 
@@ -258,11 +259,11 @@ class TimelapseTest(unittest.TestCase):
         r._process_ffmpeg_output(progress1Str)
         self.assertEqual(r._parsed_duration, 18)
         self.assertAlmostEqual(
-            callback.sendRenderProgress.call_args_list[0][0][0], expectedProgress1
+            self.callback.sendRenderProgress.call_args_list[0][0][0], expectedProgress1
         )
 
         r._process_ffmpeg_output(progress2Str)
         self.assertEqual(r._parsed_duration, 18)
         self.assertAlmostEqual(
-            callback.sendRenderProgress.call_args_list[1][0][0], expectedProgress2
+            self.callback.sendRenderProgress.call_args_list[1][0][0], expectedProgress2
         )

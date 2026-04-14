@@ -332,6 +332,9 @@ Update an existing printer profile
 
    Requires the ``SETTINGS`` permission.
 
+   :statuscode 200: No error
+   :statuscode 404: The profile does not exist
+
    **Example**
 
    .. sourcecode:: http
@@ -417,6 +420,10 @@ Remove an existing printer profile
    Returns a :http:statuscode:`204` and an empty body upon success.
 
    Requires the ``SETTINGS`` permission.
+
+   :statuscode 204: No error
+   :statuscode 404: The profile does not exist
+   :statuscode 409: The profile is the currently selected or default profile
 
    **Example**
 

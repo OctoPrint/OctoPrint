@@ -191,6 +191,7 @@ def getSettings():
             "g90InfluencesExtruder": s.getBoolean(["feature", "g90InfluencesExtruder"]),
             "autoUppercaseBlocklist": s.get(["feature", "autoUppercaseBlocklist"]),
             "enableDragDropUpload": s.getBoolean(["feature", "enableDragDropUpload"]),
+            "notifySuppressedCommands": s.get(["feature", "notifySuppressedCommands"]),
         },
         "gcodeAnalysis": {
             "runAt": s.get(["gcodeAnalysis", "runAt"]),
@@ -271,8 +272,17 @@ def getSettings():
     if len(plugin_settings):
         data["plugins"] = plugin_settings
 
-    if not api_version_matches(">=1.12.0"):
+    if api_version_matches(">=2.0.0"):
+        data["printerConnection"] = {
+            "autoconnect": s.getBoolean(["printerConnection", "autoconnect"])
+        }
+    else:
         data["serial"] = _get_serial_settings()
+        data["feature"]["autoUppercaseBlacklist"] = data["feature"].pop(
+            "autoUppercaseBlocklist"
+        )
+        data["server"]["pluginBlacklist"] = data["server"].pop("pluginBlocklist")
+        data["system"]["events"] = s.get(["events"])
 
     if Permissions.WEBCAM.can() or (
         settings().getBoolean(["server", "firstRun"])
@@ -625,6 +635,13 @@ def _saveSettings(data):
                 data["printer"]["defaultExtrusionLength"],
             )
 
+    if "printerConnection" in data:
+        if "autoconnect" in data["printerConnection"]:
+            s.setBoolean(
+                ["printerConnection", "autoconnect"],
+                data["printerConnection"]["autoconnect"],
+            )
+
     if "webcam" in data:
         for key in DEPRECATED_WEBCAM_KEYS:
             if key in data["webcam"]:
@@ -751,7 +768,7 @@ def _saveSettings(data):
                 data["feature"]["g90InfluencesExtruder"],
             )
 
-        if api_version_matches(">=1.12.0"):
+        if api_version_matches(">=2.0.0"):
             if "autoUppercaseBlocklist" in data["feature"] and isinstance(
                 data["feature"]["autoUppercaseBlocklist"], (list, tuple)
             ):
@@ -767,6 +784,11 @@ def _saveSettings(data):
                 data["feature"]["autoUppercaseBlacklist"],
             )
 
+        if "notifySuppressedCommands" in data["feature"]:
+            value = data["feature"]["notifySuppressedCommands"]
+            if value in ("info", "warn", "never"):
+                s.set(["feature", "notifySuppressedCommands"], value)
+
         if "enableDragDropUpload" in data["feature"]:
             s.setBoolean(
                 ["feature", "enableDragDropUpload"],
@@ -779,8 +801,17 @@ def _saveSettings(data):
         if "bedZ" in data["gcodeAnalysis"]:
             s.setFloat(["gcodeAnalysis", "bedZ"], data["gcodeAnalysis"]["bedZ"])
 
-    if "serial" in data and not api_version_matches(">=1.12.0"):
+    if "serial" in data and not api_version_matches(">=2.0.0"):
         _set_serial_settings(data["serial"])
+
+        # forward log toggle to the plugin settings path so it gets
+        # persisted through on_settings_save
+        if "log" in data["serial"]:
+            if "plugins" not in data:
+                data["plugins"] = {}
+            if "serial_connector" not in data["plugins"]:
+                data["plugins"]["serial_connector"] = {}
+            data["plugins"]["serial_connector"]["log"] = data["serial"]["log"]
 
     if "temperature" in data:
         if "profiles" in data["temperature"]:
@@ -819,6 +850,8 @@ def _saveSettings(data):
     if "system" in data:
         if "actions" in data["system"]:
             s.set(["system", "actions"], data["system"]["actions"])
+        if "events" in data["system"] and not api_version_matches(">=2.0.0"):
+            s.set(["events"], data["system"]["events"])
 
     if "scripts" in data:
         if "gcode" in data["scripts"] and isinstance(data["scripts"]["gcode"], dict):
@@ -927,7 +960,7 @@ def _saveSettings(data):
                 except ValueError:
                     pass
 
-        if api_version_matches(">=1.12.0"):
+        if api_version_matches(">=2.0.0"):
             if "pluginBlocklist" in data["server"]:
                 processPluginBlocklistSettings("pluginBlocklist")
         elif "pluginBlacklist" in data["server"]:  # legacy
@@ -988,7 +1021,7 @@ def _saveSettings(data):
     s.save(trigger_event=True)
 
 
-# pre 1.12.0 settings API still contains serial settings, backwards compatibility layer starts here
+# pre 2.0.0 settings API still contains serial settings, backwards compatibility layer starts here
 
 
 def _get_serial_settings():
@@ -1018,7 +1051,7 @@ def _get_serial_settings():
         "lowLatency": s.getBoolean(["plugins", "serial_connector", "lowLatency"]),
         "portOptions": connection_options.get("port", []),
         "baudrateOptions": connection_options.get("baudrate", []),
-        "autoconnect": s.getBoolean(["plugins", "serial_connector", "autoconnect"]),
+        "autoconnect": s.getBoolean(["printerConnection", "autoconnect"]),
         "timeoutConnection": s.getFloat(
             ["plugins", "serial_connector", "timeout", "connection"]
         ),
@@ -1121,17 +1154,11 @@ def _get_serial_settings():
             ["plugins", "serial_connector", "sdAlwaysAvailable"]
         ),
         "sdLowerCase": s.getBoolean(["plugins", "serial_connector", "sdLowerCase"]),
-        "swallowOkAfterResend": s.getBoolean(
-            ["plugins", "serial_connector", "swallowOkAfterResend"]
-        ),
         "repetierTargetTemp": s.getBoolean(
             ["plugins", "serial_connector", "repetierTargetTemp"]
         ),
         "externalHeatupDetection": s.getBoolean(
             ["plugins", "serial_connector", "externalHeatupDetection"]
-        ),
-        "ignoreIdenticalResends": s.getBoolean(
-            ["plugins", "serial_connector", "ignoreIdenticalResends"]
         ),
         "firmwareDetection": s.getBoolean(
             ["plugins", "serial_connector", "firmwareDetection"]
@@ -1145,9 +1172,7 @@ def _get_serial_settings():
         "sanityCheckTools": s.getBoolean(
             ["plugins", "serial_connector", "sanityCheckTools"]
         ),
-        "notifySuppressedCommands": s.get(
-            ["plugins", "serial_connector", "notifySuppressedCommands"]
-        ),
+        "notifySuppressedCommands": s.get(["feature", "notifySuppressedCommands"]),
         "sendM112OnError": s.getBoolean(
             ["plugins", "serial_connector", "sendM112OnError"]
         ),
@@ -1401,11 +1426,6 @@ def _set_serial_settings(data: dict[str, Any]):
         )
     if "sdLowerCase" in data:
         s.setBoolean(["plugins", "serial_connector", "sdLowerCase"], data["sdLowerCase"])
-    if "swallowOkAfterResend" in data:
-        s.setBoolean(
-            ["plugins", "serial_connector", "swallowOkAfterResend"],
-            data["swallowOkAfterResend"],
-        )
     if "repetierTargetTemp" in data:
         s.setBoolean(
             ["plugins", "serial_connector", "repetierTargetTemp"],
@@ -1415,11 +1435,6 @@ def _set_serial_settings(data: dict[str, Any]):
         s.setBoolean(
             ["plugins", "serial_connector", "externalHeatupDetection"],
             data["externalHeatupDetection"],
-        )
-    if "ignoreIdenticalResends" in data:
-        s.setBoolean(
-            ["plugins", "serial_connector", "ignoreIdenticalResends"],
-            data["ignoreIdenticalResends"],
         )
     if "firmwareDetection" in data:
         s.setBoolean(
@@ -1442,7 +1457,7 @@ def _set_serial_settings(data: dict[str, Any]):
     if "notifySuppressedCommands" in data:
         value = data["notifySuppressedCommands"]
         if value in ("info", "warn", "never"):
-            s.set(["plugins", "serial_connector", "notifySuppressedCommands"], value)
+            s.set(["feature", "notifySuppressedCommands"], value)
     if "sendM112OnError" in data:
         s.setBoolean(
             ["plugins", "serial_connector", "sendM112OnError"], data["sendM112OnError"]
@@ -1541,15 +1556,3 @@ def _set_serial_settings(data: dict[str, Any]):
             ["plugins", "serial_connector", "enableShutdownActionCommand"],
             data["enableShutdownActionCommand"],
         )
-
-    oldLog = s.getBoolean(["plugins", "serial_connector", "log"])
-    if "log" in data:
-        s.setBoolean(["plugins", "serial_connector", "log"], data["log"])
-    if oldLog and not s.getBoolean(["plugins", "serial_connector", "log"]):
-        # disable debug logging to serial.log
-        logging.getLogger("SERIAL").debug("Disabling serial logging")
-        logging.getLogger("SERIAL").setLevel(logging.CRITICAL)
-    elif not oldLog and s.getBoolean(["plugins", "serial_connector", "log"]):
-        # enable debug logging to serial.log
-        logging.getLogger("SERIAL").setLevel(logging.DEBUG)
-        logging.getLogger("SERIAL").debug("Enabling serial logging")

@@ -32,7 +32,7 @@ You can also disable individual hooks by setting the (optional) ``enabled`` para
 
    OctoPrint so far has been running system commands defined in event hooks within a shell. Starting with OctoPrint 1.11.3,
    OctoPrint will log a message to ``octoprint.log`` when it encounters a system hook that hasn't yet explicitly configured
-   ``shell``, and default to enabling the shell. From 1.13.0 onward, this behaviour will change, and OctoPrint will default
+   ``shell``, and default to enabling the shell. From 2.1.0 onward, this behaviour will change, and OctoPrint will default
    to *disabling* the shell in such cases, to further reduce the attack surface.
 
    You should make an explicit decision now. Try to make your commands work *without* having to enable shell mode, and thoroughly
@@ -365,15 +365,13 @@ UpdatedFiles
 
    Payload:
 
-   * ``type``: the type of file list that was modified. Only ``printables`` is supported here. See the deprecation
-     note below.
-
-     .. deprecated:: 1.2.0
-        The ``gcode`` modification type has been superseded by ``printables``. It is currently still available for
-        reasons of backwards compatibility and will also be sent on modification of ``printables``. It will however
-        be removed with 1.4.0.
+   * ``type``: the type of file list that was modified. Currently only ``printables`` is supported here.
 
    .. versionchanged:: 1.4.0
+
+   .. versionchanged:: 2.0.0
+
+      The ``gcode`` modifications type has been fully removed after being deprecated since its replacement by the ``printables`` type in 1.2.0.
 
 MetadataAnalysisStarted
    The metadata analysis of a file has started.

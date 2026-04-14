@@ -2,8 +2,6 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-import sys
-
 import click
 
 import octoprint
@@ -50,8 +48,10 @@ def init_platform_for_cli(ctx):
     """
 
     from octoprint import (
+        init_blocklist_compat_overlay,
         init_custom_events,
         init_platform,
+        init_serial_compat_overlay,
         init_settings_plugin_config_migration_and_cleanup,
         init_webcam_compat_overlay,
     )
@@ -95,6 +95,8 @@ def init_platform_for_cli(ctx):
     plugin_manager.initialize_implementations()
 
     init_settings_plugin_config_migration_and_cleanup(plugin_manager)
+    init_serial_compat_overlay(settings)
+    init_blocklist_compat_overlay(settings)
     init_webcam_compat_overlay(settings, plugin_manager)
 
     return components
@@ -251,41 +253,6 @@ def standard_options(hidden=False):
     return bulk_options(options)
 
 
-# ~~ helper for settings legacy options we still have to support on "octoprint"
-
-legacy_options = bulk_options(
-    [
-        hidden_option("--host", type=click.STRING, callback=set_ctx_obj_option),
-        hidden_option("--port", type=click.INT, callback=set_ctx_obj_option),
-        hidden_option("--logging", type=click.Path(), callback=set_ctx_obj_option),
-        hidden_option("--debug", "-d", is_flag=True, callback=set_ctx_obj_option),
-        hidden_option(
-            "--daemon",
-            type=click.Choice(["start", "stop", "restart"]),
-            callback=set_ctx_obj_option,
-        ),
-        hidden_option(
-            "--pid",
-            type=click.Path(),
-            default="/tmp/octoprint.pid",
-            callback=set_ctx_obj_option,
-        ),
-        hidden_option(
-            "--iknowwhatimdoing", "allow_root", is_flag=True, callback=set_ctx_obj_option
-        ),
-        hidden_option(
-            "--ignore-blocklist",
-            "--ignore-blacklist",  # legacy
-            "ignore_blocklist",
-            is_flag=True,
-            callback=set_ctx_obj_option,
-        ),
-    ]
-)
-"""Legacy options available directly on the "octoprint" command in earlier versions.
-   Kept available for reasons of backwards compatibility, but hidden from the
-   generated help pages."""
-
 # ~~ command groups from sub modules
 
 
@@ -348,7 +315,7 @@ from .systeminfo import cli as systeminfo_commands  # noqa: E402
 
 @click.group(
     name="octoprint",
-    invoke_without_command=True,
+    invoke_without_command=False,
     cls=click.CommandCollection,
     sources=[
         subcommands,
@@ -357,43 +324,7 @@ from .systeminfo import cli as systeminfo_commands  # noqa: E402
     ],
 )
 @standard_options()
-@legacy_options
 @click.version_option(version=octoprint.__version__, allow_from_autoenv=False)
 @click.pass_context
 def octo(ctx, **kwargs):
-    if ctx.invoked_subcommand is None:
-        # We have to support calling the octoprint command without any
-        # sub commands to remain backwards compatible.
-        #
-        # But better print a message to inform people that they should
-        # use the sub commands instead.
-
-        def get_value(key):
-            return get_ctx_obj_option(ctx, key, kwargs.get(key))
-
-        daemon = get_value("daemon")
-
-        if daemon:
-            click.echo(
-                'Daemon operation via "octoprint --daemon '
-                'start|stop|restart" is deprecated, please use '
-                '"octoprint daemon start|stop|restart" from now on'
-            )
-
-            if sys.platform == "win32" or sys.platform == "darwin":
-                click.echo(
-                    "Sorry, daemon mode is not supported under your operating system right now"
-                )
-            else:
-                from octoprint.cli.server import daemon_command
-
-                ctx.invoke(daemon_command, command=daemon, **kwargs)
-        else:
-            click.echo(
-                'Starting the server via "octoprint" is deprecated, '
-                'please use "octoprint serve" from now on.'
-            )
-
-            from octoprint.cli.server import serve_command
-
-            ctx.invoke(serve_command, **kwargs)
+    pass

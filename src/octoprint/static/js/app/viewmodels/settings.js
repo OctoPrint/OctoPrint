@@ -7,7 +7,7 @@ $(function () {
         self.printerProfiles = parameters[2];
         self.about = parameters[3];
 
-        // TODO: remove in upcoming version, this is only for backwards compatibility
+        // TODO remove in 2.1.0, this is only for backwards compatibility
         self.users = parameters[4];
 
         // use this promise to do certain things once the SettingsViewModel has processed
@@ -341,7 +341,7 @@ $(function () {
         self.addTerminalFilter = function () {
             self.terminalFilters.push({
                 name: "New",
-                regex: "(Send:\\s+(N\\d+\\s+)?M105)|(Recv:\\s+(ok\\s+([PBN]\\d+\\s+)*)?.*([BCLPR]|T\\d*):-?\\d+)"
+                regex: "(>>>\\s+(N\\d+\\s+)?M105)|(<<<\\s+(ok\\s+([PBN]\\d+\\s+)*)?.*([BCLPR]|T\\d*):-?\\d+)"
             });
         };
 
@@ -629,8 +629,6 @@ $(function () {
         };
 
         self.generateApiKey = () => {
-            if (!CONFIG_ACCESS_CONTROL) return;
-
             showConfirmationDialog(
                 gettext(
                     "This will generate a new API Key. The old API Key will cease to function immediately."
@@ -647,7 +645,6 @@ $(function () {
         };
 
         self.deleteApiKey = () => {
-            if (!CONFIG_ACCESS_CONTROL) return;
             if (!self.api_key()) return;
 
             showConfirmationDialog(
@@ -683,52 +680,12 @@ $(function () {
         };
 
         self.requestData = function (local) {
-            // handle old parameter format
-            var callback = undefined;
-            if (arguments.length === 2 || _.isFunction(local)) {
-                var exc = new Error();
-                log.warn(
-                    "The callback parameter of SettingsViewModel.requestData is deprecated, the method now returns a promise, please use that instead. Stacktrace:",
-                    exc.stack || exc.stacktrace || "<n/a>"
-                );
-
-                if (arguments.length === 2) {
-                    callback = arguments[0];
-                    local = arguments[1];
-                } else {
-                    callback = local;
-                    local = false;
-                }
-            }
-
-            // handler for any explicitly provided callbacks
-            var callbackHandler = function () {
-                if (!callback) return;
-                try {
-                    callback();
-                } catch (exc) {
-                    log.error(
-                        "Error calling settings callback",
-                        callback,
-                        ":",
-                        `${exc.message}\n${exc.stack || exc}`
-                    );
-                }
-            };
-
             // if a request is already active, create a new deferred and return
             // its promise, it will be resolved in the response handler of the
             // current request
             if (self.receiving()) {
                 var deferred = $.Deferred();
                 self.outstanding.push(deferred);
-
-                if (callback) {
-                    // if we have a callback, we need to make sure it will
-                    // get called when the deferred is resolved
-                    deferred.done(callbackHandler);
-                }
-
                 return deferred.promise();
             }
 
@@ -741,12 +698,6 @@ $(function () {
                 })
                 .done(function (response) {
                     self.fromResponse(response, local);
-
-                    if (callback) {
-                        var deferred = $.Deferred();
-                        deferred.done(callbackHandler);
-                        self.outstanding.push(deferred);
-                    }
 
                     // resolve all promises
                     var args = arguments;
@@ -1022,13 +973,15 @@ $(function () {
             };
 
             // set up webcam compat layer if not yet done
+            //
+            // TODO remove in 2.2.0
             _.each(self.webcamCompat, (mapped, key) => {
                 if (self.settings.hasOwnProperty(key)) return;
                 if (!self.settings.webcam.hasOwnProperty(mapped)) return;
                 const message =
                     "Please use the webcam system introduced with 1.9.0, the " +
                     key +
-                    " config setting is deprecated and will be removed in a future release. Stacktrace:";
+                    " config setting is deprecated and will be removed in 2.2.0. Stacktrace:";
                 self[key] = ko.pureComputed({
                     read: () => {
                         const exc = new Error();
@@ -1363,8 +1316,7 @@ $(function () {
             "loginStateViewModel",
             "accessViewModel",
             "printerProfilesViewModel",
-            "aboutViewModel",
-            "usersViewModel"
+            "aboutViewModel"
         ],
         elements: ["#settings_dialog", "#navbar_settings"]
     });

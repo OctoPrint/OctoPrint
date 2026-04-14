@@ -151,7 +151,7 @@ import copy
 import logging
 import os
 
-from octoprint.settings import settings
+from octoprint.settings import settings, valid_boolean_trues
 from octoprint.util import (
     dict_contains_keys,
     dict_merge,
@@ -195,10 +195,6 @@ class BedFormFactor:
             for name in cls.__dict__
             if not (name.startswith("__") or name == "values")
         ]
-
-
-BedTypes = BedFormFactor
-"""Deprecated name of :class:`BedFormFactors`"""
 
 
 class BedOrigin:
@@ -702,10 +698,13 @@ class PrinterProfileManager:
             ("axes", "x", "inverted"),
             ("axes", "y", "inverted"),
             ("axes", "z", "inverted"),
+            ("axes", "e", "inverted"),
             ("extruder", "sharedNozzle"),
+            ("heatedBed",),
+            ("heatedChamber",),
         ):
             try:
-                convert_value(profile, path, bool)
+                convert_value(profile, path, lambda v: v in valid_boolean_trues)
             except Exception as e:
                 self._logger.warning(
                     "Profile has invalid value for path {path!r}: {msg}".format(

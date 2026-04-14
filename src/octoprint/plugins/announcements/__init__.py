@@ -27,6 +27,10 @@ from octoprint.server.util.flask import (
 from octoprint.util import count, deserialize, serialize, utmify
 from octoprint.util.text import sanitize
 
+PLACEHOLDER_IMAGE = (
+    "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+)
+
 
 class AnnouncementPlugin(
     octoprint.plugin.AssetPlugin,
@@ -38,8 +42,18 @@ class AnnouncementPlugin(
 ):
     # noinspection PyMissingConstructor
     def __init__(self):
+        from html_sanitizer.sanitizer import Sanitizer
+
         self._cached_channel_configs = None
         self._cached_channel_configs_mutex = threading.RLock()
+
+        self._html_sanitizer = Sanitizer(
+            settings={
+                "tags": {"strong", "em", "p", "ul", "ol", "li", "br", "img", "a"},
+                "attributes": {"a": {"href"}, "img": {"src"}},
+                "empty": {"br", "img"},
+            }
+        )
 
     # Additional permissions hook
 
@@ -538,14 +552,20 @@ class AnnouncementPlugin(
         if read_until is not None:
             read = published <= read_until
 
+        sanitized_title = self._html_sanitizer.sanitize(entry["title"])
+        sanitized_summary = self._html_sanitizer.sanitize(entry["summary"])
+        sanitized_link = (
+            entry["link"] if not entry["link"].lower().startswith("javascript:") else "#"
+        )
+
         return {
-            "title": entry["title"],
-            "title_without_tags": _strip_tags(entry["title"]),
-            "summary": _lazy_images(entry["summary"]),
-            "summary_without_images": _strip_images(entry["summary"]),
+            "title": sanitized_title,
+            "title_without_tags": _strip_tags(sanitized_title),
+            "summary": _lazy_images(sanitized_summary),
+            "summary_without_images": _strip_images(sanitized_summary),
             "published": published,
             "link": utmify(
-                entry["link"],
+                sanitized_link,
                 source="octoprint",
                 medium="announcements",
                 content=OCTOPRINT_VERSION,
@@ -607,7 +627,7 @@ def _lazy_images(text, placeholder=None):
     """
     if placeholder is None:
         # 1px transparent gif
-        placeholder = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+        placeholder = PLACEHOLDER_IMAGE
 
     def callback(img_tag):
         match = _image_src_re.search(img_tag)

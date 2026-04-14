@@ -140,6 +140,44 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
+.. js:function:: OctoPrintClient.printer.home(axes, opts)
+
+   Homes the specified ``axes``.
+
+   ``axes`` is expected to be an array of strings specifying the axes to home.
+
+   **Example:**
+
+   Home the X and Y axis.
+
+   .. code-block:: javascript
+
+      OctoPrint.printer.home(["x", "y"]);
+
+   Home the Z axis.
+
+   .. code-block:: javascript
+
+      OctoPrint.printer.home(["z"]);
+
+   See the ``home`` command in :ref:`Issue a print head command <sec-api-printer-printheadcommand>` for more details.
+
+   :param array axes: List of axes to home
+   :param object opts: Additional options for the request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
+.. js:function:: OctoPrintClient.printer.setFeedrate(factor, opts)
+
+   Sets the feedrate multiplier to use.
+
+   ``factor`` is expected to be an integer value >0 representing the new feedrate percentage.
+
+   See the ``feedrate`` command in :ref:`Issue a print head command <sec-api-printer-printheadcommand>` for more details.
+
+   :param integer factor: The feedrate multiplier as percentage
+   :param object opts: Additional options for the request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
 .. js:function:: OctoPrintClient.printer.setFlowrate(factor, opts)
 
    Sets the current flowrate multiplier.
@@ -295,79 +333,62 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.printer.home(axes, opts)
+.. js:function:: OctoPrintClient.printer.getStorageState(opts)
 
-   Homes the specified ``axes``.
+   Retrieves the current ready state of the printer's internal storage.
 
-   ``axes`` is expected to be an array of strings specifying the axes to home.
+   See :ref:`Retrieve the current storage state <sec-api-printer-storagestate>` for more details.
 
-   **Example:**
+   .. versionadded:: 2.0.0
 
-   Home the X and Y axis.
-
-   .. code-block:: javascript
-
-      OctoPrint.printer.home(["x", "y"]);
-
-   Home the Z axis.
-
-   .. code-block:: javascript
-
-      OctoPrint.printer.home(["z"]);
-
-   See the ``home`` command in :ref:`Issue a print head command <sec-api-printer-printheadcommand>` for more details.
-
-   :param array axes: List of axes to home
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.printer.setFeedrate(factor, opts)
+.. js:function:: OctoPrintClient.printer.initStorage(opts)
 
-   Sets the feedrate multiplier to use.
+   Instructs the printer to initialize and mounts its internal storage (if present).
 
-   ``factor`` is expected to be an integer value >0 representing the new feedrate percentage.
+   See the ``init`` command in :ref:`Issue a storage command <sec-api-printer-storagecommand>` for more details.
 
-   See the ``feedrate`` command in :ref:`Issue a print head command <sec-api-printer-printheadcommand>` for more details.
+   .. versionadded:: 2.0.0
 
-   :param integer factor: The feedrate multiplier as percentage
+   :param object opts: Additional options for the request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
+.. js:function:: OctoPrintClient.printer.releaseStorage(opts)
+
+   Instructs the printer to unmount its internal storage (if present and possible).
+
+   See the ``release`` command in :ref:`Issue a storage command <sec-api-printer-storagecommand>` for more details.
+
+   .. versionadded:: 2.0.0
+
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrintClient.printer.getSdState(opts)
 
-   Retrieves the current ready state of the printer's SD card.
+   .. deprecated:: 2.0.0
 
-   See :ref:`Retrieve the current SD state <sec-api-printer-sdstate>` for more details.
-
-   :param object opts: Additional options for the request
-   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+      Deprecated in favor of :js:func:`OctoPrintClient.printer.getStorageState`, will be removed in 3.0.0
 
 .. js:function:: OctoPrintClient.printer.initSd(opts)
 
-   Instructs the printer to initialize its SD card (if present).
+   .. deprecated:: 2.0.0
 
-   See the ``init`` command in :ref:`Issue an SD command <sec-api-printer-sdcommand>` for more details.
-
-   :param object opts: Additional options for the request
-   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+      Deprecated in favor of :js:func:`OctoPrintClient.printer.initStorage`, will be removed in 3.0.0
 
 .. js:function:: OctoPrintClient.printer.refreshSd(opts)
 
-   Instructs the printer to refresh the list of files on the SD card (if present).
+   .. deprecated:: 2.0.0
 
-   See the ``refresh`` command in :ref:`Issue an SD command <sec-api-printer-sdcommand>` for more details.
-
-   :param object opts: Additional options for the request
-   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+      Deprecated in favor of :js:func:`OctoPrintClient.files.listForLocation`, will be removed in 3.0.0
 
 .. js:function:: OctoPrintClient.printer.releaseSd(opts)
 
-   Instructs the printer to release its SD card (if present).
+   .. deprecated:: 2.0.0
 
-   See the ``release`` command in :ref:`Issue an SD command <sec-api-printer-sdcommand>` for more details.
-
-   :param object opts: Additional options for the request
-   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+      Deprecated in favor of :js:func:`OctoPrintClient.printer.releaseStorage`, will be removed in 3.0.0
 
 .. seealso::
 

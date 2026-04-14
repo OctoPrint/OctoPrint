@@ -195,14 +195,6 @@ User record
      - 1
      - bool
      - Whether the user's account is active (true) or not (false)
-   * - ``user``
-     - 1
-     - bool
-     - Whether the user has user rights. Should always be true. Deprecated as of 1.4.0, use the ``users`` group instead.
-   * - ``admin``
-     - 1
-     - bool
-     - Whether the user has admin rights (true) or not (false). Deprecated as of 1.4.0, use the ``admins`` group instead.
    * - ``apikey``
      - 0..1
      - string

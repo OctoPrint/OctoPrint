@@ -176,6 +176,10 @@ class SettingsTest(unittest.TestCase):
             "Send: N85343 G1 Z29.880 F10800.000*15",
             "Recv: ok",
             "Recv: FIRMWARE_NAME:Marlin 1.1.7-C2 (Github) SOURCE_CODE_URL:https://github.com/Robo3D/Marlin-C2 PROTOCOL_VERSION:C2 MACHINE_TYPE:RoboC2 EXTRUDER_COUNT:1 UUID:cede2a2f-41a2-4748-9b12-c55c62f367ff EMERGENCY_CODES:M108,M112,M410",
+            ">>> N71667 G1 X163.151 Y35.424 E0.02043*83",
+            ">>> N85343 G1 Z29.880 F10800.000*15",
+            "<<< ok",
+            "<<< FIRMWARE_NAME:Marlin 1.1.7-C2 (Github) SOURCE_CODE_URL:https://github.com/Robo3D/Marlin-C2 PROTOCOL_VERSION:C2 MACHINE_TYPE:RoboC2 EXTRUDER_COUNT:1 UUID:cede2a2f-41a2-4748-9b12-c55c62f367ff EMERGENCY_CODES:M108,M112,M410",
         ]
 
         filters = octoprint.settings.Settings().get(["terminalFilters"])
@@ -202,6 +206,11 @@ class SettingsTest(unittest.TestCase):
             "Recv: ok N5993 P15 B15 T:59.2 /0.0 B:31.8 /0.0 T0:59.2 /0.0 @:0 B@:100:",  # monoprice mini delta
             "Recv: ok T:210.3 /210.0 B:60.3 /60.0 T0:210.3 /210.0 @:79 B@:0 P:35.9 A:40.0",  # Prusa mk3
             "Recv:  T:210.3 /210.0",
+            ">>> M105",
+            ">>> N123 M105*456",
+            "<<< ok N5993 P15 B15 T:59.2 /0.0 B:31.8 /0.0 T0:59.2 /0.0 @:0 B@:100:",  # monoprice mini delta
+            "<<< ok T:210.3 /210.0 B:60.3 /60.0 T0:210.3 /210.0 @:79 B@:0 P:35.9 A:40.0",  # Prusa mk3
+            "<<<  T:210.3 /210.0",
         ]
 
         filters = octoprint.settings.Settings().get(["terminalFilters"])
@@ -648,6 +657,17 @@ class SettingsTest(unittest.TestCase):
             # verify callback was not called again
             callback.assert_called_once_with(["api", "key"], "test", "newkey")
 
+    def test_update_callback_child_write(self):
+        with self.settings() as settings:
+            callback = unittest.mock.Mock()
+            settings.add_path_update_callback(["server"], callback)
+
+            # set a child value
+            settings.set(["server", "host"], "new")
+
+            # verify callback was called
+            callback.assert_called_once()
+
     ##~~ test overlays
 
     def test_overlay_add_and_remove(self):
@@ -681,6 +701,84 @@ class SettingsTest(unittest.TestCase):
             # verify overlay was removed and path no longer marked as deprecated
             self.assertEqual(settings.get(["server", "host"]), "0.0.0.0")
             self.assertFalse(settings._is_deprecated_path(["server", "host"]))
+
+    ##~~ test compat overlays
+
+    @ddt.data(
+        # settings moved from serial to serial_connector as they were
+        ("log", False),
+        ("blocklistedPorts", ["foo"]),
+        ("blocklistedBaudrates", [9600]),
+        # connection params, moved from serial to printerConnection
+        ("port", "/dev/ttyUSB0"),
+        ("baudrate", 115200),
+        ("autoconnect", True),
+        ("autorefresh", False),
+        ("autorefreshInterval", 5),
+        # settings that were booleans and now are enums
+        ("alwaysSendChecksum", False),
+        ("neverSendChecksum", False),
+        ("disconnectOnErrors", True),
+        ("ignoreErrorsFromFirmware", False),
+        # old "blacklisted" settings, now renamed to "blocklisted"
+        ("blacklistedPorts", ["foo"]),
+        ("blacklistedBaudrates", [9600]),
+        # notifySuppressedCommands, moved to feature
+        ("notifySuppressedCommands", "never"),
+    )
+    @ddt.unpack
+    def test_serial_compat_overlay(self, serial_key, expected):
+        with self.serial_compat_settings() as settings:
+            self.assertEqual(settings.get(["serial", serial_key]), expected)
+            self.assertTrue(settings._is_deprecated_path(["serial", serial_key]))
+
+    @ddt.data(
+        (["plugins", "serial_connector", "log"], True, "log"),
+        (["printerConnection", "autoconnect"], False, "autoconnect"),
+        (["feature", "notifySuppressedCommands"], "log", "notifySuppressedCommands"),
+    )
+    @ddt.unpack
+    def test_serial_compat_overlay_updates(self, source_path, new_value, serial_key):
+        with self.serial_compat_settings() as settings:
+            settings.set(source_path, new_value, force=True)
+            self.assertEqual(settings.get(["serial", serial_key]), new_value)
+
+    @ddt.data(
+        (["feature", "autoUppercaseBlacklist"], ["M115"]),
+        (["server", "pluginBlacklist", "url"], "https://example.com/blocklist.json"),
+        (["server", "pluginBlacklist", "ttl"], 5),
+        (["server", "pluginBlacklist", "timeout"], 3.05),
+    )
+    @ddt.unpack
+    def test_blocklist_compat_overlay(self, settings_key, expected):
+        with self.blocklist_compat_settings() as settings:
+            self.assertEqual(settings.get(settings_key), expected)
+            self.assertTrue(settings._is_deprecated_path(settings_key))
+
+    def test_webcam_compat_overlay(self):
+        from octoprint.schema.webcam import Webcam, WebcamCompatibility
+
+        with self.mocked_basedir():
+            settings = octoprint.settings.Settings()
+
+            compat = WebcamCompatibility(
+                stream="http://cam/stream", snapshot="http://cam/snap"
+            )
+            webcam = Webcam(
+                name="test", displayName="Test", snapshotDisplay="", compat=compat
+            )
+            provided = unittest.mock.Mock()
+            provided.config = webcam
+
+            with unittest.mock.patch(
+                "octoprint.webcams.get_default_webcam", return_value=provided
+            ):
+                from octoprint import init_webcam_compat_overlay
+
+                init_webcam_compat_overlay(settings, unittest.mock.Mock())
+
+            self.assertEqual(settings.get(["webcam", "stream"]), "http://cam/stream")
+            self.assertTrue(settings._is_deprecated_path(["webcam", "stream"]))
 
     ##~~ test save
 
@@ -812,6 +910,61 @@ class SettingsTest(unittest.TestCase):
         with self.mocked_config():
             settings = octoprint.settings.Settings()
             settings.add_overlay(self.overlay, key="overlay")
+            yield settings
+
+    @contextlib.contextmanager
+    def serial_compat_settings(self):
+        from octoprint import init_serial_compat_overlay
+
+        with self.mocked_basedir():
+            settings = octoprint.settings.Settings()
+            settings.set(
+                ["plugins", "serial_connector"],
+                {
+                    "log": False,
+                    "sendChecksum": "print",
+                    "errorHandling": "disconnect",
+                    "blocklistedPorts": ["foo"],
+                    "blocklistedBaudrates": [9600],
+                },
+                force=True,
+            )
+            settings.set(
+                ["printerConnection"],
+                {
+                    "preferred": {
+                        "parameters": {
+                            "port": "/dev/ttyUSB0",
+                            "baudrate": 115200,
+                        }
+                    },
+                    "autoconnect": True,
+                    "autorefresh": False,
+                    "autorefreshInterval": 5,
+                },
+                force=True,
+            )
+            settings.set(
+                ["feature"],
+                {"notifySuppressedCommands": "never"},
+                force=True,
+            )
+            init_serial_compat_overlay(settings)
+            yield settings
+
+    @contextlib.contextmanager
+    def blocklist_compat_settings(self):
+        from octoprint import init_blocklist_compat_overlay
+
+        with self.mocked_basedir():
+            settings = octoprint.settings.Settings()
+            settings.set(["feature", "autoUppercaseBlocklist"], ["M115"], force=True)
+            settings.set(
+                ["server", "pluginBlocklist"],
+                {"url": "https://example.com/blocklist.json", "ttl": 5, "timeout": 3.05},
+                force=True,
+            )
+            init_blocklist_compat_overlay(settings)
             yield settings
 
     @contextlib.contextmanager

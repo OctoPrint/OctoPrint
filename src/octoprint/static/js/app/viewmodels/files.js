@@ -608,31 +608,9 @@ $(function () {
                 return;
             }
 
-            var focus, switchToPath, force;
-
-            if (_.isObject(params)) {
-                focus = params.focus;
-                switchToPath = params.switchToPath;
-                force = params.force;
-            } else if (arguments.length) {
-                // old argument list type call signature
-                log.warn(
-                    "FilesViewModel.requestData called with old argument list. That is deprecated, please use parameter object instead."
-                );
-                if (arguments.length >= 1) {
-                    if (arguments.length >= 2) {
-                        focus = {location: arguments[1], path: arguments[0]};
-                    } else {
-                        focus = {location: "local", path: arguments[0]};
-                    }
-                }
-                if (arguments.length >= 3) {
-                    switchToPath = arguments[2];
-                }
-                if (arguments.length >= 4) {
-                    force = arguments[3];
-                }
-            }
+            const focus = params ? params.focus : undefined;
+            const switchToPath = params ? params.switchToPath : undefined;
+            const force = params ? params.force : false;
 
             self._filesToFocus =
                 self._filesToFocus && self._filesToFocus.length
@@ -666,25 +644,8 @@ $(function () {
         };
 
         self.fromResponse = function (response, params) {
-            let focus = [];
-            let switchToPath;
-
-            if (_.isObject(params)) {
-                focus = params.focus || focus;
-                switchToPath = params.switchToPath || undefined;
-            } else if (arguments.length > 1) {
-                log.warn(
-                    "FilesViewModel.fromResponse called with old argument list. That is deprecated, please use parameter object instead."
-                );
-                if (arguments.length > 2) {
-                    focus = [{location: arguments[2], path: arguments[1]}];
-                } else {
-                    focus = [{location: "local", path: arguments[1]}];
-                }
-                if (arguments.length > 3) {
-                    switchToPath = arguments[3] || undefined;
-                }
-            }
+            const focus = params ? params.focus || [] : [];
+            const switchToPath = params ? params.switchToPath : undefined;
 
             self.storageFiles(response);
 
@@ -1024,34 +985,37 @@ $(function () {
             if (!self.loginState.hasPermission(self.access.permissions.CONTROL)) return;
             OctoPrint.printer.initStorage();
         };
-        self.initSdCard = function () {
-            log.warn(
-                "initSdCard has been deprecated as of OctoPrint 1.12.0, use initPrinterStorage instead"
-            );
-            self.initPrinterStorage();
-        };
+        self.initSdCard = OctoPrintClient.deprecated(
+            "FilesViewModel.initSdCard",
+            "FilesViewModel.initPrinterStorage",
+            self.initPrinterStorage,
+            "2.0.0",
+            "3.0.0"
+        ); // TODO remove in 3.0.0
 
         self.releasePrinterStorage = function () {
             if (!self.loginState.hasPermission(self.access.permissions.CONTROL)) return;
             OctoPrint.printer.releaseStorage();
         };
-        self.releaseSdCard = function () {
-            log.warn(
-                "releaseSdCard has been deprecated as of OctoPrint 1.12.0, use releasePrinterStorage instead"
-            );
-            self.releasePrinterStorage();
-        };
+        self.releaseSdCard = OctoPrintClient.deprecated(
+            "FilesViewModel.releaseSdCard",
+            "FilesViewModel.releasePrinterStorage",
+            self.releasePrinterStorage,
+            "2.0.0",
+            "3.0.0"
+        ); // TODO remove in 3.0.0
 
         self.refreshPrinterStorage = function () {
             if (!self.loginState.hasPermission(self.access.permissions.CONTROL)) return;
             OctoPrint.files.listForLocation("printer", true, true);
         };
-        self.refreshSdFiles = function () {
-            log.warn(
-                "refreshSdFiles has been deprecated as of OctoPrint 1.12.0, use the printer storage directly instead"
-            );
-            self.refreshPrinterStorage();
-        };
+        self.refreshSdFiles = OctoPrintClient.deprecated(
+            "FilesViewModel.refreshSdFiles",
+            "FilesViewModel.refreshPrinterStorage",
+            self.refreshPrinterStorage,
+            "2.0.0",
+            "3.0.0"
+        ); // TODO remove in 3.0.0
 
         self.moveFileOrFolder = function (source, destination, storage) {
             storage = storage || self.currentStorage();
@@ -1717,7 +1681,7 @@ $(function () {
         };
 
         self.elementByPath = (path, root) => {
-            self.elementByPathAndStorage(path, "local", root);
+            return self.elementByPathAndStorage(path, "local", root);
         };
 
         self.elementByPathAndStorage = function (path, storage, root) {
@@ -1974,7 +1938,7 @@ $(function () {
             )
                 return;
 
-            // TODO: update options instead of re-init
+            // FIXME update options instead of re-init
             button.fileupload({
                 url: API_BASEURL + "files/" + storage,
                 dataType: "json",

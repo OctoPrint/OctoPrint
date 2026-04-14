@@ -188,6 +188,8 @@ MINIMAL_SD_TIMESTAMP = 1212012000
 PORT_AUTO = "AUTO"
 BAUDRATE_AUTO = 0
 
+STANDARD_BAUDRATES = [115200, 250000, 230400, 57600, 38400, 19200, 9600]
+# standard baudrates, sorted by likelihood
 
 SDFileData = namedtuple("SDFileData", ["name", "size", "timestamp", "longname"])
 
@@ -218,10 +220,9 @@ def serialList():
     else:
         candidates = []
         try:
-            with os.scandir("/dev") as it:
-                for entry in it:
-                    if regex_serial_devices.match(entry.name):
-                        candidates.append(entry.path)
+            for entry in os.scandir("/dev"):
+                if regex_serial_devices.match(entry.name):
+                    candidates.append(entry.path)
         except Exception:
             _logger.exception("Could not scan /dev for serial ports on the system")
 
@@ -252,19 +253,23 @@ def serialList():
                 filter(lambda x: not fnmatch.fnmatch(x, pattern), candidates)
             )
 
-    # last used port = first to try, move to start
-    prev = settings().get(["plugins", "serial_connector", "port"])
-    if prev in candidates:
-        candidates.remove(prev)
-        candidates.insert(0, prev)
+    # preferred port = first to try, move to start
+    preferred_connector = settings().get(["printerConnection", "preferred", "connector"])
+    if preferred_connector == "serial":
+        preferred_params = settings().get(
+            ["printerConnection", "preferred", "parameters"]
+        )
+        preferred = preferred_params.get("port")
+        if preferred in candidates:
+            candidates.remove(preferred)
+            candidates.insert(0, preferred)
 
     return candidates
 
 
 def baudrateList(candidates=None):
     if candidates is None:
-        # sorted by likelihood
-        candidates = [115200, 250000, 230400, 57600, 38400, 19200, 9600]
+        candidates = STANDARD_BAUDRATES[:]
 
     # additional baudrates prepended, sorted descending
     additionalBaudrates = settings().get(
@@ -289,11 +294,16 @@ def baudrateList(candidates=None):
             except ValueError:
                 pass
 
-    # last used baudrate = first to try, move to start
-    prev = settings().getInt(["plugins", "serial_connector", "baudrate"])
-    if prev in candidates:
-        candidates.remove(prev)
-        candidates.insert(0, prev)
+    # preferred baudrate = first to try, move to start
+    preferred_connector = settings().get(["printerConnection", "preferred", "connector"])
+    if preferred_connector == "serial":
+        preferred_params = settings().get(
+            ["printerConnection", "preferred", "parameters"]
+        )
+        preferred = preferred_params.get("baudrate")
+        if preferred in candidates:
+            candidates.remove(preferred)
+            candidates.insert(0, preferred)
 
     return candidates
 
@@ -522,7 +532,6 @@ class MachineCom:
         plugin_manager=None,
     ):
         self._logger = logging.getLogger(__name__)
-        self._serialLogger = logging.getLogger("SERIAL")
         self._phaseLogger = logging.getLogger(__name__ + ".command_phases")
 
         self._settings = settings
@@ -955,7 +964,6 @@ class MachineCom:
 
         self._terminal_log.append(message)
         self._callback.on_comm_log(message)
-        self._serialLogger.debug(message)
 
     def _to_logfile_with_terminal(self, message=None, level=logging.INFO):
         log = "Last lines in terminal:\n" + "\n".join(
@@ -3309,13 +3317,7 @@ class MachineCom:
                             self.close(wait=False)
 
                 ### Operational (idle or busy)
-                elif self._state in {
-                    self.STATE_OPERATIONAL,
-                    self.STATE_STARTING,
-                    self.STATE_PRINTING,
-                    self.STATE_PAUSED,
-                    self.STATE_TRANSFERING_FILE,
-                }:
+                elif self._state in self.OPERATIONAL_STATES:
                     if line == "start":  # exact match, to be on the safe side
                         with self.job_put_on_hold():
                             idle = self._state == self.STATE_OPERATIONAL
@@ -4276,10 +4278,10 @@ class MachineCom:
 
         if ret != "":
             try:
-                self._log(f"Recv: {sanitize_ascii(ret)}")
+                self._log(f"<<< {sanitize_ascii(ret)}")
             except ValueError as e:
                 self._log(f"WARN: While reading last line: {e}")
-                self._log(f"Recv: {ret!r}")
+                self._log(f"<<< {ret!r}")
 
             if null_pos >= 0:
                 self._logger.warning("Received line:")
@@ -5114,7 +5116,7 @@ class MachineCom:
             return
 
         if log:
-            self._log("Send: " + cmd.decode(self._serial_encoding))
+            self._log(">>> " + cmd.decode(self._serial_encoding))
 
         cmd += b"\n"
         written = 0

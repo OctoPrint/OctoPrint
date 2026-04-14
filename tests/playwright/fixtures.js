@@ -15,7 +15,7 @@ const mfaCredentials = {
 };
 
 const defaultHeaders = {
-    "X-OctoPrint-Api-Version": "1.12.0"
+    "X-OctoPrint-Api-Version": "2.0.0"
 };
 
 const expect = base.expect;
