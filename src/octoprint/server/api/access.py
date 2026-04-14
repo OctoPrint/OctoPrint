@@ -264,7 +264,7 @@ def change_password_for_user(username):
         data = request.get_json()
 
         new_password = data.get("password")
-        if new_password is None:
+        if not new_password:
             abort(400, description="new password is missing")
 
         current_password = data.get("current")
