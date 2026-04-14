@@ -58,18 +58,6 @@ $(function () {
                 }
             };
 
-            self.isChangePasswordEnabled = (user) => {
-                return !self.isUserMyself(user);
-            };
-
-            self.changePasswordTooltip = (user) => {
-                if (self.isChangePasswordEnabled(user)) {
-                    return gettext("Change password");
-                } else {
-                    return gettext("Change your own password via your User Settings");
-                }
-            };
-
             self.apikeysVisible = ko.observable(false);
             self.revealingApikeys = ko.observable(false);
 

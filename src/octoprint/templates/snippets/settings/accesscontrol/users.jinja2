@@ -36,7 +36,8 @@
                    title="{{ _('Update User') |edq }}"
                    data-bind="click: function() { $root.access.users.showEditUserDialog($data); }"></a>&nbsp;|&nbsp;<a href="javascript:void()"
    class="fas fa-key"
-   data-bind="attr: { title: $root.access.users.changePasswordTooltip($data) }, css: { disabled: !$root.access.users.isChangePasswordEnabled($data)}, enabled: $root.access.users.isChangePasswordEnabled($data), click: function() { if ($root.access.users.isChangePasswordEnabled($data)) { $root.access.users.showChangePasswordDialog($data); } }"></a>&nbsp;|&nbsp;<a href="javascript:void()"
+   title="{{ _('Change password') | edq }}"
+   data-bind="click: function() { $root.access.users.showChangePasswordDialog($data); }"></a>&nbsp;|&nbsp;<a href="javascript:void()"
    class="far fa-trash-alt"
    data-bind="attr: { title: $root.access.users.deleteUserTooltip($data) }, css: { disabled: !$root.access.users.isDeleteUserEnabled($data)}, enabled: $root.access.users.isDeleteUserEnabled($data), click: function() { if ($root.access.users.isDeleteUserEnabled($data)) { $root.access.users.confirmRemoveUser($data); } }"></a>
             </td>
