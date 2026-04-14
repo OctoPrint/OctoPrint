@@ -972,10 +972,14 @@ class User(UserMixin):
             "needs": OctoPrintPermission.convert_needs_to_dict(self.needs),
             "apikey": self._apikey,
             "settings": self._settings,
+            "has_password": self.has_password(),
         }
 
+    def has_password(self):
+        return self._passwordHash != NOLOGIN_PWHASH
+
     def check_password(self, password, legacy=False):
-        if self._passwordHash == NOLOGIN_PWHASH:
+        if not self.has_password():
             return False
 
         if legacy:

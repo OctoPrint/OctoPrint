@@ -263,15 +263,18 @@ def change_password_for_user(username):
     ):
         data = request.get_json()
 
-        if "password" not in data or not data["password"]:
+        new_password = data.get("password")
+        if not new_password:
             abort(400, description="new password is missing")
 
-        if current_user.get_name() == username:
-            if "current" not in data or not data["current"]:
-                abort(400, description="current password is missing")
+        current_password = data.get("current")
 
-            if not userManager.check_password(username, data["current"]):
-                abort(403, description="Invalid current password")
+        if current_user.get_name() == username:
+            if current_user.has_password():
+                if not current_password or not userManager.check_password(
+                    username, current_password
+                ):
+                    abort(403, description="Invalid current password")
 
         elif current_user.has_permission(Permissions.ADMIN):
             ensure_credentials_checked_recently()
@@ -281,7 +284,7 @@ def change_password_for_user(username):
             abort(403, description="You are not allowed to change this user's password")
 
         try:
-            userManager.change_user_password(username, data["password"])
+            userManager.change_user_password(username, new_password)
         except users.UnknownUser:
             abort(404)
 

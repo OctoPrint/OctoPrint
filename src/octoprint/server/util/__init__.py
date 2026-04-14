@@ -39,10 +39,17 @@ class LoginMechanism:
     REMOTE_USER = "remote_user"
 
     _REAUTHENTICATION_ENABLED = (PASSWORD, REMEMBER_ME, AUTOLOGIN)
+    _REAUTHENTICATION_ENABLED_IF_PASSWORD_SET = (REMOTE_USER,)
 
     @classmethod
-    def reauthentication_enabled(cls, login_mechanism):
-        return login_mechanism in cls._REAUTHENTICATION_ENABLED
+    def reauthentication_enabled(cls, login_mechanism, has_password=False):
+        if login_mechanism in cls._REAUTHENTICATION_ENABLED:
+            return True
+
+        return (
+            has_password
+            and login_mechanism in cls._REAUTHENTICATION_ENABLED_IF_PASSWORD_SET
+        )
 
     @classmethod
     def to_log(cls, login_mechanism):

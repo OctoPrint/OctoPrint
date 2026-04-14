@@ -38,6 +38,7 @@ $(function () {
         self.permitted = ko.observable(false);
         self.username = ko.observable(undefined);
         self.credentialsSeen = ko.observable(undefined);
+        self.credentialsRecheckSupported = ko.observable(false);
 
         // system commands
         self.systemCommands = ko.observableArray([]);
@@ -78,6 +79,7 @@ $(function () {
             OctoPrint.browser.passiveLogin().done((resp) => {
                 self.username(resp.name);
                 self.permitted(_.includes(resp.needs.role, "admin"));
+                self.credentialsRecheckSupported(resp._credentials_recheck_supported);
                 self.credentialsSeen(resp._credentials_seen);
                 self.known(true);
 
@@ -149,6 +151,9 @@ $(function () {
             return OctoPrint.browser
                 .login(user, pass)
                 .done((response) => {
+                    self.credentialsRecheckSupported(
+                        response._credentials_recheck_supported
+                    );
                     self.credentialsSeen(response._credentials_seen);
                     self.reauthenticateFailed(false);
                     self._reauthenticated = self.credentialsSeen();
@@ -160,17 +165,8 @@ $(function () {
                 });
         };
 
-        self.forceReauthentication = (callback) => {
-            self.showReauthenticationDialog()
-                .done(() => {
-                    callback();
-                })
-                .fail(() => {
-                    // Do nothing
-                });
-        };
-
         self.checkCredentialsSeen = () => {
+            if (!self.credentialsRecheckSupported()) return true;
             if (CONFIG_REAUTHENTICATION_TIMEOUT <= 0) return true;
 
             const credentialsSeen = self.credentialsSeen();
@@ -185,7 +181,13 @@ $(function () {
 
         self.reauthenticateIfNecessary = (callback) => {
             if (!self.checkCredentialsSeen()) {
-                self.forceReauthentication(callback);
+                self.showReauthenticationDialog()
+                    .done(() => {
+                        callback();
+                    })
+                    .fail(() => {
+                        // Do nothing
+                    });
             } else {
                 callback();
             }
