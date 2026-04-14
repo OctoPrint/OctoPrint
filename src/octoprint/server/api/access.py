@@ -269,19 +269,16 @@ def change_password_for_user(username):
 
         current_password = data.get("current")
 
-        if current_user.has_permission(Permissions.ADMIN):
-            if not credentials_checked_recently():
-                if current_password is None:
-                    abort(403, description="Please reauthenticate with your credentials")
-                if not userManager.check_password(username, current_password):
+        if current_user.get_name() == username:
+            if current_user.has_password():
+                if not current_password or not userManager.check_password(
+                    username, current_password
+                ):
                     abort(403, description="Invalid current password")
 
-        elif current_user.get_name() == username:
-            if current_user.has_password():
-                if current_password is None:
-                    abort(400, description="current password is missing")
-                if not userManager.check_password(username, current_password):
-                    abort(403, description="Invalid current password")
+        elif current_user.has_permission(Permissions.ADMIN):
+            if not credentials_checked_recently():
+                abort(403, description="Please reauthenticate with your credentials")
 
         else:
             # this should never happen
