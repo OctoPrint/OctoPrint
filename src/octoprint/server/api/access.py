@@ -277,8 +277,7 @@ def change_password_for_user(username):
                     abort(403, description="Invalid current password")
 
         elif current_user.has_permission(Permissions.ADMIN):
-            if not credentials_checked_recently():
-                abort(403, description="Please reauthenticate with your credentials")
+            ensure_credentials_checked_recently()
 
         else:
             # this should never happen
