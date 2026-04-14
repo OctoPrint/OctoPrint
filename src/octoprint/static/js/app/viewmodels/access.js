@@ -501,7 +501,10 @@ $(function () {
             };
 
             self.updatePassword = function (username, password, current) {
-                if (!access.loginState.checkCredentialsSeen()) {
+                if (
+                    username !== access.loginState.username() &&
+                    !access.loginState.checkCredentialsSeen()
+                ) {
                     return $.Deferred()
                         .reject("You need to reauthenticate to perform this action")
                         .promise();
