@@ -24,7 +24,7 @@
 .. seealso::
 
    :ref:`sec-api-access-permissions`
-       The documentation of the underlying user API.
+       The documentation of the underlying permissions API.
 
 .. _sec-jsclientlib-access-users:
 
@@ -58,7 +58,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.access.users.update(name, active, admin, opts)
+.. js:function:: OctoPrintClient.access.users.update(name, active, permissions, groups, opts)
 
    Update an existing user.
 
@@ -66,8 +66,8 @@
 
    :param string name: The user's name
    :param bool active: The new ``active`` state of the user
-   :param permissions: The list of permissions of the user
-   :param groups: The list of groups of the user
+   :param list permissions: The list of permissions of the user
+   :param list groups: The list of groups of the user
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
@@ -131,12 +131,13 @@
 
 .. _sec-jsclientlib-access-groups:
 
-:mod:`OctoPrint.access.groups`
+:mod:`OctoPrintClient.access.groups`
 ..............................
 
 .. js:function:: OctoPrintClient.access.groups.list(opts)
 
    Get a list of registered groups.
+
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
@@ -152,10 +153,10 @@
 
    Add a new group.
 
-   ``group`` is expected to be the new group with at least ``key`` and ``name`` defined. Futher
-   supported parameters are ``description``, ``permissions``, ``subgroup`` and the ``default`` flag.
+   ``group`` is expected to be the new group with at least ``key`` and ``name`` defined. Further
+   supported parameters are ``description``, ``permissions``, ``subgroups`` and the ``default`` flag.
 
-   :param object group: The updated group
+   :param object group: The new group
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
@@ -180,5 +181,5 @@
 .. seealso::
 
    :ref:`sec-api-access-groups`
-       The documentation of the underlying user API.
+       The documentation of the underlying groups API.
 
