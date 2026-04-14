@@ -49,6 +49,26 @@ $(function () {
                 return !self.isUserMyself(user);
             };
 
+            self.deleteUserTooltip = (user) => {
+                if (self.isDeleteUserEnabled(user)) {
+                    return gettext("Delete user");
+                } else {
+                    return gettext("You cannot delete your own account");
+                }
+            };
+
+            self.isChangePasswordEnabled = (user) => {
+                return !self.isUserMyself(user);
+            };
+
+            self.changePasswordTooltip = (user) => {
+                if (self.isChangePasswordEnabled(user)) {
+                    return gettext("Change password");
+                } else {
+                    return gettext("Change your own password via your User Settings");
+                }
+            };
+
             self.apikeysVisible = ko.observable(false);
             self.revealingApikeys = ko.observable(false);
 
