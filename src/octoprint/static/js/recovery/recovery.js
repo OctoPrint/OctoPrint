@@ -164,16 +164,6 @@ $(function () {
                 });
         };
 
-        self.forceReauthentication = (callback) => {
-            self.showReauthenticationDialog()
-                .done(() => {
-                    callback();
-                })
-                .fail(() => {
-                    // Do nothing
-                });
-        };
-
         self.checkCredentialsSeen = () => {
             if (!self.credentialsRecheckSupported()) return true;
             if (CONFIG_REAUTHENTICATION_TIMEOUT <= 0) return true;
@@ -190,7 +180,13 @@ $(function () {
 
         self.reauthenticateIfNecessary = (callback) => {
             if (!self.checkCredentialsSeen()) {
-                self.forceReauthentication(callback);
+                self.showReauthenticationDialog()
+                    .done(() => {
+                        callback();
+                    })
+                    .fail(() => {
+                        // Do nothing
+                    });
             } else {
                 callback();
             }
