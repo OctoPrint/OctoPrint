@@ -284,7 +284,7 @@ def change_password_for_user(username):
             abort(403, description="You are not allowed to change this user's password")
 
         try:
-            userManager.change_user_password(username, data["password"])
+            userManager.change_user_password(username, new_password)
         except users.UnknownUser:
             abort(404)
 
