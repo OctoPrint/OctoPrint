@@ -29,6 +29,11 @@ tasks:
     cmds:
       - pip-check -H
 
+  scan-deps:
+    desc: Scan dependencies in pyproject.toml for potential bound updates
+    cmds:
+      - python tools/scan-deps.py
+
   pre-commit:
     desc: Run pre-commit on all files
     cmds:

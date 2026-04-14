@@ -135,7 +135,8 @@ develop = [
     "go-task-bin",
     "pip-check",
     'tomli>=1.1.0 ; python_version < "3.11"',
-    "tomli-w"
+    "tomli-w",
+    "tqdm",
 ]
 plugins = [
     "cookiecutter>=2.6.0,<3"
