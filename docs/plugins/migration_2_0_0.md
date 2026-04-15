@@ -402,9 +402,9 @@ class MyPlugin(octoprint.plugin.StartupPlugin):
 
 The following long deprecated API endpoints have been removed, with their established replacements shown next to them:
 
-  - `/api/logs/*` -> `/api/plugin/logging/*`
+  - `/api/logs/*` -> `/plugin/logging/logs/*`
   - `/api/users/*` -> `/api/access/users/*`
-  - `/api/pluginmanager` -> `/plugin/pluginmanager/(plugins|orphan|repository)
+  - `/api/plugin/pluginmanager` -> `/plugin/pluginmanager/(plugins|orphans|repository)`
 
 Clients still relying on the old endpoints need to switch to the new ones.
 
