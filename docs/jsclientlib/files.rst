@@ -124,7 +124,7 @@
 
 .. js:function:: OctoPrintClient.files.slice(location, path, parameters, opts)
 
-   Slices a file at ``location`` called ``filename``, using the supplied slice command ``parameters``.
+   Slices a file at ``location`` called ``path``, using the supplied slice command ``parameters``.
 
    See the ``slice`` command in :ref:`Issue a file command <sec-api-fileops-filecommand>` for more details.
 
@@ -312,8 +312,9 @@
 
    Requests a zip-based bulk download of the provided ``files`` on the defined ``storage``.
 
+   :param string storage: The storage from which to bulk download
    :param list files: The paths of the files to bulk download
-   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+   :returns string: The URL for the bulk download
 
 .. js:function:: OctoPrintClient.files.pathForEntry(entry)
 

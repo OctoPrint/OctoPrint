@@ -100,14 +100,14 @@
    For infos on these parameters please refer to :ref:`document.cookie <https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie>`_.
 
    :param string name: Name of the cookie to set
-   :param string value: Value to the set cookie to
+   :param string value: Value to set the cookie to
    :param object opts: Additional options to set on the cookie.
 
 .. js:function:: OctoPrintClient.deleteCookie(name)
 
    Deletes the cookie with name ``name``. The port based cookie suffix and if
    necessary also the script root based suffix will be automatically applied to the ``name``
-   prior to looking up the value.
+   prior to deleting it.
 
    :param string name: Name of the cookie to delete
 
@@ -513,7 +513,7 @@
 
    .. code-block:: javascript
 
-      self.someFunction = () => {}
+      self.someOtherFunction = () => {}
       self.someDeprecatedFunction = OctoPrintClient.deprecated(
          "MyViewModel.someDeprecatedFunction", 
          "MyViewModel.someOtherFunction", 
