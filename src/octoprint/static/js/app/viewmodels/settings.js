@@ -8,7 +8,7 @@ $(function () {
         self.about = parameters[3];
 
         // TODO remove in 2.1.0, this is only for backwards compatibility
-        self.users = parameters[4];
+        self.users = self.access.users;
 
         // use this promise to do certain things once the SettingsViewModel has processed
         // its first request
