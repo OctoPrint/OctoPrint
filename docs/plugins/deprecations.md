@@ -11,7 +11,7 @@ This document lists all active deprecations or possibly disruptive behaviour cha
 
 The global API key will get removed for good in OctoPrint 2.1.0. If your plugin is still relying on it in any shape or form, you need to migrate off of it **now**.
 
-If you utilize it access APIs provided by other plugins installed in OctoPrint, use the [one-time use `plugin_apikey`](#octoprint.plugin.types.OctoPrintPlugin.plugin_apikey) instead. See also [above](#sec-plugins-octo_2_0_0-api-global_api_key).
+If you utilize it to access APIs provided by other plugins installed in OctoPrint, use the [one-time use `plugin_apikey`](#octoprint.plugin.types.OctoPrintPlugin.plugin_apikey) instead. See also [above](#sec-plugins-octo_2_0_0-api-global_api_key).
 
 ```{deprecated} 1.6.0
 ```
@@ -19,7 +19,7 @@ If you utilize it access APIs provided by other plugins installed in OctoPrint, 
 (sec-plugins-deprecations-2_1_0-prefixed_plugin_templates)=
 ### Plugin specific prefix required in plugin templates
 
-Including plugin template without a `plugin_<plugin identifier>` prefix has now been deprecated since version 1.8.0. The compatiblity layer that is still allowing for this to work will be removed in OctoPrint 2.1.0.
+Including plugin template without a `plugin_<plugin identifier>` prefix has now been deprecated since version 1.8.0. The compatibility layer that is still allowing for this to work will be removed in OctoPrint 2.1.0.
 
 If your plugin is still including `jinja2` templates without using the `plugin_<plugin identifier>` prefix, you need to fix this *now*.
 
@@ -37,7 +37,7 @@ Look for two things in your code:
    ``` jinja2
    {% include "plugin_some_other_plugin/snippets/my_snippet.jinja2" %}
    ```
-2. Templates rendered by your plugin. e.g. in a custom route created through the [`BluePrintPlugin` mixin](#sec-plugins-mixins-blueprintplugin) need to be prefixed as well. Example:
+2. Templates rendered by your plugin. e.g. in a custom route created through the [`BlueprintPlugin` mixin](#sec-plugins-mixins-blueprintplugin) need to be prefixed as well. Example:
 
    {emphasize-lines="5"}
    ``` python
@@ -123,7 +123,7 @@ and then testing their plugin fully. If there are any issues, they should ideall
 
 Should your plugin for whatever reason rely on it instead of having `accessViewModel` on its own dependencies (and thus access to `accessViewModel.users`), you should change this:
 
-1. add a depedency to `accessViewModel` in your plugin's view model
+1. add a dependency to `accessViewModel` in your plugin's view model
 2. replace usages of `self.settingsViewModel.users` (or however you called the parameter you keep the injected `SettingsViewModel` instance in) to `self.accessViewModel.users`
 
 ```{deprecated} 2.0.0
@@ -260,7 +260,7 @@ The payload of [the `TransferStarted`, `TransferDone` and `TransferFailed` event
 
 ### Removal of deprecated methods on `octoprint.printer.standard.Printer`, also known as `self._printer`
 
-- `get_connection_options` -> use `ConnectedPrinter.all()` in combination with `get_connection_option` on the returned `ConnectPrinter` instances instead
+- `get_connection_options` -> use `ConnectedPrinter.all()` in combination with `get_connection_option` on the returned `ConnectedPrinter` instances instead
 - `select_file` -> `set_job`
 - `unselect_file` -> `set_job` with `None`
 - `fake_ack` -> `repair_communication`
