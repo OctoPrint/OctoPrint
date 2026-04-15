@@ -242,7 +242,7 @@ PrinterStateChanged
      :func:`~octoprint.printer.PrinterInterface.get_state_id` for possible values.
    * ``state_string``: Text representation of the new state.
 
-  .. versionadded:: 1.3.0
+   .. versionadded:: 1.3.0
 
 .. _sec-events-available_events-file_handling:
 
@@ -253,6 +253,7 @@ Upload
    A file has been uploaded through the :ref:`REST API <sec-api-fileops-uploadfile>`.
 
    Payload:
+
    * ``name``: the file's name
    * ``path``: the file's path within its storage location
    * ``target``: the target storage location to which the file was uploaded, either ``local`` or ``sdcard``
@@ -262,12 +263,13 @@ Upload
    * ``effective_print``: whether the file will actually start printing (``print`` request got granted)
    * ``userdata``: optional ``userdata`` if provided on the API, will only be present if supplied in the upload request
 
-  .. versionchanged:: 1.4.0
+   .. versionchanged:: 1.4.0
 
 FileAdded
    A file has been added to a storage.
 
    Payload:
+
    * ``storage``: the storage's identifier
    * ``path``: the file's path within its storage location
    * ``name``: the file's name
@@ -279,12 +281,13 @@ FileAdded
       A copied file triggers this for its new path. A moved file first triggers ``FileRemoved`` for its original
       path and then ``FileAdded`` for the new one.
 
-  .. versionadded:: 1.3.3
+   .. versionadded:: 1.3.3
 
 FileRemoved
    A file has been removed from a storage.
 
    Payload:
+
    * ``storage``: the storage's identifier
    * ``path``: the file's path within its storage location
    * ``name``: the file's name
@@ -295,12 +298,13 @@ FileRemoved
 
       A moved file first triggers ``FileRemoved`` for its original path and then ``FileAdded`` for the new one.
 
-  .. versionadded:: 1.3.3
+   .. versionadded:: 1.3.3
 
 FileMoved
    A file has been moved from one location to another location.
 
    Payload:
+
    * ``storage``: the storage's identifier
    * ``source_path``: the source file's path within its storage location
    * ``source_name``: the source file's name
@@ -313,12 +317,13 @@ FileMoved
 
       A moved file still triggers first a ``FileRemoved`` for its original path and then ``FileAdded`` event for the new one. After that a ``UpdatedFiles`` event is also fired.
 
-  .. versionadded:: 1.8.0
+   .. versionadded:: 1.8.0
 
 FolderAdded
    A folder has been added to a storage.
 
    Payload:
+
    * ``storage``: the storage's identifier
    * ``path``: the folder's path within its storage location
    * ``name``: the folder's name
@@ -328,12 +333,13 @@ FolderAdded
       A copied folder triggers this for its new path. A moved folder first triggers ``FolderRemoved`` for its original
       path and then ``FolderAdded`` for the new one.
 
-  .. versionadded:: 1.3.3
+   .. versionadded:: 1.3.3
 
 FolderRemoved
    A folder has been removed from a storage.
 
    Payload:
+
    * ``storage``: the storage's identifier
    * ``path``: the folder's path within its storage location
    * ``name``: the folder's name
@@ -342,12 +348,13 @@ FolderRemoved
 
       A moved folder first triggers ``FolderRemoved`` for its original path and then ``FolderAdded`` for the new one.
 
-  .. versionadded:: 1.3.3
+   .. versionadded:: 1.3.3
 
 FolderMoved
    A folder has been moved from one location to another location.
 
    Payload:
+
    * ``storage``: the storage's identifier
    * ``source_path``: the source folder's path within its storage location
    * ``source_name``: the source folder's name
@@ -358,7 +365,7 @@ FolderMoved
 
       A moved folder still triggers first a ``FolderRemoved`` for its original path and then ``FolderAdded`` event for the new one. After that a ``UpdatedFiles`` event is also fired.
 
-  .. versionadded:: 1.8.0
+   .. versionadded:: 1.8.0
 
 UpdatedFiles
    A file list was modified.
@@ -382,7 +389,7 @@ MetadataAnalysisStarted
    * ``path``: the file's path within its storage location
    * ``origin``: the file's origin storage location
 
-  .. versionchanged:: 1.4.0
+   .. versionchanged:: 1.4.0
 
 MetadataAnalysisFinished
    The metadata analysis of a file has finished.
@@ -436,11 +443,23 @@ TransferStarted
       Deprecated ``local`` payload, it's always the same as ``remote``.
 
 TransferDone
-   A file transfer to the printer's storage has finished.
+   A file transfer to the printer's storage has finished successfully.
 
    Payload:
 
    * ``time``: the time it took for the transfer to complete in seconds
+   * ``remote``: the file's name as stored on the printer
+
+   .. versionchanged:: 2.0.0
+
+      Deprecated ``local`` payload, it's always the same as ``remote``.
+
+TransferFailed
+   A file transfer to the printer's storage has failed.
+
+   Payload:
+
+   * ``time``: the time it took for the transfer to fail in seconds
    * ``remote``: the file's name as stored on the printer
 
    .. versionchanged:: 2.0.0
@@ -508,7 +527,7 @@ PrintCancelling
    * ``user``: the user who cancelled the print job (if available)
    * ``firmwareError``: the firmware error that caused cancelling the print job, if any
 
-  .. versionadded:: 1.3.7
+   .. versionadded:: 1.3.7
 
 PrintCancelled
    The print has been cancelled.
@@ -841,7 +860,7 @@ SlicingProfileAdded
    * ``slicer``: the slicer for which the profile was added
    * ``profile``: the profile that was added
 
-  .. versionadded:: 1.2.12
+   .. versionadded:: 1.2.12
 
 SlicingProfileModified
    A slicing profile was modified.
@@ -851,7 +870,7 @@ SlicingProfileModified
    * ``slicer``: the slicer for which the profile was modified
    * ``profile``: the profile that was modified
 
-  .. versionadded:: 1.2.12
+   .. versionadded:: 1.2.12
 
 SlicingProfileDeleted
    A slicing profile was deleted.
@@ -861,7 +880,7 @@ SlicingProfileDeleted
    * ``slicer``: the slicer for which the profile was deleted
    * ``profile``: the profile that was deleted
 
-  .. versionadded:: 1.2.12
+   .. versionadded:: 1.2.12
 
 .. _sec-events-available_events-settings:
 
