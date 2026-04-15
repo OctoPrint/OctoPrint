@@ -122,6 +122,35 @@ to switch over to `type: printables` now.
 (sec-plugins-octo_2_0_0-server-plugin)=
 ### Plugin system
 
+#### Endpoints provided through the `BlueprintPlugin` mixin do now automatically fall under OctoPrint's CSRF protection
+
+As of OctoPrint 2.0.0 and announced with the release of OctoPrint 1.8.3, endpoints provided through a [`BlueprintPlugin mixin`](#octoprint.plugin.BlueprintPlugin) do now automatically fall under OctoPrint's [CSRF protection](#sec-api-general-csrf).
+
+If this breaks your plugin, you can exempt individual endpoints through the `@octoprint.plugin.BlueprintPlugin.csrf_exempt` decorator:
+
+{emphasize-lines="13,18-19"}
+```python
+class MyPlugin(octoprint.plugin.BlueprintPlugin):
+    @octoprint.plugin.BlueprintPlugin.route("/hello_world", methods=["GET"])
+    def hello_world(self):
+        # This is a GET request and thus not subject to CSRF protection
+        return "Hello world!"
+
+    @octoprint.plugin.BlueprintPlugin.route("/hello_you", methods=["POST"])
+    def hello_you(self):
+        # This is a POST request and thus subject to CSRF protection. It is not exempt.
+        return "Hello you!"
+
+    @octoprint.plugin.BlueprintPlugin.route("/hello_me", methods=["POST"])
+    @octoprint.plugin.BlueprintPlugin.csrf_exempt()
+    def hello_me(self):
+        # This is a POST request and thus subject to CSRF protection, but this one is exempt.
+        return "Hello me!"
+
+    def is_blueprint_csrf_protected(self):
+        return True
+```
+
 #### `octoprint.plugin.PluginSettings.get_plugin_data_folder` removed
 
 The long-deprecated `octoprint.plugin.PluginSettings.get_plugin_data_folder` has finally been removed in favor of its established replacement [`octoprint.plugin.OctoPrintPlugin.get_plugin_data_folder`](#octoprint.plugin.types.OctoPrintPlugin.get_plugin_data_folder).
@@ -131,42 +160,48 @@ In practice for plugins that means relacing any calls to `self._settings.get_plu
 (sec-plugins-octo_2_0_0-server-printer)=
 ### Printer interaction
 
-(sec-plugins-octo_2_0_0-server-printer-get_transport)=
-#### `Printer.get_transport` no longer functional
-
-`get_transport` is no longer functional. There is no alternative implementation. Plugins 
-relying on it should please get in touch in the shape of a [feature request](https://github.com/OctoPrint/OctoPrint/issues) so we can figure out how to achieve what they so
-far have been doing by utilizing this method.
-
 (sec-plugins-octo_2_0_0-server-printer-internal)=
-#### Internal attributes of `Printer` class renamed
+#### Internal attributes of `Printer` class renamed or removed
 
-Some internal attributes of the `octoprint.printer.Printer` class (injected as `self.
-_printer into plugin implementations) have been renamed. Plugins that accessed the 
-following (**private**) attributes will need to update the names. Please note that these are
-*not* drop-in replacements!
+Some internal attributes of the `octoprint.printer.Printer` class (injected as `self. _printer into plugin implementations) have been renamed or removed. Plugins that accessed the following (**private**) attributes will need to update the names. Please note that these are *not* drop-in replacements!
 
 :::{attention} 
-Your plugin should not use private & undocumented properties on OctoPrint's internal classes. However
-looking at the plugins on the [official plugin repository](https://plugins.octoprint.org) it's
-clear that quite a number of plugins utilize these directly.
+Your plugin should not use private & undocumented properties on OctoPrint's internal classes. However looking at the plugins on the [official plugin repository](https://plugins.octoprint.org) it's clear that quite a number of plugins utilize these directly.
 
-This is supposed to be avoided, but clearly there's a reason why so many plugin authors have 
-decided to rely on undocumented implementation details.
+This is supposed to be avoided, but clearly there's a reason why so many plugin authors have decided to rely on undocumented implementation details.
 
-If this affects you, then please [open a feature request](https://github.com/OctoPrint/OctoPrint/issues) 
-on OctoPrint's repository and tell us what exactly you need that's currently missing from the plugin interface
-and documented internal APIs so that ideally we can make things *officially supported* and
-avoid issues like this in the future!
+If this affects you, then please [open a feature request](https://github.com/OctoPrint/OctoPrint/issues) on OctoPrint's repository and tell us what exactly you need that's currently missing from the plugin interface and documented internal APIs so that ideally we can make things *officially supported* and avoid issues like this in the future!
 :::
 
 The affected names are:
 
-  - `_comm` -> `_connection`
   - `_currentZ` -> `_last_z`
   - `_fileManager` -> `_file_manager`
   - `_printerProfileManager` -> `_printer_profile_manager`
   - `_selectedFile` -> `_selected_job`
+  - `_comm` -> still available, however *with a deprecation warning* and *only* if the current connection happens to be provided by the bundled serial connector plugin; see [here](#sec-plugins-octo_2_0_0-server-printer-get_transport) for an alternative access method
+
+(sec-plugins-octo_2_0_0-server-printer-get_transport)=
+#### `Printer.get_transport` deprecated
+
+`get_transport` has been deprecated, and the compatiblity layer in place is only functional if the current printer connection is provided by the bundled serial connector plugin.
+
+This compatibility layer is planned to get removed in a future version, so if your plugin still relies on `self._printer`, for now *refactor it* to instead check for the serial connector yourself and then fetch the `_comm`  and its `_serial` object yourself, with a lot of error checking to protect against internal changes (these are *private* properties shown by the `_` prefix - they are *not* part of the official plugin API!):
+
+``` python
+if self._printer.connection is None or self._connection.connector != "serial":
+    return
+
+if hasattr(self._connection, "_comm"):
+  # this gets you what used to be self._printer._comm...
+  comm = self._connection._comm  
+
+  if hasattr(comm, "_serial"):
+      # ... and this what used to be returned by self._printer.get_transport()
+      serial = comm._serial  
+```
+
+ Plugins that need access like this should please get in touch in the shape of a [feature request](https://github.com/OctoPrint/OctoPrint/issues) so we can figure out how to achieve what they so far have been doing by utilizing this method in an officially supported and documented way that does not rely on implementation details!
 
 (sec-plugins-octo_2_0_0-server-printer-log_format)=
 #### Format of terminal log lines changed
@@ -339,6 +374,7 @@ The Global API Key has been deprecated for a while, with 2.0.0 is no longer auto
 Instead of utilizing this key to talk to OctoPrint's API endpoints from plugin code, plugins
 should instead use [`self.plugin_apikey`](#octoprint.plugin.types.OctoPrintPlugin.plugin_apikey). Example:
 
+{emphasize-lines="15-17"}
 ``` python
 import octoprint.plugin
 
@@ -388,37 +424,5 @@ Now is a good as time as any to also [migrate your plugin to use pyproject.toml 
 (sec-plugins-octo_2_0_0-upcoming)=
 ## Prepare for upcoming removals too!
 
-While you are it, please also take care of some upcoming removals that already have 
-deprecation warnings going on.
+While you are it, please also take care of some upcoming removals that already have deprecation warnings going on. Refer to [the list of current deprecations](#sec-plugins-deprecations)!
 
-(sec-plugins-octo_2_0_0-upcoming-global_apikey)=
-### Global API key will get removed in 2.1.0
-
-The global API key will get removed for good in OctoPrint 2.1.0. If your plugin is still relying on it in any shape or form, you need to migrate off of it **now**.
-
-If you utilize it access APIs provided by other plugins installed in OctoPrint, use the [one-time use `plugin_apikey`](#octoprint.plugin.types.OctoPrintPlugin.plugin_apikey) instead. See also [above](#sec-plugins-octo_2_0_0-api-global_api_key).
-
-(sec-plugins-octo_2_0_0-upcoming-settings_getter_and_setter)=
-### `PluginSettings.(get|set)(Int|Float|Boolean)` will get removed in 3.0.0
-
-The methods `getInt`, `getFloat`, `getBoolean`, `setInt`, `setFloat` and `setBoolean` of the [`PluginSettings`](#octoprint.plugin.PluginSettings) instance injected into plugin implementations as `self._settings` have been deprecated and logging deprecation warnings for 10 years. Yet they are still in heavy use by plenty third party plugins out there.
-
-**This is the final warning for plugin authors to finally switch their plugins over to the long standing replacements `get_(int|float|boolean)` and `set_(int|float|boolean)`!**
-
-In practice, that means these simple drop-in replacements in your plugin code:
-
-- `self._settings.getInt` -> `self._settings.get_int`
-- `self._settings.getFloat` -> `self._settings.get_float`
-- `self._settings.getBoolean` -> `self._settings.get_boolean`
-- `self._settings.setInt` -> `self._settings.set_int`
-- `self._settings.setFloat` -> `self._settings.set_float`
-- `self._settings.setBoolean` -> `self._settings.set_boolean`
-
-OctoPrint 3.0.0 will remove the deprecated versions for good!
-
-(sec-plugins-octo_2_0_0-upcoming-user_factory_hook)=
-### Support for the `octoprint.users.factory` hook will be removed in 3.0.0
-
-The plugin hook `octoprint.users.factory` has been declared deprecated in OctoPrint 2.0.0 and will be removed in OctoPrint 3.0.0. It has long been replaced by `octoprint.access.users.factory`. 
-
-If your plugin still implements `octoprint.users.factory`, switch its registration over to the drop-in replacement `octoprint.access.users.factory`.
