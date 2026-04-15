@@ -419,7 +419,7 @@ The `netifaces` and `passlib` libraries are no longer part of the dependencies o
 (sec-plugins-octo_2_0_0-project-pyproject_toml)=
 ### `pyproject.toml` and build isolation
 
-Now is as good as time as any to also [migrate your plugin to use pyproject.toml and build isolation](#sec-plugins-pyproject_toml), should you still be on the old `setup.py` based build approach.
+Now is as good a time as any to also [migrate your plugin to use pyproject.toml and build isolation](#sec-plugins-pyproject_toml), should you still be on the old `setup.py` based build approach.
 
 (sec-plugins-octo_2_0_0-upcoming)=
 ## Prepare for upcoming removals too!
