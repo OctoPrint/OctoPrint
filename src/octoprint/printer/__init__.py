@@ -935,7 +935,7 @@ class PrinterMixin(CommonPrinterMixin):
 
     @deprecated(
         message="get_transport is non-functional. There is currently no alternative implementation. This compatibility layer will be removed in a future version.",
-        includedoc="No longer functional",
+        includedoc="Only functional if the current connector happens to be the bundled serial connector",
         since="2.0.0",
     )
     def get_transport(self, *args, **kwargs):
@@ -948,6 +948,26 @@ class PrinterMixin(CommonPrinterMixin):
         Returns:
             object: The communication layer's transport object
         """
+        if self._connection is None or self._connection.connector != "serial":
+            return None
+
+        comm = self._connection._comm
+        if comm is None:
+            return None
+
+        return comm._serial
+
+    @property
+    @deprecated(
+        message="_comm is no longer available here after some heavy refactoring, and was private to begin with. It should never have been used by third parties. This compatibility layer will be removed in a future version.",
+        includedoc="Only functional if the current connector happens to be the bundled serial connector",
+        since="2.0.0",
+    )
+    def _comm(self):
+        if self._connection is None or self._connection.connector != "serial":
+            return None
+
+        return self._connection._comm
 
     @deprecated(
         message="get_current_connection has been replaced by connection_state. This compatibility layer will be removed in a future version.",
