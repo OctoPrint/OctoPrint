@@ -1169,7 +1169,7 @@ class Server:
             loaders.append(octoprint.util.jinja.SelectedFilesLoader(files))
 
         # TODO remove in 2.1.0
-        warning_message = "Loading plugin template '{template}' from '{filename}' without plugin prefix, this is deprecated and will soon no longer be supported."
+        warning_message = "Loading plugin template '{template}' from '{filename}' without plugin prefix, this is deprecated and will no longer be supported in OctoPrint 2.1.0."
         loaders.append(
             octoprint.util.jinja.WarningLoader(
                 octoprint.util.jinja.PrefixChoiceLoader(app.jinja_env.prefix_loader),

@@ -388,7 +388,6 @@ class HierarchicalChainMap:
 
         # if we arrived here we might be trying to grab a dict, look for children
 
-        # TODO Remove this in 2.0.0 & make 'merged' the default
         if not merged and hasattr(current, "maps"):
             # we do something a bit odd here: if merged is not true, we don't include the
             # full contents of the key. Instead, we only include the contents of the key

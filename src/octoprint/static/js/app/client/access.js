@@ -156,7 +156,7 @@
             //
             // TODO remove in 3.0.0
             console.log(
-                "Calling OctoPrint.access.users with admin flag is deprecated and will be removed in OctoPrint 3.0.0. Use permissions or groups instead."
+                "Calling OctoPrint.access.users.update with admin flag is deprecated and will be removed in OctoPrint 3.0.0. Use permissions or groups instead."
             );
             permissions = groups;
             groups = opts;
