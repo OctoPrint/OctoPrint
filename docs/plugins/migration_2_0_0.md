@@ -1,12 +1,12 @@
 (sec-plugins-octo_2_0_0)=
 # Migrating to OctoPrint 2.0.0
 
-With OctoPrint 2.0.0 quite a number of compatibility layers in place for most of the past decade are finally getting removed, causing potential breakage for existing plugins still relying on these compatilibity layers after having ignored the related deprecation warnings for years.
+With OctoPrint 2.0.0 quite a number of compatibility layers in place for most of the past decade are finally getting removed, causing potential breakage for existing plugins still relying on these compatibility layers after having ignored the related deprecation warnings for years.
 
 It's time to finally migrate, and this guide is in place to show you how to quickly get your plugin up and running under OctoPrint 2.0.0 again as all but 1 of the removed deprecated endpoints and functions have had replacements available for a long time already!
 
 :::{note}
-This looks like an incredibly long list. But please don't get discouraged by this. Most plugins won't have to do anything but maybe one or two points, some note even anything at all.
+This looks like an incredibly long list. But please don't get discouraged by this. Most plugins won't have to do anything but maybe one or two points, some not even anything at all.
 
 This migration guide lists *all* changes in OctoPrint 2.0.0 that might require changes in any plugin (or client) implementations. Whether your plugin is affected by any of them relies heavily on the implementation and complexity of your plugin.
 
@@ -22,7 +22,7 @@ However, even if you are not affected by any of the necessary changes, please ta
 (sec-plugins-octo_2_0_0-server-access-octoprint_access_users)=
 #### Changes in `octoprint.access.users.*`
 
-Various long deprecated (and replaced) methods have been removed from `octoprint.access.users.UserManager`, `octoprint.access.users.FilebasedUserManager`, `octoprint.access.users.User` and `octoprint.access.users.SessionUser`. If your code utilizes any of them,  you'll need to migrate.
+Various long deprecated (and replaced) methods have been removed from `octoprint.access.users.UserManager`, `octoprint.access.users.FilebasedUserManager`, `octoprint.access.users.User` and `octoprint.access.users.SessionUser`. If your code utilizes any of them, you'll need to migrate.
 
 What follows is a list of all methods and their corresponding replacements:
 
@@ -56,7 +56,7 @@ What follows is a list of all methods and their corresponding replacements:
     - `findUser` -> `find_user`
     - `getAllUsers` -> `get_all_users`
     - `hasBeenCustomized` -> `has_been_customized`
-  - `octoprint.access.users.User`
+  - `octoprint.access.users.User`:
     - `asDict` -> `as_dict`
     - `is_admin`, `is_user`, `roles` -> check specific permissions instead, e.g.:
 
@@ -92,7 +92,7 @@ admin_permission = groups.GroupPermission(groups.ADMIN_GROUP)
 user_permission = groups.GroupPermission(groups.USER_GROUP)
 ```
 
-However, it is *strongly* recommend to think whether some more granular (and possibly [custom](#sec-plugins-hook-permissions)) permissions aren't better suited for your specific usecase!
+However, it is *strongly* recommended to think whether some more granular (and possibly [custom](#sec-plugins-hook-permissions)) permissions aren't better suited for your specific usecase!
 
 (sec-plugins-octo_2_0_0-server-storage)=
 ### File storage, printable files
@@ -114,9 +114,9 @@ if storage == FileDestinations.SDCARD:
 (sec-plugins-octo_2_0_0-server-storage-updated_files)=
 #### Dropped event type `gcode` for `UpdatedFiles` event
 
-The [`UpdatedFiles` event](#sec-events-available_events-file_handling) generated inside the storage subsystemis no longer generated for the file type `gcode` but only for the file type `printables` now.
+The [`UpdatedFiles` event](#sec-events-available_events-file_handling) generated inside the storage subsystem is no longer generated for the file type `gcode` but only for the file type `printables` now.
 
-If you still rely `UpdatedFiles` to be fired with `type: gcode`, you need
+If you still rely on `UpdatedFiles` to be fired with `type: gcode`, you need
 to switch over to `type: printables` now.
 
 (sec-plugins-octo_2_0_0-server-plugin)=
@@ -155,7 +155,7 @@ class MyPlugin(octoprint.plugin.BlueprintPlugin):
 
 The long-deprecated `octoprint.plugin.PluginSettings.get_plugin_data_folder` has finally been removed in favor of its established replacement [`octoprint.plugin.OctoPrintPlugin.get_plugin_data_folder`](#octoprint.plugin.types.OctoPrintPlugin.get_plugin_data_folder).
 
-In practice for plugins that means relacing any calls to `self._settings.get_plugin_data_folder` with `self.get_plugin_data_folder`. Note that if the only reason for your plugin to implement [the `SettingsPlugin` mixin](#octoprint.plugin.SettingsPlugin) was to be able to access your plugin's data folder, you can then also remove that mixin from your plugin.
+In practice for plugins that means replacing any calls to `self._settings.get_plugin_data_folder` with `self.get_plugin_data_folder`. Note that if the only reason for your plugin to implement [the `SettingsPlugin` mixin](#octoprint.plugin.SettingsPlugin) was to be able to access your plugin's data folder, you can then also remove that mixin from your plugin.
 
 (sec-plugins-octo_2_0_0-server-printer)=
 ### Printer interaction
@@ -163,7 +163,7 @@ In practice for plugins that means relacing any calls to `self._settings.get_plu
 (sec-plugins-octo_2_0_0-server-printer-internal)=
 #### Internal attributes of `Printer` class renamed or removed
 
-Some internal attributes of the `octoprint.printer.Printer` class (injected as `self. _printer into plugin implementations) have been renamed or removed. Plugins that accessed the following (**private**) attributes will need to update the names. Please note that these are *not* drop-in replacements!
+Some internal attributes of the `octoprint.printer.Printer` class (injected as `self._printer` into plugin implementations) have been renamed or removed. Plugins that accessed the following (**private**) attributes will need to update the names. Please note that these are *not* drop-in replacements!
 
 :::{attention} 
 Your plugin should not use private & undocumented properties on OctoPrint's internal classes. However looking at the plugins on the [official plugin repository](https://plugins.octoprint.org) it's clear that quite a number of plugins utilize these directly.
@@ -184,9 +184,9 @@ The affected names are:
 (sec-plugins-octo_2_0_0-server-printer-get_transport)=
 #### `Printer.get_transport` deprecated
 
-`get_transport` has been deprecated, and the compatiblity layer in place is only functional if the current printer connection is provided by the bundled serial connector plugin.
+`get_transport` has been deprecated, and the compatibility layer in place is only functional if the current printer connection is provided by the bundled serial connector plugin.
 
-This compatibility layer is planned to get removed in a future version, so if your plugin still relies on `self._printer`, for now *refactor it* to instead check for the serial connector yourself and then fetch the `_comm`  and its `_serial` object yourself, with a lot of error checking to protect against internal changes (these are *private* properties shown by the `_` prefix - they are *not* part of the official plugin API!):
+This compatibility layer is planned to get removed in a future version, so if your plugin still relies on `self._printer`, for now *refactor it* to instead check for the serial connector yourself and then fetch the `_comm` and its `_serial` object yourself, with a lot of error checking to protect against internal changes (these are *private* properties shown by the `_` prefix - they are *not* part of the official plugin API!):
 
 ``` python
 if self._printer.connection is None or self._connection.connector != "serial":
@@ -201,14 +201,14 @@ if hasattr(self._connection, "_comm"):
       serial = comm._serial  
 ```
 
- Plugins that need access like this should please get in touch in the shape of a [feature request](https://github.com/OctoPrint/OctoPrint/issues) so we can figure out how to achieve what they so far have been doing by utilizing this method in an officially supported and documented way that does not rely on implementation details!
+Plugins that need access like this should please get in touch in the shape of a [feature request](https://github.com/OctoPrint/OctoPrint/issues) so we can figure out how to achieve what they so far have been doing by utilizing this method in an officially supported and documented way that does not rely on implementation details!
 
 (sec-plugins-octo_2_0_0-server-printer-log_format)=
 #### Format of terminal log lines changed
 
 Terminal log lines as generated by the serial connection no longer have the prefixes `Recv:` and `Send:` but rather `<<<` and `>>>`. 
 
-Any consumers of these logs must updated their parsers. 
+Any consumers of these logs must update their parsers. 
 
 The terminal filters have already been updated accordingly.
 
@@ -223,7 +223,7 @@ The long deprecated `octoprint.printer.profile.BedTypes` type has been removed. 
 (sec-plugins-octo_2_0_0-server-settings-serial)=
 #### The `serial.*` block has moved
 
-The `serial` block in the settings schema has moved to `plugins.serial_connector` as its now managed by that bundled plugin.
+The `serial` block in the settings schema has moved to `plugins.serial_connector` as it's now managed by that bundled plugin.
 
 If you are accessing any `serial` related settings in your plugin, you'll need to adapt your accessing code. In most cases you can just replace all settings paths referring to `serial.*` with `plugins.serial_connector.*`, **with the following exceptions**:
 
@@ -252,7 +252,7 @@ The following path names containing the words "blacklist" or "whitelist" have be
   - `feature.autoUppercaseBlacklist` -> `feature.autoUppercaseBlocklist`
   - `server.pluginBlacklist` -> `server.pluginBlocklist`
   - `serial.blacklistedPorts` -> `plugins.serial_connector.blocklistedPorts` (see also [above](#sec-plugins-octo_2_0_0-server-settings-serial))
-  - `serial.blacklistedBaudrates` -> `plugins.serial_connector.blocklistedBoardrates` (see also [above](#sec-plugins-octo_2_0_0-server-settings-serial))
+  - `serial.blacklistedBaudrates` -> `plugins.serial_connector.blocklistedBaudrates` (see also [above](#sec-plugins-octo_2_0_0-server-settings-serial))
 
 :::{info}
 A compatibility layer is in place performing these mappings for you, however please 
@@ -323,7 +323,7 @@ self.settingsViewModel.requestData()
 ```
 
 (sec-plugins-octo_2_0_0-client-viewmodels-on_wizard_tab_change)=
-#### `onWizardTabChanged` removed
+#### `onWizardTabChange` removed
 
 This has long been replaced by `onBeforeWizardTabChange`, so if your plugin still relies on the old name, please just switch to the new.
 
@@ -335,7 +335,7 @@ This has long been replaced by `onBeforeWizardTabChange`, so if your plugin stil
 
 The following JS Client components have been removed, with established replacements documented next to them:
 
-  - `OctoPrintClient.logs` -> `OctoPrintClient.plugin.logging`
+  - `OctoPrintClient.logs` -> `OctoPrintClient.plugins.logging`
   - `OctoPrintClient.users` -> `OctoPrintClient.access.users`
 
 (sec-plugins-octo_2_0_0-client-jsclient-get_request_headers)=
@@ -360,7 +360,7 @@ If your plugin was using this, use [`OctoPrintClient.deprecated`](#OctoPrintClie
 (sec-plugins-octo_2_0_0-client-jsclient-deprecated_variable)=
 #### Changed signature on `OctoPrintClient.deprecatedVariable`
 
-If your plugin was using this, make sure to adjust the calling parameters to the the 
+If your plugin was using this, make sure to adjust the calling parameters to the 
 new signature. Refer to the documentation of [`OctoPrintClient.deprecatedVariable`](#OctoPrintClient.deprecatedVariable) for details.
 
 (sec-plugins-octo_2_0_0-api)=
@@ -369,7 +369,7 @@ new signature. Refer to the documentation of [`OctoPrintClient.deprecatedVariabl
 (sec-plugins-octo_2_0_0-api-global_api_key)=
 ### Global API Key
 
-The Global API Key has been deprecated for a while, with 2.0.0 is no longer automatically generated at startup and may thus be empty! [It will be removed entirely in 2.1.0](#sec-plugins-octo_2_0_0-upcoming-global_apikey).
+The Global API Key has been deprecated for a while, with 2.0.0 it is no longer automatically generated at startup and may thus be empty! [It will be removed entirely in 2.1.0](#sec-plugins-octo_2_0_0-upcoming-global_apikey).
 
 Instead of utilizing this key to talk to OctoPrint's API endpoints from plugin code, plugins
 should instead use [`self.plugin_apikey`](#octoprint.plugin.types.OctoPrintPlugin.plugin_apikey). Example:
@@ -419,7 +419,7 @@ The `netifaces` and `passlib` libraries are no longer part of the dependencies o
 (sec-plugins-octo_2_0_0-project-pyproject_toml)=
 ### `pyproject.toml` and build isolation
 
-Now is a good as time as any to also [migrate your plugin to use pyproject.toml and build isolation](#sec-plugins-pyproject_toml), should you still be on the old `setup.py` based build approach.
+Now is as good as time as any to also [migrate your plugin to use pyproject.toml and build isolation](#sec-plugins-pyproject_toml), should you still be on the old `setup.py` based build approach.
 
 (sec-plugins-octo_2_0_0-upcoming)=
 ## Prepare for upcoming removals too!
