@@ -1002,8 +1002,8 @@ class PrinterMixin(CommonPrinterMixin):
         since="2.0.0",
     )
     def can_modify_file(self, path, sd, *args, **kwargs):
-        return not self.is_current_file(path, sd) and (
-            self.is_printing() or self.is_paused()
+        return not (
+            self.is_current_file(path, sd) and (self.is_printing() or self.is_paused())
         )
 
     @deprecated(
