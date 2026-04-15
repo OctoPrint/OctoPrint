@@ -507,7 +507,7 @@ class StorageInterface:
         pass
 
     @deprecated(
-        "add_link has been deprecated and will be removed in a future version",
+        "remove_link has been deprecated and will be removed in a future version",
         since="2.0.0",
     )
     def remove_link(self, path, rel, data):

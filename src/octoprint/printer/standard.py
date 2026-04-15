@@ -1601,7 +1601,10 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
     def on_printer_files_upload_start(self, job: UploadJob):
         eventManager().fire(
             Events.TRANSFER_STARTED,
-            {"local": job.path, "remote": job.path},  # local is deprecated as of 2.0.0
+            {
+                "local": job.path,
+                "remote": job.path,
+            },  # TODO local is deprecated as of 2.0.0
         )
 
         self._sdStreaming = True
@@ -1625,7 +1628,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             "local": job.path,
             "remote": job.path,
             "time": elapsed,
-        }  # local is deprecated as of 2.0.0
+        }  # TODO local is deprecated as of 2.0.0, remove in 3.0.0
 
         if failed:
             eventManager().fire(Events.TRANSFER_FAILED, payload)
