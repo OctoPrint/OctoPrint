@@ -217,6 +217,14 @@ The terminal filters have already been updated accordingly.
 
 The long deprecated `octoprint.printer.profile.BedTypes` type has been removed. Its drop-in replacement is the more aptly named `octoprint.printer.profile.BedFormFactor`.
 
+(sec-plugins-octo_2_0_0-server-server)=
+### Server
+
+(sec-plugins-octo_2_0_0-server-server-validator)
+#### `octoprint.server.util.flask.(admin|user)_validator` removed
+
+Both `octoprint.server.util.flask.admin_validator` and `octoprint.server.util.flask.user_validator` have been removed in favor of `octoprint.server.util.flask.permissions_validator`
+
 (sec-plugins-octo_2_0_0-server-settings)=
 ### Settings
 
@@ -308,6 +316,11 @@ const params = {
 }
 self.filesViewModel.requestData(params);
 ```
+
+(sec-plugins-octo_2_0_0-client-viewmodels-files_vm_from_response)=
+#### Changed signature on `FilesViewModel.fromResponse`
+
+`FilesViewModel.fromResponse` now expects being called with the parameters `(response, params)`, mirroring [the changes to `requestData`](#sec-plugins-octo_2_0_0-client-viewmodels-files_vm_request_data).
 
 (sec-plugins-octo_2_0_0-client-viewmodels-settings_vm_request_data)=
 #### Removed support for deprecated method calling signature on `SettingsViewModel.requestData`
@@ -407,6 +420,10 @@ The following long deprecated API endpoints have been removed, with their establ
   - `/api/plugin/pluginmanager` -> `/plugin/pluginmanager/(plugins|orphans|repository)`
 
 Clients still relying on the old endpoints need to switch to the new ones.
+
+### `admin` and `user` fields dropped on user responses on API
+
+Any API responses related to users no longer contain the `admin` and `user` fields. You can still determine these from the returned `groups`.
 
 (sec-plugins-octo_2_0_0-project)=
 ## Project organisation
