@@ -47,6 +47,7 @@ OctoPrint via `pip`.
 
 OctoPrint currently supports Python 3.9, 3.10, 3.11, 3.12 and 3.13.
 
+(usage)=
 ## Usage
 
 Running the pip install via
