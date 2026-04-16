@@ -229,11 +229,11 @@ Data model
      - Information about the current machine state
    * - ``job``
      - 1
-     - :ref:`Job information <sec-api-datamodel-jobs-job>`
+     - :ref:`Job information <sec-api-job-datamodel-response>`
      - Information about the currently active print job
    * - ``progress``
      - 1
-     - :ref:`Progress information <sec-api-datamodel-jobs-progress>`
+     - :ref:`Progress information <sec-api-job-datamodel-response>`
      - Information about the current print/streaming progress
    * - ``currentZ``
      - 0..1

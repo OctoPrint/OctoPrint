@@ -54,7 +54,7 @@ Printer State
      - 1
      - Boolean
      - ``true`` if the printer's SD card is available and initialized, ``false`` otherwise. This is redundant information
-       to :ref:`the SD State <sec-api-printer-datamodel-sdstate>`.
+       to :ref:`the Storage State <sec-api-printer-datamodel-storagestate>`.
    * - ``flags.error``
      - 1
      - Boolean
