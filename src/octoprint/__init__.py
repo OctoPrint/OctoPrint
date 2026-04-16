@@ -649,7 +649,7 @@ def init_blocklist_compat_overlay(settings):
             key="blocklist_compat",
             at_end=True,
             deprecated=(
-                '"Blacklist" in settings keys has been changed to "blocklist".'
+                '"Blacklist" in settings keys has been changed to "blocklist". '
                 "This compatibility layer will be removed in a future "
                 "release."
             ),
@@ -660,8 +660,8 @@ def init_blocklist_compat_overlay(settings):
         set_overlay()
 
     set_overlay()
-    settings.add_path_update_callback(["feature", "autoUppercaseBlacklist"], callback)
-    settings.add_path_update_callback(["server", "pluginBlacklist"], callback)
+    settings.add_path_update_callback(["feature", "autoUppercaseBlocklist"], callback)
+    settings.add_path_update_callback(["server", "pluginBlocklist"], callback)
 
 
 def init_webcam_compat_overlay(settings, plugin_manager):
