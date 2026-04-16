@@ -126,7 +126,9 @@ def main():
     pyproject = read_pyproject_toml(path)
 
     deps = [*pyproject.get("project", {}).get("dependencies", [])]
-    for _, optional in pyproject.get("project.optional-dependencies", {}).items():
+    for _, optional in (
+        pyproject.get("project", {}).get("optional-dependencies", {}).items()
+    ):
         deps += optional
 
     print(f"Scanning {len(deps)} dependencies...")
