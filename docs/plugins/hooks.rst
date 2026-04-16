@@ -1320,10 +1320,16 @@ octoprint.printer.estimation.factory
    .. versionadded:: 1.3.9
 
    Return a :class:`~octoprint.printer.estimation.PrintTimeEstimator` subclass (or factory) to use for print time
-   estimation. This will be called on each start of a print or streaming job with a single parameter ``job_type``
+   estimation. This will be called on each start of a print or streaming job with the parameter ``job_type``
    denoting the type of job that was just started: ``local`` meaning a print of a local file through the serial connection,
    ``sdcard`` a print of a file stored on the printer's SD card, ``stream`` the streaming of a local file to the
    printer's SD card.
+
+   .. versionchanged:: 2.0.0
+
+   Starting with OctoPrint 2.0.0, if the factory declares a ``job_status_interval`` (a ``float``) parameter in its
+   signature, it will receive it as a keyword argument indicating the interval in seconds at which the active
+   connector reports job progress. This is used by the default estimator to size its rolling window.
 
    This is useful for plugins wishing to provide alternative methods of live print time estimation.
 
@@ -1340,7 +1346,7 @@ octoprint.printer.estimation.factory
       from octoprint.printer.estimation import PrintTimeEstimator
 
       class CustomPrintTimeEstimator(PrintTimeEstimator):
-          def __init__(self, job_type):
+          def __init__(self, job_type, job_status_interval):
               pass
 
           def estimate(self, progress, printTime, cleanedPrintTime, statisticalTotalPrintTime, statisticalTotalPrintTimeType):

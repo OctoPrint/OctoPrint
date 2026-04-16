@@ -7,6 +7,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import copy
+import inspect
 import logging
 import threading
 import time
@@ -226,9 +227,10 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
                 job_type = self._selected_job.storage
 
-        self._estimator = self._estimator_factory(
-            job_type, job_status_interval=self._connection.job_status_interval
-        )
+        kwargs = {}
+        if "job_status_interval" in inspect.signature(self._estimator_factory).parameters:
+            kwargs["job_status_interval"] = self._connection.job_status_interval
+        self._estimator = self._estimator_factory(job_type, **kwargs)
 
     @property
     def firmware_info(self):
