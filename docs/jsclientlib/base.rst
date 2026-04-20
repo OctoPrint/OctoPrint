@@ -97,7 +97,7 @@
      * ``maxage``: ``;max-age=<opts.maxage>``
      * ``secure``: ``;secure`` if ``true`` (automatically set if the current connection goes via https)
 
-   For infos on these parameters please refer to :ref:`document.cookie <https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie>`_.
+   For infos on these parameters please refer to `document.cookie <https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie>`_.
 
    :param string name: Name of the cookie to set
    :param string value: Value to set the cookie to

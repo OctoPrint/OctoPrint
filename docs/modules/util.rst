@@ -14,6 +14,15 @@ octoprint.util.commandline
 .. automodule:: octoprint.util.commandline
    :members:
 
+.. _sec-modules-util-json:
+
+octoprint.util.json
+-------------------
+
+.. automodule:: octoprint.util.json
+   :members:
+   :imported-members:
+
 .. _sec-modules-util-platform:
 
 octoprint.util.platform

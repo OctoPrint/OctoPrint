@@ -1,7 +1,7 @@
 .. _sec-jsclientlib-access:
 
 :mod:`OctoPrintClient.access`
-----------------------------
+-----------------------------
 
 .. note::
 
@@ -132,7 +132,7 @@
 .. _sec-jsclientlib-access-groups:
 
 :mod:`OctoPrintClient.access.groups`
-..............................
+....................................
 
 .. js:function:: OctoPrintClient.access.groups.list(opts)
 

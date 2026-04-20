@@ -220,7 +220,7 @@ The long deprecated `octoprint.printer.profile.BedTypes` type has been removed. 
 (sec-plugins-octo_2_0_0-server-server)=
 ### Server
 
-(sec-plugins-octo_2_0_0-server-server-validator)
+(sec-plugins-octo_2_0_0-server-server-validator)=
 #### `octoprint.server.util.flask.(admin|user)_validator` removed
 
 Both `octoprint.server.util.flask.admin_validator` and `octoprint.server.util.flask.user_validator` have been removed in favor of `octoprint.server.util.flask.permissions_validator`
@@ -382,7 +382,7 @@ new signature. Refer to the documentation of [`OctoPrintClient.deprecatedVariabl
 (sec-plugins-octo_2_0_0-api-global_api_key)=
 ### Global API Key
 
-The Global API Key has been deprecated for a while, with 2.0.0 it is no longer automatically generated at startup and may thus be empty! [It will be removed entirely in 2.1.0](#sec-plugins-octo_2_0_0-upcoming-global_apikey).
+The Global API Key has been deprecated for a while, with 2.0.0 it is no longer automatically generated at startup and may thus be empty! [It will be removed entirely in 2.1.0](#sec-plugins-deprecations-2_1_0-global_apikey).
 
 Instead of utilizing this key to talk to OctoPrint's API endpoints from plugin code, plugins
 should instead use [`self.plugin_apikey`](#octoprint.plugin.types.OctoPrintPlugin.plugin_apikey). Example:

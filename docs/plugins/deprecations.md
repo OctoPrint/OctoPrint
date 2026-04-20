@@ -27,14 +27,14 @@ Look for two things in your code:
 
 1. Imports of other plugin templates in your own plugin's templates, e.g.
 
-   ``` jinja2
+   ``` jinja
    {% include "snippets/my_snippet.jinja2" %}
    ```
 
    will only be resolved relatively to the current plugin, and thus need
    to be prefixed referencing the target plugin going forward:
 
-   ``` jinja2
+   ``` jinja
    {% include "plugin_some_other_plugin/snippets/my_snippet.jinja2" %}
    ```
 2. Templates rendered by your plugin. e.g. in a custom route created through the [`BlueprintPlugin` mixin](#sec-plugins-mixins-blueprintplugin) need to be prefixed as well. Example:

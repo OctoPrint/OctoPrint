@@ -75,6 +75,9 @@ class PydanticModelInspector:
         def token_comma(scanner, token):
             return "COMMA", token
 
+        def token_pipe(scanner, token):
+            return "PIPE", token
+
         def token_whitespace(scanner, token):
             return "WHITESPACE", token
 
@@ -84,6 +87,7 @@ class PydanticModelInspector:
                 (r"\[", token_lbracket),
                 (r"\]", token_rbracket),
                 (r",", token_comma),
+                (r"\|", token_pipe),
                 (r"\s+", token_whitespace),
             ]
         )

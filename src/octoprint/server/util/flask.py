@@ -1537,7 +1537,7 @@ def permission_validator(request, permission):
     Must be executed in an existing Flask request context!
 
     :param request: The Flask request object
-    :param request: The required permission
+    :param permission: The required permission
     """
 
     user = get_flask_user_from_request(request)
@@ -1553,7 +1553,7 @@ def permission_and_fresh_credentials_validator(request, permission):
     Must be executed in an existing Flask request context!
 
     :param request: The Flask request object
-    :param request: The required permission
+    :param permission: The required permission
     """
 
     permission_validator(request, permission)
