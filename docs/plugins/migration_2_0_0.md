@@ -269,9 +269,9 @@ removal cycle of deprecated features!
 :::
 
 (sec-plugins-octo_2_0_0-server-settings-_config)=
-#### `octoprint.settings.SettingsManager._config` removed
+#### `octoprint.settings.Settings._config` removed
 
-The long deprecated `octoprint.settings.SettingsManager._config` field has been removed. If you need read access to its old value, use the `config` property instead.
+The long deprecated `octoprint.settings.Settings._config` field has been removed. If you need read access to its old value, use the `config` property instead.
 
 Write access should be avoided at all costs, but if absolutely necessary can be achieved through `_map.topmap`.
 
