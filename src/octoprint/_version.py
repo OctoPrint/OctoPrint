@@ -57,11 +57,11 @@ BRANCH_VERSIONS = [
         "commit": "d0268b28427c6dc632bccdc75433ba67e53a5650",
         "patterns": ["next", "regression/*"],
     },
-    # dev is ongoing work towards 2.0.0
+    # dev is ongoing work towards 2.1.0
     # so are fix/..., wip/..., dependabot/...
     {
-        "tag": "2.0.0",
-        "commit": "ad3fdb9cb641b52db8e7f479d388c10317597c76",
+        "tag": "2.1.0",
+        "commit": "d0268b28427c6dc632bccdc75433ba67e53a5650",
         "patterns": ["dev", "fix/.*", "wip/.*", "dependabot/.*"],
     },
 ]
