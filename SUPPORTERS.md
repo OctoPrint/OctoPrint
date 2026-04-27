@@ -32,15 +32,15 @@ thanks to everyone who contributed!
   * Erik Ableson
   * Ernesto Martinez
   * Franziska Kunsmann
-  * homoldak000
+  * Grzegorz Wierzowiecki
   * James Nangano
   * Jason Kitchens
   * John Cassel
+  * jrytio
   * Justin Kaufman
   * Kaile Riser
   * Keenan Newton
   * Kurt Wubbels
-  * Kyle Warner
   * Lachlan Bell
   * Makespace Madrid
   * Marco van Dijk
@@ -63,9 +63,7 @@ thanks to everyone who contributed!
   * Sinie47
   * Stefan Krister
   * Steve Dougherty
-  * TheWebMachine
-  * Tideline 3D
   * Timothy Efinger
   * Ulrich Kempken
 
-and 2277 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!
+and 2213 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!
