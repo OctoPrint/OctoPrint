@@ -264,17 +264,18 @@ def _get_data_from_git():
     template = "{tag}"
     dirty = "+g{short}.dirty"
 
-    if branch is not None:
-        lookup = _parse_branch_versions()
-        for matcher, virtual_tag, ref_commit in lookup:
-            if not matcher.match(branch):
-                continue
+    if distance is None or distance > 0:
+        if branch is not None:
+            lookup = _parse_branch_versions()
+            for matcher, virtual_tag, ref_commit in lookup:
+                if not matcher.match(branch):
+                    continue
 
-            tag = virtual_tag
-            distance = _get_distance(ref_commit)
-            template = "{tag}.dev{distance}+g{short}"
-            dirty = ".dirty"
-            break
+                tag = virtual_tag
+                distance = _get_distance(ref_commit)
+                template = "{tag}.dev{distance}+g{short}"
+                dirty = ".dirty"
+                break
 
     if is_dirty:
         template += dirty
