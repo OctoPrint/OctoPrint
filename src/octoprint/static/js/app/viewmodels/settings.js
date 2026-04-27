@@ -131,6 +131,7 @@ $(function () {
         self.revealingApiKey = ko.observable(false);
 
         self.reauthReqs = undefined;
+        self.accessControl_defaultReauthenticationTimeout = ko.observable(undefined);
 
         self.appearance_name = ko.observable(undefined);
         self.appearance_color = ko.observable(undefined);
