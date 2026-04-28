@@ -81,9 +81,15 @@ $(function () {
                         if (result === undefined || result === null) return;
 
                         reevaluateResult = result;
-                        self.connectionParametersValidated(result);
                     }
                 );
+                if (reevaluateResult !== undefined) {
+                    // some VM considered itself responsible, let's use the result
+                    self.connectionParametersValidated(reevaluateResult);
+                } else {
+                    // no specific check for this connector found, default to "valid"
+                    self.connectionParametersValidated(true);
+                }
             }, 10);
         };
         self.setConnectionInputsEnabled = (enabled) => {
