@@ -848,7 +848,7 @@ def uploadGcodeFile(target):
                 to_select or to_print or reselect
             ):
                 job = fileManager.create_job(target, added_file, owner=user)
-                printer.set_job(job, printer_after_select=to_print)
+                printer.set_job(job, print_after_select=to_print)
 
             if userdata is not None:
                 # upload included userdata, add this now to the metadata
