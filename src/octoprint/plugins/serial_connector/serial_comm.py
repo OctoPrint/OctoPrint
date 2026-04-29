@@ -1221,6 +1221,17 @@ class MachineCom:
               queue to be processed before closing (True, default) or not (False)
         """
 
+        if self._state == self.STATE_DETECT_SERIAL:
+            # if we are running serial detection, we only close the serial port and trigger the next detection step
+            if self._serial:
+                try:
+                    self._serial.close()
+                except Exception:
+                    self._logger.exception("Error while trying to close serial port")
+                self._serial = None
+                self._perform_detection_step()
+            return
+
         # legacy parameters
         is_error = kwargs.get("isError", is_error)
 
@@ -3598,7 +3609,9 @@ class MachineCom:
                             b, get_exception_string()
                         )
                     )
-                    self._logger.exception(f"Unexpected error while setting baudrate {b}")
+                    self._logger.exception(
+                        f"Unexpected error while setting up serial port {p} @ {b}"
+                    )
 
         error_text = "No more candidates to test, and no working port/baudrate combination detected."
         self._trigger_error(error_text, "autodetect")
