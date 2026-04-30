@@ -12,6 +12,7 @@ import tempfile
 import threading
 import time
 from datetime import datetime
+from urllib.parse import urlparse
 
 import filetype
 import pylru
@@ -915,6 +916,13 @@ class PluginManagerPlugin(
             except Exception as exc:
                 self._logger.exception(f"Could not parse {path} as json file: {exc}")
 
+    def _is_vcs_url(self, url):
+        scheme = urlparse(url).scheme
+        return scheme in PluginManagerPlugin.URL_SCHEMES and scheme not in (
+            "http",
+            "https",
+        )
+
     def command_install(
         self,
         url=None,
@@ -933,16 +941,21 @@ class PluginManagerPlugin(
             try:
                 source = path
                 source_type = "path"
+                is_vcs_url = False
 
                 if url is not None:
-                    # fetch URL
-                    folder = tempfile.TemporaryDirectory()
-                    path = download_file(url, folder.name)
                     source = url
                     source_type = "url"
+                    if self._is_vcs_url(url):
+                        path = url
+                        is_vcs_url = True
+                    else:
+                        # fetch URL
+                        folder = tempfile.TemporaryDirectory()
+                        path = download_file(url, folder.name)
 
                 # determine type of path
-                if self._is_archive(path):
+                if is_vcs_url or self._is_archive(path):
                     result = self._command_install_archive(
                         path,
                         source=source,
@@ -953,6 +966,7 @@ class PluginManagerPlugin(
                         no_build_isolation=no_build_isolation,
                         partial=partial,
                         from_repo=from_repo,
+                        is_vcs_url=is_vcs_url,
                     )
 
                 elif self._is_pythonfile(path):
@@ -1037,6 +1051,7 @@ class PluginManagerPlugin(
         no_build_isolation=False,
         partial=False,
         from_repo=False,
+        is_vcs_url=False,
     ):
         throttled = self._get_throttled()
         if (
@@ -1062,15 +1077,20 @@ class PluginManagerPlugin(
 
         from urllib.parse import quote as url_quote
 
-        path = os.path.abspath(path)
-        if os.sep != "/":
+        if is_vcs_url:
+            # VCS URL goes straight to pip
+            path_url = path
+            shell_quote = sarge.shell_quote
+        elif os.sep != "/":
             # windows gets special handling
+            path = os.path.abspath(path)
             drive, loc = os.path.splitdrive(path)
             path_url = (
                 "file:///" + drive.lower() + url_quote(loc.replace(os.sep, "/").lower())
             )
             shell_quote = lambda x: x  # do not shell quote under windows, non posix shell
         else:
+            path = os.path.abspath(path)
             path_url = "file://" + url_quote(path)
             shell_quote = sarge.shell_quote
 
@@ -1085,7 +1105,7 @@ class PluginManagerPlugin(
         if dependency_links or self._settings.get_boolean(["dependency_links"]):
             pip_args.append("--process-dependency-links")
 
-        if no_build_isolation or is_pre_pep517_plugin_package(path):
+        if not is_vcs_url and (no_build_isolation or is_pre_pep517_plugin_package(path)):
             pip_args += PRE_PEP517_PIP_ARGS
 
         all_plugins_before = self._plugin_manager.find_plugins(existing={})
