@@ -748,57 +748,55 @@ class MachineCom:
         self._resend_ratio_reported = False
 
         # hooks
-        self._pluginManager = octoprint.plugin.plugin_manager()
-
         self._gcode_hooks = {
-            "queuing": self._pluginManager.get_hooks(
+            "queuing": self._plugin_manager.get_hooks(
                 "octoprint.comm.protocol.gcode.queuing"
             ),
-            "queued": self._pluginManager.get_hooks(
+            "queued": self._plugin_manager.get_hooks(
                 "octoprint.comm.protocol.gcode.queued"
             ),
-            "sending": self._pluginManager.get_hooks(
+            "sending": self._plugin_manager.get_hooks(
                 "octoprint.comm.protocol.gcode.sending"
             ),
-            "sent": self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.sent"),
+            "sent": self._plugin_manager.get_hooks("octoprint.comm.protocol.gcode.sent"),
         }
-        self._received_message_hooks = self._pluginManager.get_hooks(
+        self._received_message_hooks = self._plugin_manager.get_hooks(
             "octoprint.comm.protocol.gcode.received"
         )
-        self._error_message_hooks = self._pluginManager.get_hooks(
+        self._error_message_hooks = self._plugin_manager.get_hooks(
             "octoprint.comm.protocol.gcode.error"
         )
         self._atcommand_hooks = {
-            "queuing": self._pluginManager.get_hooks(
+            "queuing": self._plugin_manager.get_hooks(
                 "octoprint.comm.protocol.atcommand.queuing"
             ),
-            "sending": self._pluginManager.get_hooks(
+            "sending": self._plugin_manager.get_hooks(
                 "octoprint.comm.protocol.atcommand.sending"
             ),
         }
         self._firmware_info_hooks = {
-            "info": self._pluginManager.get_hooks(
+            "info": self._plugin_manager.get_hooks(
                 "octoprint.comm.protocol.firmware.info"
             ),
-            "capabilities": self._pluginManager.get_hooks(
+            "capabilities": self._plugin_manager.get_hooks(
                 "octoprint.comm.protocol.firmware.capabilities"
             ),
-            "capability_report": self._pluginManager.get_hooks(
+            "capability_report": self._plugin_manager.get_hooks(
                 "octoprint.comm.protocol.firmware.capability_report"
             ),
         }
 
-        self._printer_action_hooks = self._pluginManager.get_hooks(
+        self._printer_action_hooks = self._plugin_manager.get_hooks(
             "octoprint.comm.protocol.action"
         )
-        self._gcodescript_hooks = self._pluginManager.get_hooks(
+        self._gcodescript_hooks = self._plugin_manager.get_hooks(
             "octoprint.comm.protocol.scripts"
         )
-        self._serial_factory_hooks = self._pluginManager.get_hooks(
+        self._serial_factory_hooks = self._plugin_manager.get_hooks(
             "octoprint.comm.transport.serial.factory"
         )
 
-        self._temperature_hooks = self._pluginManager.get_hooks(
+        self._temperature_hooks = self._plugin_manager.get_hooks(
             "octoprint.comm.protocol.temperatures.received"
         )
 
@@ -1222,6 +1220,17 @@ class MachineCom:
            wait (bool): Whether to wait for all messages in the send
               queue to be processed before closing (True, default) or not (False)
         """
+
+        if self._state == self.STATE_DETECT_SERIAL:
+            # if we are running serial detection, we only close the serial port and trigger the next detection step
+            if self._serial:
+                try:
+                    self._serial.close()
+                except Exception:
+                    self._logger.exception("Error while trying to close serial port")
+                self._serial = None
+                self._perform_detection_step()
+            return
 
         # legacy parameters
         is_error = kwargs.get("isError", is_error)
@@ -3600,7 +3609,9 @@ class MachineCom:
                             b, get_exception_string()
                         )
                     )
-                    self._logger.exception(f"Unexpected error while setting baudrate {b}")
+                    self._logger.exception(
+                        f"Unexpected error while setting up serial port {p} @ {b}"
+                    )
 
         error_text = "No more candidates to test, and no working port/baudrate combination detected."
         self._trigger_error(error_text, "autodetect")
