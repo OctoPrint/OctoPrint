@@ -339,15 +339,67 @@ $(function () {
             self.temperature_profiles.remove(profile);
         };
 
+        self.defaultTerminalFilters =
+            typeof DEFAULT_TERMINAL_FILTERS !== "undefined"
+                ? DEFAULT_TERMINAL_FILTERS
+                : [];
+
+        self.terminalFilterHasDefault = function (filter) {
+            return !!_.find(self.defaultTerminalFilters, {name: filter.name()});
+        };
+
+        self.terminalFilterMatchesDefault = function (filter) {
+            var def = _.find(self.defaultTerminalFilters, {name: filter.name()});
+            return !!def && filter.regex() === def.regex;
+        };
+
+        self.terminalFiltersMatchDefaults = ko.pureComputed(function () {
+            return _.isEqual(
+                _.map(self.terminalFilters(), function (f) {
+                    return {name: f.name(), regex: f.regex()};
+                }),
+                self.defaultTerminalFilters
+            );
+        });
+
+        self._wrapTerminalFilter = function (filter) {
+            return {
+                name: ko.observable(filter.name),
+                regex: ko.observable(filter.regex)
+            };
+        };
+
         self.addTerminalFilter = function () {
-            self.terminalFilters.push({
-                name: "New",
-                regex: "(>>>\\s+(N\\d+\\s+)?M105)|(<<<\\s+(ok\\s+([PBN]\\d+\\s+)*)?.*([BCLPR]|T\\d*):-?\\d+)"
-            });
+            self.terminalFilters.push(
+                self._wrapTerminalFilter({
+                    name: "New",
+                    regex: "(>>>\\s+(N\\d+\\s+)?M105)|(<<<\\s+(ok\\s+([PBN]\\d+\\s+)*)?.*([BCLPR]|T\\d*):-?\\d+)"
+                })
+            );
         };
 
         self.removeTerminalFilter = function (filter) {
             self.terminalFilters.remove(filter);
+        };
+
+        self.resetTerminalFilter = function (filter) {
+            var def = _.find(self.defaultTerminalFilters, {name: filter.name()});
+            if (def) {
+                filter.regex(def.regex);
+            }
+        };
+
+        self.resetAllTerminalFilters = function () {
+            showConfirmationDialog(
+                gettext(
+                    "This will reset all terminal filters to their defaults. Any custom filters will be lost."
+                ),
+                function () {
+                    self.terminalFilters(
+                        _.map(self.defaultTerminalFilters, self._wrapTerminalFilter)
+                    );
+                }
+            );
         };
 
         self.testWebcamFfmpegPathBusy = ko.observable(false);
@@ -829,6 +881,11 @@ $(function () {
                         return result;
                     }
                 },
+                terminalFilters: function () {
+                    return _.map(self.terminalFilters(), function (filter) {
+                        return {name: filter.name(), regex: filter.regex()};
+                    });
+                },
                 temperature: {
                     profiles: function () {
                         var result = [];
@@ -964,7 +1021,7 @@ $(function () {
                     }
                 },
                 terminalFilters: function (value) {
-                    self.terminalFilters($.extend(true, [], value));
+                    self.terminalFilters(_.map(value, self._wrapTerminalFilter));
                 },
                 temperature: {
                     profiles: function (value) {
