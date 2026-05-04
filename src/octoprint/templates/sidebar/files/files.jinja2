@@ -45,7 +45,7 @@
             <div class="btn btn-mini toggleAdditionalData" data-bind="click: function() { if ($root.enableAdditionalData($data)) { $root.toggleAdditionalData($data); } else { return; } }, css: { disabled: !$root.enableAdditionalData($data) }" title="{{ _('Additional data')|edq }}"><i class="fas fa-chevron-down"></i></div>
         </div>
         <div class="file-entry-content" data-bind="style: { 'flex-direction': $root.contentFlexDirection() }">
-            <div class="file-entry-thumbnail clickable" data-bind="style: { width: $root.thumbnailsContainerWidth, 'text-align': $root.thumbnailsAlignment, display: ($root.thumbnailLink($data) && $root.loginState.hasPermissionKo($root.access.permissions.FILES_DOWNLOAD) && $root.thumbnailsEnabled()) ? 'block' : 'none' }">
+            <div class="file-entry-thumbnail clickable" data-bind="style: { width: $root.thumbnailsContainerWidth, 'text-align': $root.thumbnailsAlignment, display: ($root.thumbnailLink($data) && $root.loginState.hasPermissionKo($root.access.permissions.FILES_DOWNLOAD)() && $root.thumbnailsEnabled()) ? 'block' : 'none' }">
                 <img loading="lazy" data-bind="attr: { src: $root.thumbnailLink($data) }, style: { 'max-width': $root.thumbnailsWidth }, popover: { placement: 'right', title: '{{ _("Preview") | esq }}', html: true, content: $root.thumbnailPopover($data), container: 'body', trigger: $root.thumbnailPopoverTrigger }">
             </div>
             <div class="file-entry-meta">
@@ -73,7 +73,7 @@
             <div class="title muted" data-bind="text: display, attr: { title: display }"></div>
         </div>
         <div class="file-entry-content" data-bind="style: { 'flex-direction': $root.contentFlexDirection() }">
-            <div class="file-entry-thumbnail" data-bind="style: { width: $root.thumbnailsContainerWidth, 'text-align': $root.thumbnailsAlignment, display: ($root.thumbnailLink($data) && $root.loginState.hasPermissionKo($root.access.permissions.FILES_DOWNLOAD) && $root.thumbnailsEnabled()) ? 'block' : 'none' }, class: $root.thumbnailsContainerClass">
+            <div class="file-entry-thumbnail" data-bind="style: { width: $root.thumbnailsContainerWidth, 'text-align': $root.thumbnailsAlignment, display: ($root.thumbnailLink($data) && $root.loginState.hasPermissionKo($root.access.permissions.FILES_DOWNLOAD)() && $root.thumbnailsEnabled()) ? 'block' : 'none' }, class: $root.thumbnailsContainerClass">
                 <img loading="lazy" data-bind="attr: { src: $root.thumbnailLink($data) }, style: { 'max-width': $root.thumbnailsWidth }, popover: { placement: 'right', title: '{{ _("Preview") | esq }}', html: true, content: $root.thumbnailPopover($data), container: 'body', trigger: $root.thumbnailPopoverTrigger }">
             </div>
             <div class="file-entry-meta">
@@ -115,7 +115,7 @@
     </script>
 </div>
 <div class="text-right muted"
-     data-bind="attr: {title: diskusageString}, css: {'text-error': diskusageCritical}, style: {'font-weight': diskusageCritical() || diskusageWarning() ? 'bold' : 'normal'}, visible: $root.loginState.hasPermissionKo($root.access.permissions.FILES_LIST) && $root.currentStorageHasUsage()">
+     data-bind="attr: {title: diskusageString}, css: {'text-error': diskusageCritical}, style: {'font-weight': diskusageCritical() || diskusageWarning() ? 'bold' : 'normal'}, visible: $root.loginState.hasPermissionKo($root.access.permissions.FILES_LIST)() && $root.currentStorageHasUsage()">
     <small>{{ _("Free") }}: <span data-bind="text: freeSpaceString"></span> / {{ _("Total") }}: <span data-bind="text: totalSpaceString"></span> <i class="fas fa-exclamation-triangle"
     data-bind="visible: diskusageWarning"
     style="display: none"></i></small>
