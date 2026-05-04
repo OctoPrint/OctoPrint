@@ -12,6 +12,7 @@ import tempfile
 import threading
 import time
 from datetime import datetime
+from urllib.parse import urlparse
 
 import filetype
 import pylru
@@ -136,9 +137,8 @@ class PluginManagerPlugin(
     JSON_EXTENSIONS = (".json",)
 
     # valid pip install URL schemes according to https://pip.pypa.io/en/stable/reference/pip_install/
-    URL_SCHEMES = (
-        "http",
-        "https",
+    DOWNLOAD_SCHEMES = ("http", "https")
+    URL_SCHEMES = DOWNLOAD_SCHEMES + (
         "git",
         "git+http",
         "git+https",
@@ -915,6 +915,13 @@ class PluginManagerPlugin(
             except Exception as exc:
                 self._logger.exception(f"Could not parse {path} as json file: {exc}")
 
+    def _is_vcs_url(self, url):
+        scheme = urlparse(url).scheme
+        return (
+            scheme in PluginManagerPlugin.URL_SCHEMES
+            and scheme not in PluginManagerPlugin.DOWNLOAD_SCHEMES
+        )
+
     def command_install(
         self,
         url=None,
@@ -935,14 +942,17 @@ class PluginManagerPlugin(
                 source_type = "path"
 
                 if url is not None:
-                    # fetch URL
-                    folder = tempfile.TemporaryDirectory()
-                    path = download_file(url, folder.name)
                     source = url
-                    source_type = "url"
+                    if self._is_vcs_url(url):
+                        path = url
+                        source_type = "url"
+                    else:
+                        # fetch URL
+                        folder = tempfile.TemporaryDirectory()
+                        path = download_file(url, folder.name)
 
                 # determine type of path
-                if self._is_archive(path):
+                if source_type == "url" or self._is_archive(path):
                     result = self._command_install_archive(
                         path,
                         source=source,
@@ -1062,17 +1072,26 @@ class PluginManagerPlugin(
 
         from urllib.parse import quote as url_quote
 
-        path = os.path.abspath(path)
-        if os.sep != "/":
-            # windows gets special handling
-            drive, loc = os.path.splitdrive(path)
-            path_url = (
-                "file:///" + drive.lower() + url_quote(loc.replace(os.sep, "/").lower())
-            )
-            shell_quote = lambda x: x  # do not shell quote under windows, non posix shell
-        else:
-            path_url = "file://" + url_quote(path)
+        if source_type == "url":
+            # URL goes straight to pip
+            path_url = path
             shell_quote = sarge.shell_quote
+        else:
+            path = os.path.abspath(path)
+            if os.sep != "/":
+                # windows gets special handling
+                drive, loc = os.path.splitdrive(path)
+                path_url = (
+                    "file:///"
+                    + drive.lower()
+                    + url_quote(loc.replace(os.sep, "/").lower())
+                )
+                shell_quote = (
+                    lambda x: x
+                )  # do not shell quote under windows, non posix shell
+            else:
+                path_url = "file://" + url_quote(path)
+                shell_quote = sarge.shell_quote
 
         self._logger.info(f"Installing plugin from {source}")
         pip_args = [
@@ -1085,7 +1104,11 @@ class PluginManagerPlugin(
         if dependency_links or self._settings.get_boolean(["dependency_links"]):
             pip_args.append("--process-dependency-links")
 
-        if no_build_isolation or is_pre_pep517_plugin_package(path):
+        # NOTE: we can only check whether we need PEP517 related args if we have a path source type!
+        # Consequently, packages installed from VCS URLs will not support automatic addition of those pip args!
+        if source_type == "path" and (
+            no_build_isolation or is_pre_pep517_plugin_package(path)
+        ):
             pip_args += PRE_PEP517_PIP_ARGS
 
         all_plugins_before = self._plugin_manager.find_plugins(existing={})

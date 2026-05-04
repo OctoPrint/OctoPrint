@@ -31,6 +31,11 @@ formats:
 
   The plugin manager will feed all contained URLs to the same logic as above.
 
+.. note::
+
+   OctoPrint can only detect the file type (and build isolation support in case of plugin archives to be installed via ``pip``) from URLs provided via ``http`` or ``https``.
+   VCS URLs (e.g. ``git+http``) will be considered plugin archives and directly provided to ``pip`` with the default install parameters.
+
 .. _fig-bundledplugins-pluginmanager-mainscreen:
 .. figure:: ../images/bundledplugins-pluginmanager-mainscreen.png
    :align: center
