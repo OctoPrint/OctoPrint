@@ -1106,7 +1106,7 @@ class PluginManagerPlugin(
 
         # NOTE: we can only check whether we need PEP517 related args if we have a path source type!
         # Consequently, packages installed from VCS URLs will not support automatic addition of those pip args!
-        if source_type != "path" and (
+        if source_type == "path" and (
             no_build_isolation or is_pre_pep517_plugin_package(path)
         ):
             pip_args += PRE_PEP517_PIP_ARGS
