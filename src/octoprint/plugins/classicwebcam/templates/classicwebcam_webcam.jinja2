@@ -62,15 +62,15 @@
                 <p>
                     <strong>{{ _("Webcam stream not loaded") }}</strong>
                 </p>
-                <p data-bind="visible: !loginState.isAdmin()">
+                <p data-bind="visible: !loginState.hasPermissionKo(access.permissions.SETTINGS)()">
                     <small>{{ _("It might not be configured correctly or require authentication. To have this fixed, get in touch with an administrator of this OctoPrint instance.") }}</small>
                 </p>
-                <p data-bind="visible: loginState.isAdmin">
+                <p data-bind="visible: loginState.hasPermissionKo(access.permissions.SETTINGS)">
                     <small>{% trans %}
                         It might not be configured correctly or require authentication. You can change the URL of the stream under "Settings" > "Classic Webcam" > "Stream URL". If you don't have a webcam you can also just disable webcam support there.
                     {% endtrans %}</small>
                 </p>
-                <p data-bind="visible: loginState.isUser">
+                <p>
                     <small>{{ _("Currently configured stream URL") }}: <a target="_blank"
     rel="noreferrer"
     data-bind="attr: {href: settings.streamUrl}, text: settings.streamUrl"></a></small>
