@@ -173,7 +173,7 @@ $(function () {
             });
 
             self.requestData = function () {
-                if (!access.loginState.hasPermissionKo(access.permissions.ADMIN)) return;
+                if (!access.loginState.hasPermission(access.permissions.ADMIN)) return;
 
                 return OctoPrint.access.users.list().done(self.fromResponse);
             };
@@ -416,7 +416,7 @@ $(function () {
                 if (!user) {
                     throw OctoPrint.InvalidArgumentError("user must be set");
                 }
-                if (!access.loginState.hasPermissionKo(access.permissions.ADMIN)) {
+                if (!access.loginState.hasPermission(access.permissions.ADMIN)) {
                     return $.Deferred()
                         .reject("You are not authorized to perform this action")
                         .promise();
@@ -434,7 +434,7 @@ $(function () {
                 if (!user) {
                     throw OctoPrint.InvalidArgumentError("user must be set");
                 }
-                if (!access.loginState.hasPermissionKo(access.permissions.ADMIN)) {
+                if (!access.loginState.hasPermission(access.permissions.ADMIN)) {
                     return $.Deferred()
                         .reject("You are not authorized to perform this action")
                         .promise();
