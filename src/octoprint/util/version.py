@@ -201,6 +201,9 @@ def get_comparable_version(
         >>> str(get_comparable_version("1.2.3rc2", cut=0))
         '1.2.3'
         >>> str(get_comparable_version("1.2.3rc2", base=False))
+        '1.2.3rc2'
+        >>> str(get_comparable_version("1.2.3rc2", cut=1, base=True))
+        '1.2'
 
     Returns:
         A comparable version
