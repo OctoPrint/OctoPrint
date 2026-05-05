@@ -873,6 +873,81 @@ class SettingsTest(unittest.TestCase):
                 if actual_return:
                     settings.backup.assert_called_once_with("trusted_proxies_migration")
 
+    @ddt.data(
+        # default name + old default regex -> migrate to new default regex
+        (
+            [
+                {
+                    "name": "Suppress wait responses",
+                    "regex": r"Recv: wait",
+                }
+            ],
+            [
+                {
+                    "name": "Suppress wait responses",
+                    "regex": r"(Recv:|<<<)\s+wait",
+                }
+            ],
+            True,
+        ),
+        # default name but user-modified regex -> leave as is
+        (
+            [{"name": "Suppress wait responses", "regex": r"custom regex"}],
+            [{"name": "Suppress wait responses", "regex": r"custom regex"}],
+            False,
+        ),
+        # default name + new default regex (already migrated) -> leave as is
+        (
+            [
+                {
+                    "name": "Suppress wait responses",
+                    "regex": r"(Recv:|<<<)\s+wait",
+                }
+            ],
+            [
+                {
+                    "name": "Suppress wait responses",
+                    "regex": r"(Recv:|<<<)\s+wait",
+                }
+            ],
+            False,
+        ),
+        # custom filter -> leave as is
+        (
+            [{"name": "My custom filter", "regex": r"^foo"}],
+            [{"name": "My custom filter", "regex": r"^foo"}],
+            False,
+        ),
+        # mixed list: default name with old default regex + custom filter -> migrate only the default
+        (
+            [
+                {"name": "Suppress wait responses", "regex": r"Recv: wait"},
+                {"name": "My custom filter", "regex": r"^foo"},
+            ],
+            [
+                {
+                    "name": "Suppress wait responses",
+                    "regex": r"(Recv:|<<<)\s+wait",
+                },
+                {"name": "My custom filter", "regex": r"^foo"},
+            ],
+            True,
+        ),
+    )
+    @ddt.unpack
+    def test_migrate_terminal_filters(self, filters, expected_filters, expected_return):
+        config = {"terminalFilters": filters}
+        with self.settings() as settings:
+            actual_return = settings._migrate_terminal_filters(config)
+            self.assertEqual(expected_return, actual_return)
+            self.assertEqual({"terminalFilters": expected_filters}, config)
+
+    def test_migrate_terminal_filters_no_key(self):
+        config = {"foo": "bar"}
+        with self.settings() as settings:
+            self.assertFalse(settings._migrate_terminal_filters(config))
+            self.assertEqual({"foo": "bar"}, config)
+
     ##~~ helpers
 
     @contextlib.contextmanager

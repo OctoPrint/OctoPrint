@@ -33,7 +33,7 @@ from typing import Any
 
 from yaml import YAMLError
 
-from octoprint.schema.config import Config
+from octoprint.schema.config import DEFAULT_TERMINAL_FILTERS, Config
 from octoprint.util import (
     CaseInsensitiveSet,
     atomic_write,
@@ -1222,6 +1222,7 @@ class Settings:
             self._migrate_allowlists_and_blocklists,
             self._migrate_notify_suppressed_commands,
             self._migrate_trusted_auth_proxies,
+            self._migrate_terminal_filters,
         )
 
         for migrate in migrators:
@@ -1829,6 +1830,30 @@ class Settings:
             self._logger.info(
                 f"Made a copy of the current config at {backup_path} to allow recovery of trustRemoteUser"
             )
+
+        return modified
+
+    def _migrate_terminal_filters(self, config):
+        """
+        Migrates terminal filters with pre-2.0.0 default regexes to the new defaults.
+
+        Added in 2.0.0
+        """
+        old_defaults = {
+            "Suppress temperature messages": r"(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+([PBN]\d+\s+)*)?([BCLPR]|T\d*):-?\d+)",
+            "Suppress SD status messages": r"(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)|(Recv: Not SD printing)",
+            "Suppress position messages": r"(Send:\s+(N\d+\s+)?M114)|(Recv:\s+(ok\s+)?X:[+-]?([0-9]*[.])?[0-9]+\s+Y:[+-]?([0-9]*[.])?[0-9]+\s+Z:[+-]?([0-9]*[.])?[0-9]+\s+E\d*:[+-]?([0-9]*[.])?[0-9]+).*",
+            "Suppress wait responses": r"Recv: wait",
+            "Suppress processing responses": r"Recv: (echo:\s*)?busy:\s*processing",
+        }
+        new_defaults = {f.name: f.regex for f in DEFAULT_TERMINAL_FILTERS}
+
+        modified = False
+        for entry in config.get("terminalFilters", []):
+            name = entry.get("name")
+            if name in old_defaults and entry.get("regex") == old_defaults[name]:
+                entry["regex"] = new_defaults[name]
+                modified = True
 
         return modified
 

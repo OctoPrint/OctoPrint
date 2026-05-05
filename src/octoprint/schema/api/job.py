@@ -25,7 +25,7 @@ class ApiJobInfo(BaseModel):
     """File being printed"""
     estimatedPrintTime: Optional[float] = None
     """Estimated print time in seconds, if known"""
-    filament: Optional[dict[str, Optional[dict[str, float]]]] = None
+    filament: Optional[dict[str, Optional[dict[str, Optional[float]]]]] = None
     """Filament usage information as mapping from printer profile to mappings from tool to used length, if known"""
     user: Optional[str] = None
     """The user who started the job, if known"""

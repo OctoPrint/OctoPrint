@@ -26,6 +26,7 @@ from werkzeug.routing import BuildError
 import octoprint.plugin
 from octoprint.access.permissions import OctoPrintPermission, Permissions
 from octoprint.filemanager import full_extension_tree, get_all_extensions
+from octoprint.schema.config import DEFAULT_TERMINAL_FILTERS
 from octoprint.server import (  # noqa: F401
     BRANCH,
     DISPLAY_VERSION,
@@ -861,6 +862,8 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
     filetypes = sorted(full_extension_tree().keys())
     extensions = [f".{ext}" for ext in get_all_extensions()]
 
+    default_terminal_filters = [f.model_dump() for f in DEFAULT_TERMINAL_FILTERS]
+
     # ~~ prepare full set of template vars for rendering
 
     render_kwargs = {
@@ -879,6 +882,7 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
         "permissions": permissions,
         "supportedFiletypes": filetypes,
         "supportedExtensions": extensions,
+        "defaultTerminalFilters": default_terminal_filters,
     }
     render_kwargs.update(plugin_vars)
 

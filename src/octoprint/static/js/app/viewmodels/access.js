@@ -253,7 +253,7 @@ $(function () {
                 };
 
                 access.loginState.reauthenticateIfNecessary(() => {
-                    OctoPrint.users
+                    OctoPrint.access.users
                         .get(user.name)
                         .done(function (data) {
                             process(data);

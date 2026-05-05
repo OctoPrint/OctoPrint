@@ -701,10 +701,12 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         self._listener.on_printer_files_refreshed(files)
 
     def on_comm_file_selected(self, full_path, size, sd, user=None, data=None):
-        storage = FileDestinations.PRINTER if sd else FileDestinations.LOCAL
-
-        path = self._file_manager.path_in_storage(storage, full_path)
-        job = self._file_manager.create_job(storage, path, owner=user)
+        if full_path is None:
+            job = None
+        else:
+            storage = FileDestinations.PRINTER if sd else FileDestinations.LOCAL
+            path = self._file_manager.path_in_storage(storage, full_path)
+            job = self._file_manager.create_job(storage, path, owner=user)
 
         super().set_job(job)
         self._listener.on_printer_job_changed(job, user=user, data=data)

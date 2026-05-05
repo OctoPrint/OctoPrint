@@ -19,17 +19,23 @@
                 <input type="text" class="span12" data-bind="value: regex">
             </div>
             <div class="span2">
-                <a title="Remove Filter"
+                <a title="{{ _('Remove Filter') |edq }}"
                    class="btn btn-danger"
                    data-bind="click: $parent.removeTerminalFilter"><i class="far fa-trash-alt"></i></a>
+                <a title="{{ _('Reset filter to default') |edq }}"
+                   class="btn"
+                   data-bind="visible: $parent.terminalFilterHasDefault($data), click: $parent.resetTerminalFilter, css: {disabled: $parent.terminalFilterMatchesDefault($data)}"><i class="fas fa-rotate-left"></i></a>
             </div>
         </div>
     </div>
     <div class="row-fluid">
         <div class="offset10 span2">
-            <a title="Add Filter"
+            <a title="{{ _('Add Filter') |edq }}"
                class="btn btn-primary"
                data-bind="click: addTerminalFilter"><i class="fas fa-plus"></i></a>
+            <a title="{{ _('Reset all filters to defaults') |edq }}"
+               class="btn"
+               data-bind="click: resetAllTerminalFilters, css: {disabled: terminalFiltersMatchDefaults}"><i class="fas fa-rotate-left"></i></a>
         </div>
     </div>
 </form>

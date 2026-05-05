@@ -827,7 +827,14 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             self._logger.info("Cannot load job: printer not connected or currently busy")
             return
 
+        if tags is None:
+            tags = set()
+        tags |= {"trigger:printer.set_job"}
+
         if job is None:
+            super().set_job(None, tags=tags, user=user)
+            self._connection.set_job(None, tags=tags, user=user)
+            self._update_progress_data()
             return
 
         # canonicalize
@@ -838,10 +845,6 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         if not self._connection.supports_job(job):
             self._logger.info("Cannot load job: printer doesn't support it")
             return
-
-        if tags is None:
-            tags = set()
-        tags |= {"trigger:printer.set_job"}
 
         try:
             recovery_data = self._file_manager.get_recovery_data()
