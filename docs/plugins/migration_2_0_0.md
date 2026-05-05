@@ -160,6 +160,10 @@ In practice for plugins that means replacing any calls to `self._settings.get_pl
 (sec-plugins-octo_2_0_0-server-printer)=
 ### Printer interaction
 
+:::{note}
+The `Printer` class mentioned is injected into plugins as `self._printer`.
+:::
+
 (sec-plugins-octo_2_0_0-server-printer-internal)=
 #### Internal attributes of `Printer` class renamed or removed
 
@@ -186,7 +190,7 @@ The affected names are:
 
 `get_transport` has been deprecated, and the compatibility layer in place is only functional if the current printer connection is provided by the bundled serial connector plugin.
 
-This compatibility layer is planned to get removed in a future version, so if your plugin still relies on `self._printer`, for now *refactor it* to instead check for the serial connector yourself and then fetch the `_comm` and its `_serial` object yourself, with a lot of error checking to protect against internal changes (these are *private* properties shown by the `_` prefix - they are *not* part of the official plugin API!):
+This compatibility layer is planned to get removed in a future version, so if your plugin still relies on `self._printer.get_transport`, for now *refactor it* to instead check for the serial connector yourself and then fetch the `_comm` and its `_serial` object yourself, with a lot of error checking to protect against internal changes (these are *private* properties shown by the `_` prefix - they are *not* part of the official plugin API!):
 
 ``` python
 if self._printer.connection is None or self._connection.connector != "serial":

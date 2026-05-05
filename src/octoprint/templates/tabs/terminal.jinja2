@@ -12,11 +12,11 @@
         <div class="input-block-level input-append">
             <input type="text"
                    id="terminal-command"
-                   data-bind="value: command, event: { keyup: function(d,e) { return handleKeyUp(e); }, keydown: function(d,e) { return handleKeyDown(e); } }, enable: isOperational() && loginState.isUser()"
+                   data-bind="value: command, event: { keyup: function(d,e) { return handleKeyUp(e); }, keydown: function(d,e) { return handleKeyDown(e); } }, enable: isOperational() && loginState.hasPermissionKo(access.permissions.CONTROL)()"
                    autocomplete="off">
             <a class="btn add-on"
                id="terminal-send"
-               data-bind="click: sendCommand, enable: isOperational() && loginState.isUser()">{{ _("Send") }}</a>
+               data-bind="click: sendCommand, enable: isOperational() && loginState.hasPermissionKo(access.permissions.CONTROL)()">{{ _("Send") }}</a>
         </div>
     </div>
     <small id="terminal-autoscroll-panel"
