@@ -290,7 +290,7 @@ def is_prerelease(version: Union[str, Version]) -> bool:
 def normalize_version(version: str) -> str:
     """
     >>> normalize_version("1.2.3+")
-    '3.9.8'
+    '1.2.3'
     >>> normalize_version("v1.2.3")
     '1.2.3'
     >>> normalize_version("1.2.3")
