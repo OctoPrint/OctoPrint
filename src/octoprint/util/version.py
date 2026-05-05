@@ -33,7 +33,7 @@ def get_package_version(package: str) -> str:
     return meta.version(package)
 
 
-def safe_get_package_version(package: str, default: str = None) -> str:
+def safe_get_package_version(package: str, default: Optional[str] = None) -> str:
     """Returns the version of the provided package, returns the configured ``default`` if it cannot be found"""
     try:
         return get_package_version(package)
@@ -70,14 +70,14 @@ def get_octoprint_version(cut: int = None, **kwargs) -> Version:
     return get_comparable_version(octoprint_version_string, cut=cut, **kwargs)
 
 
-def is_released_octoprint_version(version: Union[str, Version] = None) -> bool:
+def is_released_octoprint_version(version: Optional[Union[str, Version]] = None) -> bool:
     """Returns whether the current OctoPrint version is a released version"""
     if version is None:
         version = get_octoprint_version()
     return is_release(version)
 
 
-def is_stable_octoprint_version(version: Union[str, Version] = None) -> bool:
+def is_stable_octoprint_version(version: Optional[Union[str, Version]] = None) -> bool:
     """Returns whether the current OctoPrint version is a stable version"""
     if version is None:
         version = get_octoprint_version()
@@ -85,7 +85,9 @@ def is_stable_octoprint_version(version: Union[str, Version] = None) -> bool:
 
 
 def is_octoprint_compatible(
-    *compatibility_entries: str, octoprint_version: Union[str, Version] = None, **kwargs
+    *compatibility_entries: str,
+    octoprint_version: Optional[Union[str, Version]] = None,
+    **kwargs,
 ) -> bool:
     """
     Tests if the current ``octoprint_version`` is compatible to any of the provided ``compatibility_entries``.
@@ -156,7 +158,7 @@ def get_python_version() -> Version:
 
 
 def is_python_compatible(
-    compat: Union[str, Version], python_version: Union[str, Version]
+    compat: Union[str, Version], python_version: Optional[Union[str, Version]] = None
 ) -> bool:
     """
     Tests if the current python version is compatible to the provided ``compat``.
@@ -199,6 +201,9 @@ def get_comparable_version(
         >>> str(get_comparable_version("1.2.3rc2", cut=0))
         '1.2.3'
         >>> str(get_comparable_version("1.2.3rc2", base=False))
+        '1.2.3rc2'
+        >>> str(get_comparable_version("1.2.3rc2", cut=1, base=True))
+        '1.2'
 
     Returns:
         A comparable version
