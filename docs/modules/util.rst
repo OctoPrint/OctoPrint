@@ -30,3 +30,11 @@ octoprint.util.platform
 
 .. automodule:: octoprint.util.platform
    :members:
+
+.. _sec-modules-util-version:
+
+octoprint.util.version
+----------------------
+
+.. automodule:: octoprint.util.version
+   :members:

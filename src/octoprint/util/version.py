@@ -19,10 +19,12 @@ except ImportError:  # Python 3.7
 
 
 def get_package_version(package):
+    """Returns the version of the provided package, throws an error if it cannot be found"""
     return meta.version(package)
 
 
 def safe_get_package_version(package, default=None):
+    """Returns the version of the provided package, returns ``None`` if it cannot be found"""
     try:
         return get_package_version(package)
     except meta.PackageNotFoundError:
@@ -30,10 +32,12 @@ def safe_get_package_version(package, default=None):
 
 
 def parse_specifier(specifier: str) -> SpecifierSet:
+    """Parses the supplied ``specifier``"""
     return SpecifierSet(specifier)
 
 
 def is_version_compatible(version, specifier):
+    """Checks whether the provided ``version`` is compatible to the supplied version ``specifier``"""
     if not isinstance(version, Version):
         version = parse_version(version)
 
@@ -44,21 +48,25 @@ def is_version_compatible(version, specifier):
 
 
 def get_octoprint_version_string():
+    """Returns the current OctoPrint version as a string"""
     return __version__
 
 
 def get_octoprint_version(cut=None, **kwargs):
+    """Returns the current OctoPrint version in a comparable format"""
     octoprint_version_string = normalize_version(get_octoprint_version_string())
     return get_comparable_version(octoprint_version_string, cut=cut, **kwargs)
 
 
 def is_released_octoprint_version(version=None):
+    """Returns whether the current OctoPrint version is a released version"""
     if version is None:
         version = get_octoprint_version()
     return is_release(version)
 
 
 def is_stable_octoprint_version(version=None):
+    """Returns whether the current OctoPrint version is a stable version"""
     if version is None:
         version = get_octoprint_version()
     return is_stable(version)
@@ -110,6 +118,7 @@ def is_octoprint_compatible(*compatibility_entries, **kwargs):
 
 
 def get_python_version_string():
+    """Returns the current python version as a normalized version string"""
     from platform import python_version
 
     version_string = normalize_version(python_version())
@@ -118,10 +127,20 @@ def get_python_version_string():
 
 
 def get_python_version():
+    """Returns the current python version in a comparable format"""
     return get_comparable_version(get_python_version_string())
 
 
 def is_python_compatible(compat, **kwargs):
+    """
+    Tests if the current python version is compatible to the provided ``compat``.
+
+    Arguments:
+        compat (str): compatibility string to test against
+
+    Returns:
+        (bool) ``True`` the provided compatibility entry matches, else ``False``
+    """
     if not compat:
         return True
 
@@ -210,12 +229,33 @@ def is_release(version):
 
 
 def is_prerelease(version):
+    """
+    >>> is_prerelease("1.2.3a")
+    True
+    >>> is_prerelease("1.2.3b")
+    True
+    >>> is_prerelease("1.2.3rc1")
+    True
+    >>> is_prerelease("1.2.3.dev1")
+    True
+    >>> is_prerelease("1.2.3")
+    False
+    """
     if isinstance(version, str):
         version = get_comparable_version(version)
     return version.is_prerelease
 
 
 def normalize_version(version):
+    """
+    >>> normalize_version("1.2.3+")
+    '3.9.8'
+    >>> normalize_version("v1.2.3")
+    '1.2.3'
+    >>> normalize_version("1.2.3")
+    '1.2.3'
+    """
+
     # Debian has the python version set to 2.7.15+ which is not PEP440 compliant (bug 914072)
     if version.endswith("+"):
         version = version[:-1]
