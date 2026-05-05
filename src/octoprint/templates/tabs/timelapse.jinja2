@@ -148,7 +148,7 @@
         <p data-bind="visible: loginState.hasPermissionKo(access.permissions.SETTINGS)">
             {{ _("A working snapshot setup and/or the path to FFMPEG are missing. You can change both under \"Settings\" > \"Webcam & Timelapse\" and in the settings of your chosen webcam plugin. If you don't have a webcam or don't want to enable timelapse support you can also just disable it there.") }}
         </p>
-        <p>
+        <p data-bind="visible: loginState.loggedIn">
             <small>
                 <!-- ko if: canSnapshot -->
                 <!-- ko if: snapshotDisplay -->

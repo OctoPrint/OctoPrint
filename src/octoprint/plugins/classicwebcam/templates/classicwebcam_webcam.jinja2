@@ -70,7 +70,7 @@
                         It might not be configured correctly or require authentication. You can change the URL of the stream under "Settings" > "Classic Webcam" > "Stream URL". If you don't have a webcam you can also just disable webcam support there.
                     {% endtrans %}</small>
                 </p>
-                <p>
+                <p data-bind="visible: loginState.loggedIn">
                     <small>{{ _("Currently configured stream URL") }}: <a target="_blank"
     rel="noreferrer"
     data-bind="attr: {href: settings.streamUrl}, text: settings.streamUrl"></a></small>
