@@ -309,6 +309,75 @@ If your plugin or other client is still issuing requests against `POST /api/syst
 ```{deprecated} 2.0.0
 ```
 
+#### Migration example: `select_file`
+
+``` python
+from octoprint.filemanager import FileDestinations
+from octoprint.util.version import is_octoprint_compatible
+
+if is_octoprint_compatible(">=2"):
+    job = self._file_manager.create_job(storage, path)
+    self._printer.set_job(job, print_after_select=False)
+else:
+    is_sd = storage == FileDestinations.SDCARD
+    file_to_select = path if is_sd else self._file_manager.path_on_disk(storage, path)
+    self._printer.select_file(file_to_select, sd=is_sd, printAfterSelect=False)
+```
+
+#### Migration example: `unselect_file`
+
+``` python
+from octoprint.util.version import is_octoprint_compatible
+
+if is_octoprint_compatible(">=2"):
+    self._printer.set_job(None)
+else:
+    self._printer.unselect_file()
+```
+
+#### Migration example: `refresh_sd_files` & `get_sd_files`
+
+```python
+from octoprint.filemanager import FileDestinations
+from octoprint.util.version import is_octoprint_compatible
+
+if is_octoprint_compatible(">=2"):
+    self._file_manager.list_storage_entries([FileDestinations.PRINTER], force_refresh=blocking)
+else:
+    self._printer.get_sd_files(blocking=blocking)
+```
+
+#### Migration example: `can_modify_file`
+
+``` python
+from octoprint.filemanager import FileDestinations
+from octoprint.util.version import is_octoprint_compatible
+
+if is_octoprint_compatible(">=2"):
+    current_job = self._printer.current_job
+    is_current_job = current_job is not None and current_job.path == path and current_job.storage == storage
+    return not (is_current_job and (self._printer.is_printing() or self._printer.is_paused()))
+else:
+    is_sd = storage == FileDestinations.SDCARD
+    storage_path = path if is_sd else self._file_manager.path_on_disk(storage, path)
+    return self._printer.can_modify_file(storage_path, is_sd)
+```
+
+#### Migration example: `is_current_file`
+
+``` python
+from octoprint.filemanager import FileDestinations
+from octoprint.util.version import is_octoprint_compatible
+
+if is_octoprint_compatible(">=2"):
+    current_job = self._printer.current_job
+    return current_job is not None and current_job.path == path and current_job.storage == storage
+else:
+    is_sd = storage == FileDestinations.SDCARD
+    storage_path = path if is_sd else self._file_manager.path_on_disk(storage, path)
+    return self._printer.is_current_file(storage_path, is_sd)
+```
+
 ### Removal of direct access to `octoprint.util.comm`
 
 The `octoprint.util.comm` module has been moved into the bundled plugin `serial_connector` and is now available as `octoprint.plugins.serial_connector.serial_comm`. Direct access to `octoprint.util.comm` is deprecated and only kept as a compatibility layer that re-exports from the new location.
