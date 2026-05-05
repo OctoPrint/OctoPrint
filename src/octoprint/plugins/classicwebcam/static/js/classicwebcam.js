@@ -7,6 +7,7 @@ $(function () {
 
         self.loginState = parameters[0];
         self.settings = parameters[1];
+        self.access = parameters[2];
         self.webcamStreamVisible = false;
 
         self.webcamDisableTimeout = undefined;
@@ -375,7 +376,11 @@ $(function () {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: ClassicWebcamViewModel,
-        dependencies: ["loginStateViewModel", "classicWebcamSettingsViewModel"],
+        dependencies: [
+            "loginStateViewModel",
+            "classicWebcamSettingsViewModel",
+            "accessViewModel"
+        ],
         elements: ["#classicwebcam_container"]
     });
 });
