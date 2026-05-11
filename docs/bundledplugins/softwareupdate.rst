@@ -135,7 +135,7 @@ Configuring the Plugin
            # published on OctoPrint's Github repository and pip as update method
            # against the release archives on Github - this is the default
            type: github_release
-           user: foosel
+           user: OctoPrint
            repo: OctoPrint
            method: pip
            pip: 'https://github.com/OctoPrint/OctoPrint/archive/{target_version}.zip'
@@ -174,6 +174,10 @@ Configuring the Plugin
          #   https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token
          # Unset by default
          github:
+
+         # Codeberg API token to use for the codeberg_release or forgejo_release version check with forge set to codeberg.
+         # See https://docs.codeberg.org/advanced/access-token/
+         codeberg:
 
          # Bitbucket user name and password, used by the bitbucket_commit version check if
          # provided, but only if the check doesn't specify credentials on its own.
@@ -239,6 +243,60 @@ types are currently recognized:
   * ``branch``: Branch of the Github repository to check, defaults to
     ``master`` if not set.
   * ``current``: Current commit hash. Will be updated automatically.
+
+* ``forgejo_release``: Checks against releases published on a (reachable) `Forgejo instance <https://forgejo.org/>`_ (e.g. Codeberg). Additional
+  config parameters:
+
+  * ``forge``: (mandatory) Either a known forge name (currently supported: ``codeberg``) or a fully qualified
+    base URL for the API of the forge (e.g. ``https://codeberg.org/api/v1``), starting with ``http://`` or ``https://``
+  * ``user``: (mandatory) user the repository to check belongs to
+  * ``repo``: (mandatory) repository to check
+  * ``prerelease``: ``True`` or ``False``, default ``False``, set to
+    ``True`` to also include releases marked as prerelease.
+  * ``prerelease_branches``: Prerelease channel definitions, optional. List of:
+
+    * ``branch``: Branch associated with the channel, acts as ID
+    * ``name``: Human readable name of the release channel
+    * ``commitish``: List of values to check against ``target_commitish``
+      field in release data - release will only be included if the
+      values match. Defaults to being unset, in which case the ``branch``
+      will be matched.
+  * ``stable_branch``: Stable channel definition, optional. Structure:
+
+    * ``branch``: Branch associated with the channel, acts as ID
+    * ``name``: Human readable name of the release channel
+    * ``commitish``: List of values to check against ``target_commitish``
+      field in release data - release will only be included if the
+      values match. Defaults to being unset, in which case the ``branch``
+      will be matched.
+
+  .. note::
+
+     Setting ``type`` to ``codeberg_release`` will automatically set ``type`` to ``forgejo_release`` and ``forge``
+     to ``codeberg``. Thus, in case of a version check against codeberg, this:
+
+     .. code-block:: python
+
+        {
+          "check": "codeberg_release",
+          "user": "SomeUser",
+          "repo": "SomeRepo"
+        }
+
+     will internally be turned into:
+
+     .. code-block:: python
+
+        {
+          "check": "forgejo_release",
+          "forge": "codeberg",
+          "user": "SomeUser",
+          "repo": "SomeRepo"
+        }
+
+     and thus can be used as a shortcut.
+
+  .. versionadded:: 2.0.0
 
 * ``bitbucket_commit``: Checks against commits pushed to Bitbucket. Additional
   config parameters:

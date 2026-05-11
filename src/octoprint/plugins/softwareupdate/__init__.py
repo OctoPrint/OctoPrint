@@ -64,7 +64,10 @@ class SoftwareUpdatePlugin(
 ):
     COMMIT_TRACKING_TYPES = ("github_commit", "bitbucket_commit")
     CURRENT_TRACKING_TYPES = COMMIT_TRACKING_TYPES + ("httpheader", "jsondata")
-    RELEASE_TRACKING_TYPES = ("github_release",)
+    RELEASE_TRACKING_TYPES = (
+        "github_release",
+        "forgejo_release",
+    )
 
     OCTOPRINT_RESTART_TYPES = ("pip", "single_file_plugin")
 
@@ -1427,7 +1430,7 @@ class SoftwareUpdatePlugin(
             # switched release channel
             if "channel" in data:
                 if (
-                    populated_check["type"] == "github_release"
+                    populated_check["type"] in self.RELEASE_TRACKING_TYPES
                     and "stable_branch" in populated_check
                     and "prerelease_branches" in populated_check
                 ):
@@ -1728,11 +1731,11 @@ class SoftwareUpdatePlugin(
                         }
 
                         if (
-                            populated_check["type"] == "github_release"
+                            populated_check["type"] in self.RELEASE_TRACKING_TYPES
                             and "stable_branch" in populated_check
                             and "prerelease_branches" in populated_check
                         ):
-                            # target supports release channels via github branches and releases
+                            # target supports release channels via branches and releases
                             def to_release_channel(branch_info):
                                 return {
                                     "name": branch_info["name"],
@@ -2344,6 +2347,10 @@ class SoftwareUpdatePlugin(
 
         result = dict(check)
 
+        if result.get("type") == "codeberg_release":
+            result["type"] = "forgejo_release"
+            result["forge"] = "codeberg"
+
         if target == "octoprint":
             displayName = check.get("displayName")
             if displayName is None:
@@ -2416,22 +2423,21 @@ class SoftwareUpdatePlugin(
             # between RCs + stable for the same version release
             result["force_base"] = False
 
-            if check["type"] == "github_release":
-                if check.get("prerelease", None):
-                    # we are tracking prereleases => we want to be on the correct prerelease channel/branch
-                    channel = check.get("prerelease_channel", None)
-                    if channel:
-                        # if we have a release channel, we also set our update_branch here to our release channel
-                        # in case it's not already set
-                        result["update_branch"] = check.get("update_branch", channel)
+            if check.get("prerelease", None):
+                # we are tracking prereleases => we want to be on the correct prerelease channel/branch
+                channel = check.get("prerelease_channel", None)
+                if channel:
+                    # if we have a release channel, we also set our update_branch here to our release channel
+                    # in case it's not already set
+                    result["update_branch"] = check.get("update_branch", channel)
 
-                else:
-                    # we are not tracking prereleases, but aren't on the stable branch either => switch back
-                    # to stable branch on update
-                    result["update_branch"] = check.get(
-                        "update_branch",
-                        check.get("stable_branch", {"branch": "main"})["branch"],
-                    )
+            else:
+                # we are not tracking prereleases, but aren't on the stable branch either => switch back
+                # to stable branch on update
+                result["update_branch"] = check.get(
+                    "update_branch",
+                    check.get("stable_branch", {"branch": "main"})["branch"],
+                )
 
             if check.get("update_script", None):
                 # we force an exact version & python inequality check, to be able to downgrade
