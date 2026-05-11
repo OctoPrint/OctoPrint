@@ -290,7 +290,7 @@ If your plugin or other client is still issuing requests against `POST /api/syst
 
 ### Removal of deprecated methods on `octoprint.printer.standard.Printer`, also known as `self._printer`
 
-- `get_connection_options` -> use `ConnectedPrinter.all()` in combination with `get_connection_options` on the returned `ConnectedPrinter` instances instead
+- `get_connection_options` -> use `ConnectedPrinter.all()` in combination with `connection_options` on the returned `ConnectedPrinter` instances instead
 - `select_file` -> `set_job`
 - `unselect_file` -> `set_job` with `None`
 - `fake_ack` -> `repair_communication`
