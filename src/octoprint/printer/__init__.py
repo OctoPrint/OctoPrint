@@ -842,7 +842,7 @@ class PrinterMixin(CommonPrinterMixin):
 
     @classmethod
     @deprecated(
-        message="get_connection_options has been deprecated and will be removed in a future version. Please use ConnectedPrinter.all() in combination with get_connection_options on the returned ConnectedPrinter instances instead.",
+        message="get_connection_options has been deprecated and will be removed in a future version. Please use ConnectedPrinter.all() in combination with connection_options on the returned ConnectedPrinter instances instead.",
         since="2.0.0",
     )
     def get_connection_options(cls, *args, **kwargs):

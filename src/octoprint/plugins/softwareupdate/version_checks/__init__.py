@@ -7,6 +7,7 @@ from . import (  # noqa: F401
     always_current,
     bitbucket_commit,
     commandline,
+    forgejo_release,
     git_commit,
     github_commit,
     github_release,
@@ -18,20 +19,7 @@ from . import (  # noqa: F401
 )
 
 
-class GitHubRateLimitCheckError(RateLimitCheckError):
-    def __init__(self, remaining, ratelimit, reset):
-        if reset:
-            message = f"GitHub rate limit exceeded, reset at {reset}"
-        else:
-            message = "GitHub rate limit exceeded"
-        super().__init__(message, remaining=remaining, limit=ratelimit, reset=reset)
-
-
-class GitHubApiError(ApiCheckError):
-    API = "GitHub API"
-
-
-def check_github_apiresponse(logger, r, ok_codes=None):
+def check_apiresponse(logger, r, error_cls, ok_codes=None):
     if ok_codes is None:
         ok_codes = (200,)
 
@@ -42,9 +30,29 @@ def check_github_apiresponse(logger, r, ok_codes=None):
         except Exception:
             message = "Not a valid JSON response"
 
-        exc = GitHubApiError(r.status_code, message)
+        exc = error_cls(r.status_code, message)
         logger.error(exc.message)
         raise exc
+
+
+# ~~~ GitHub
+
+
+class GitHubApiError(ApiCheckError):
+    API = "GitHub API"
+
+
+def check_github_apiresponse(logger, r, ok_codes=None):
+    return check_apiresponse(logger, r, GitHubApiError, ok_codes=ok_codes)
+
+
+class GitHubRateLimitCheckError(RateLimitCheckError):
+    def __init__(self, remaining, ratelimit, reset):
+        if reset:
+            message = f"GitHub rate limit exceeded, reset at {reset}"
+        else:
+            message = "GitHub rate limit exceeded"
+        super().__init__(message, remaining=remaining, limit=ratelimit, reset=reset)
 
 
 def check_github_ratelimit(logger, r):
@@ -76,3 +84,14 @@ def check_github_ratelimit(logger, r):
 
     if remaining == 0:
         raise GitHubRateLimitCheckError(remaining, ratelimit, reset)
+
+
+# ~~~ Forgejo
+
+
+class ForgejoApiError(ApiCheckError):
+    API = "Forgejo API"
+
+
+def check_forgejo_apiresponse(logger, r, ok_codes=None):
+    return check_apiresponse(logger, r, ForgejoApiError, ok_codes=ok_codes)

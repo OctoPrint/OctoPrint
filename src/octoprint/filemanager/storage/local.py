@@ -13,7 +13,13 @@ import typing
 from contextlib import contextmanager
 from os import listdir, scandir, walk
 
-import gcode_thumbnail_tool as gtt
+try:
+    import gcode_thumbnail_tool as gtt
+except ImportError:
+    # pillow dependencies are most likely missing
+    logging.getLogger(__name__).exception("Error while loading gcode thumbnail tool")
+    gtt = None
+
 import psutil
 import pylru
 
@@ -77,7 +83,7 @@ class LocalFileStorage(StorageInterface):
         move_folder=True,
         metadata=True,
         history=True,
-        thumbnails=True,
+        thumbnails=gtt is not None,
         path_on_disk=True,
     )
 
@@ -1651,6 +1657,9 @@ class LocalFileStorage(StorageInterface):
 
     def _extract_thumbnails(self, path: str) -> None:
         folder, name = self.sanitize(path)
+
+        if gtt is None:
+            return
 
         thumbnails = gtt.extract_thumbnail_bytes_from_gcode_file(
             os.path.join(folder, name)

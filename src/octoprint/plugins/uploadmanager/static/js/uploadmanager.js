@@ -1115,16 +1115,24 @@ $(function () {
         self.refreshingThumbnails = ko.observable(false);
         self.enableRefreshThumbnails = () => {
             const selected = self.selectedFiles();
-            if (!selected || selected.length === 0) return false;
+            let capabilities;
 
-            const capabilities = self.files.storageCapabilities(selected[0].origin);
+            if (!selected || selected.length === 0) {
+                capabilities = self.files.storageCapabilities(self.currentStorage());
+            } else {
+                capabilities = self.files.storageCapabilities(selected[0].origin);
+            }
+
             return capabilities.thumbnails;
         };
         self.refreshThumbnails = () => {
             if (!self.enableRefreshThumbnails()) return;
 
-            const files = self.selectedFiles();
-            if (files.length === 0) return;
+            let files = self.selectedFiles();
+            if (files.length === 0) {
+                // nothing selected? Refresh current storage & path!
+                files = [{origin: self.currentStorage(), path: self.currentPath()}];
+            }
 
             self.refreshingThumbnails(true);
             if (files.length > 1) {

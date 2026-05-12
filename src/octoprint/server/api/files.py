@@ -978,12 +978,12 @@ def uploadGcodeFile(target):
         abort(404)
 
 
+@api.route("/files/<string:storage>/", methods=["POST"])
 @api.route("/files/<string:storage>/<path:path>", methods=["POST"])
 @no_firstrun_access
-def gcodeFileCommand(storage, path):
+def gcodeFileCommand(storage, path=""):
     try:
-        if not _validate_filename(storage, path):
-            abort(404)
+        _validate_filename(storage, path)
 
         # valid file commands, dict mapping command name to mandatory parameters
         valid_commands = {
