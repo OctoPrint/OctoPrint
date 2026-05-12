@@ -99,7 +99,7 @@ Then:
 .. todo::
 
    Using a Linux distribution that doesn't use ``apt``? Please send a
-   `Pull Request <https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md#pull-requests>`_ to get the necessary
+   `Pull Request <https://github.com/OctoPrint/OctoPrint/blob/dev/CONTRIBUTING.md#pull-requests>`_ to get the necessary
    steps into this guide!
 
 .. _sec-development-environment-windows:
@@ -225,7 +225,7 @@ IDE Setup
 .. todo::
 
    Using another IDE than the ones below? Please send a
-   `Pull Request <https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md#pull-requests>`_ to get the necessary
+   `Pull Request <https://github.com/OctoPrint/OctoPrint/blob/dev/CONTRIBUTING.md#pull-requests>`_ to get the necessary
    steps into this guide!
 
 Visual Studio Code (vscode)
