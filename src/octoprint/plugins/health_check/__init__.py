@@ -39,6 +39,7 @@ class HealthCheckPlugin(
     def _initialize_checks(self):
         from .checks.filesystem_storage import FilesystemStorageCheck
         from .checks.global_api_key import GlobalApiKeyCheck
+        from .checks.gtt_unusable import GttUnusableCheck
         from .checks.octoprint_freshness import OctoPrintFreshnessCheck
         from .checks.only_admins import OnlyAdminsCheck
         from .checks.python_eol import PythonEolHealthCheck
@@ -49,6 +50,7 @@ class HealthCheckPlugin(
             FilesystemStorageCheck,
             GlobalApiKeyCheck,
             OnlyAdminsCheck,
+            GttUnusableCheck,
         ):
             if clz.key in self.disabled_checks:
                 continue
