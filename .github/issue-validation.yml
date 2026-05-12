@@ -22,14 +22,14 @@ validation_comment: >
 
 
   it looks like there is some **information missing** from your bug report that will
-  be needed in order to solve the problem. Read the [Contribution Guidelines](https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md)
+  be needed in order to solve the problem. Read the [Contribution Guidelines](https://github.com/OctoPrint/OctoPrint/blob/dev/CONTRIBUTING.md)
   which will provide you with a template to *fully fill out* here so that your bug report
   is ready to be investigated (I promise I'll go away then too!).
 
 
   If you did not intend to report a bug but wanted to **request a feature or brain
   storm** about some kind of development, please take special note of the title format
-  to use as described in the [Contribution Guidelines](https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md).
+  to use as described in the [Contribution Guidelines](https://github.com/OctoPrint/OctoPrint/blob/dev/CONTRIBUTING.md).
 
 
   **Please do not abuse the bug tracker as a support forum** - that can be found at

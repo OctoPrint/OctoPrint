@@ -60,7 +60,7 @@ in any way to make it better instead of just complaining about it -- this is an 
 after all :)
 
 For information about how to go about submitting bug reports or pull requests, please see the project's
-[Contribution Guidelines](https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md).
+[Contribution Guidelines](https://github.com/OctoPrint/OctoPrint/blob/dev/CONTRIBUTING.md).
 
 ## Special Thanks
 

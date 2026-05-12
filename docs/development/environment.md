@@ -92,7 +92,7 @@ Additionally:
 
 :::{note}
 Using another IDE than the ones below? Please send a
-[Pull Request](https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md#pull-requests) to get the necessary
+[Pull Request](https://github.com/OctoPrint/OctoPrint/blob/dev/CONTRIBUTING.md#pull-requests) to get the necessary
 steps into this guide!
 :::
 
