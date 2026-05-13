@@ -69,6 +69,19 @@
                data-bind="click: function() { $root.listHelper.toggleFilter('printed'); }"><i class="fas fa-check"
    data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'printed') ? 'visible' : 'hidden'}"></i> {{ _("Hide successfully printed files") }}</a>
         </li>
+        <!-- ko if: $root.currentStorageHasThumbnails -->
+        <li class="divider"></li>
+        <li>
+            <a href="javascript:void(0)"
+               data-bind="click: function() { $root.refreshThumbnails(false) }"><i class="fas fa-spinner fa-spin"
+   data-bind="style: {visibility: $root.refreshingThumbnails() ? 'visible' : 'hidden' }"></i> {{ _("Refresh thumbnails of current folder") }}</a>
+        </li>
+        <li>
+            <a href="javascript:void(0)"
+               data-bind="click: function() { $root.refreshThumbnails(true) }"><i class="fas fa-spinner fa-spin"
+   data-bind="style: {visibility: $root.refreshingThumbnails() ? 'visible' : 'hidden' }"></i> {{ _("Refresh thumbnails of current folder (recursively)") }}</a>
+        </li>
+        <!-- /ko -->
     </ul>
 </div>
 
