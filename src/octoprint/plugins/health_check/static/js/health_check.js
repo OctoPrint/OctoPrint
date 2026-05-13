@@ -383,6 +383,28 @@ $(function () {
             };
         };
 
+        self._fromResponse_gtt_unusable = (result, context) => {
+            if (result === "ok") return;
+
+            const title = gettext("GCODE Thumbnail Tool unavailable");
+            const html =
+                "<p>" +
+                gettext(
+                    "The GCODE Thumbnail Tool, which is used for the native thumbnail support on the local storage, cannot be loaded."
+                ) +
+                "</p><p>" +
+                gettext(
+                    'The most likely cause for this are one or more missing OS dependencies for the used image library "Pillow". If you want to fix this, please see the following FAQ entry:'
+                ) +
+                "<p><a href='https://faq.octoprint.org/gtt-unavailable' target='_blank' rel='noopener noreferrer'>How to fix unavailability of GCODE Thumbnail Tool</a></p>";
+
+            return {
+                title: title,
+                html: html,
+                result: result
+            };
+        };
+
         self.onAllBound = function (allViewModels) {
             const additionalHandlers = {};
             callViewModels(
