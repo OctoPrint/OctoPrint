@@ -213,6 +213,10 @@ $(function () {
                 (!self.isPrinting() || !!capabilities.concurrent_printing)
             );
         };
+        self.storageHasThumbnails = (storage) => {
+            const capabilities = self.storageCapabilities(storage);
+            return !!capabilities.thumbnails;
+        };
 
         self.currentStorage = ko.observable("local");
         self.currentStorage.subscribe((val) => {
@@ -256,6 +260,10 @@ $(function () {
         self.currentStorageCanAddFolder = ko.pureComputed(() => {
             const storage = self.currentStorage();
             return self.storageCanAddFolder(storage);
+        });
+        self.currentStorageHasThumbnails = ko.pureComputed(() => {
+            const storage = self.currentStorage();
+            return self.storageHasThumbnails(storage);
         });
 
         self.freeSpaceString = ko.pureComputed(function () {
@@ -561,6 +569,25 @@ $(function () {
                 }
                 self.listHelper.selectNone();
             }
+        };
+
+        self.refreshingThumbnails = ko.observable(false);
+        self.refreshThumbnails = function (recursive) {
+            if (self.refreshingThumbnails()) return;
+
+            const storage = self.currentStorage();
+            if (!self.storageHasThumbnails(storage)) return;
+
+            self.refreshingThumbnails(true);
+
+            OctoPrint.files
+                .refreshThumbnails(storage, self.currentPath(), {
+                    force: true,
+                    recursive: recursive
+                })
+                .always(() => {
+                    self.refreshingThumbnails(false);
+                });
         };
 
         self.fromCurrentData = function (data) {
