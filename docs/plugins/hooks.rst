@@ -1418,7 +1418,7 @@ octoprint.printer.sdcardupload
       def nop_upload_to_sd(printer, filename, path, sd_upload_started, sd_upload_succeeded, sd_upload_failed, *args, **kwargs):
           logger = logging.getLogger(__name__)
 
-          remote_name = printer._get_free_remote_name(filename)
+          remote_name = printer.available_file_name("/", filename)
           logger.info("Starting dummy SDCard upload from {} to {}".format(filename, remote_name))
 
           sd_upload_started(filename, remote_name)
