@@ -396,7 +396,7 @@ $(function () {
                 gettext(
                     'The most likely cause for this are one or more missing OS dependencies for the used image library "Pillow". If you want to fix this, please see the following FAQ entry:'
                 ) +
-                "<p><a href='https://faq.octoprint.org/gtt-unavailable' target='_blank' rel='noopener noreferrer'>How to fix unavailability of GCODE Thumbnail Tool</a></p>";
+                "</p><p><a href='https://faq.octoprint.org/gtt-unavailable' target='_blank' rel='noopener noreferrer'>How to fix unavailability of GCODE Thumbnail Tool</a></p>";
 
             return {
                 title: title,
