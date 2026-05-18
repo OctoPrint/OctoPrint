@@ -104,7 +104,7 @@ dependencies = [
     "websocket-client>=1.9.0,<1.10",  # breaking changes can happen on patch version increases, changelog incomplete
     "werkzeug>=3.1.8,<3.2",  # breaking changes can happen on minor version increases
     "wrapt>=2.1.2,<2.2",
-    "zeroconf==0.148",  # breaking changes can happen on minor version increases (despite semantic versioning)
+    "zeroconf==0.148",  # breaking changes can happen on minor version increases (despite semantic versioning); newer releases might contain genAI authored code
     "zipstream-ng>=1.9.0,<2.0.0",
 
     # vendored deps
