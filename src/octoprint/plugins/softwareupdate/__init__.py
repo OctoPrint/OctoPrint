@@ -2347,7 +2347,7 @@ class SoftwareUpdatePlugin(
 
         result = dict(check)
 
-        if result.get("type") == "codeberg_release":
+        if check.get("type") == "codeberg_release":
             result["type"] = "forgejo_release"
             result["forge"] = "codeberg"
 
@@ -2366,7 +2366,7 @@ class SoftwareUpdatePlugin(
 
             result["released_version"] = is_released_octoprint_version()
 
-            if check["type"] in self.COMMIT_TRACKING_TYPES:
+            if result["type"] in self.COMMIT_TRACKING_TYPES:
                 result["current"] = REVISION if REVISION else "unknown"
             else:
                 result["current"] = VERSION
@@ -2404,7 +2404,7 @@ class SoftwareUpdatePlugin(
                 # displayVersion AND current missing or None
                 result["displayVersion"] = "unknown"
 
-            if check["type"] in self.CURRENT_TRACKING_TYPES:
+            if result["type"] in self.CURRENT_TRACKING_TYPES:
                 result["current"] = check.get("current", None)
             else:
                 result["current"] = check.get(
@@ -2412,7 +2412,7 @@ class SoftwareUpdatePlugin(
                 )
 
         if (
-            check["type"] in self.RELEASE_TRACKING_TYPES
+            result["type"] in self.RELEASE_TRACKING_TYPES
             and result["current"]
             and (check.get("prerelease", None) or not is_stable(result["current"]))
         ):
