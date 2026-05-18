@@ -2371,6 +2371,12 @@ class SoftwareUpdatePlugin(
 
             if result["type"] in self.COMMIT_TRACKING_TYPES:
                 result["current"] = REVISION if REVISION else "unknown"
+
+                branch = result.get("branch")
+                if branch is None or branch == "master":
+                    result["branch"] = (
+                        "main"  # make sure we default to the existing main branch vs removed master, see #5400
+                    )
             else:
                 result["current"] = VERSION
 
@@ -2549,14 +2555,14 @@ class SoftwareUpdatePlugin(
 
         return None
 
-    def _get_octoprint_tracked_branch(self, checks=None):
+    def _get_octoprint_tracked_branch(self, checks=None, default="main"):
         if checks is None:
             checks = self._get_configured_checks()
 
         if "octoprint" not in checks:
-            return None
+            return default
 
-        return checks["octoprint"].get("branch")
+        return checks["octoprint"].get("branch", default)
 
     def _get_octoprint_pip_target(self, checks=None):
         if checks is None:
