@@ -63,7 +63,7 @@ def get_latest(target, check, online=True, credentials=None, *args, **kwargs):
 
     if forge is None or user is None or repo is None:
         raise ConfigurationInvalid(
-            "Update configuration for {} of type github_commit needs user and repo set and not None".format(
+            "Update configuration for {} of type forgejo_commit needs forge, user and repo set and not None".format(
                 target
             )
         )
@@ -102,7 +102,7 @@ def get_latest(target, check, online=True, credentials=None, *args, **kwargs):
     if not forge.startswith("http://") and not forge.startswith("https://"):
         # unknown forge and no baseurl provided, bail
         raise ConfigurationInvalid(
-            "Update configuration for {} of type forgejo_release requires either a known forge or a full base url as its forge config".format(
+            "Update configuration for {} of type forgejo_commit requires either a known forge or a full base url as its forge config".format(
                 target
             )
         )
