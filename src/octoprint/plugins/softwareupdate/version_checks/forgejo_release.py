@@ -285,7 +285,7 @@ def get_latest(
         check.get("release_compare", "python"), custom=custom_compare
     )
 
-    forgejo_credentials = credentials.get("forgejo")
+    forgejo_credentials = credentials.get("forgejo", {})
     apikey = None
 
     if forge in DEFAULT_BASEURLS:
