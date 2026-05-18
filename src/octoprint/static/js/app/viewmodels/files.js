@@ -53,7 +53,7 @@ $(function () {
         self.moveDestinationFullpath = ko.pureComputed(function () {
             // Join the paths for renaming
             if (self.moveSourceFilename() !== self.moveDestinationFilename()) {
-                if (self.moveDestination() === "/") {
+                if (self.moveDestination().endsWith("/")) {
                     return self.moveDestination() + self.moveDestinationFilename();
                 } else {
                     return self.moveDestination() + "/" + self.moveDestinationFilename();
@@ -953,7 +953,7 @@ $(function () {
             var slashPos = entry.path.lastIndexOf("/");
             var current;
             if (slashPos >= 0) {
-                current = "/" + entry.path.substr(0, slashPos);
+                current = "/" + entry.path.substr(0, slashPos) + "/";
             } else {
                 current = "/";
             }
