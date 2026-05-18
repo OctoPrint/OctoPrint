@@ -134,7 +134,7 @@ $(function () {
                 let result = [];
                 entries.forEach((entry) => {
                     if (entry.type !== "folder") return;
-                    result.push("/" + entry.path);
+                    result.push("/" + entry.path + "/");
 
                     if (entry.children) {
                         result = result.concat(createFolderList(entry.children));

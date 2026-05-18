@@ -1352,6 +1352,11 @@ def gcodeFileCommand(storage, path=""):
                 sanitized_source = fileManager.path_in_storage(storage, path)
 
                 destination = data["destination"]
+                if fileManager.folder_exists(
+                    dst_storage, destination
+                ) and not destination.endswith("/"):
+                    destination += "/"  # ensure target folders end on /, see #5393
+
                 dst_path, dst_name = fileManager.split_path(dst_storage, destination)
                 if not dst_name:
                     dst_name = name
