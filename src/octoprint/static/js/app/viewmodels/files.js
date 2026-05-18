@@ -953,7 +953,7 @@ $(function () {
             var slashPos = entry.path.lastIndexOf("/");
             var current;
             if (slashPos >= 0) {
-                current = "/" + entry.path.substr(0, slashPos);
+                current = "/" + entry.path.substr(0, slashPos) + "/";
             } else {
                 current = "/";
             }
