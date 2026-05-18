@@ -285,10 +285,17 @@ def get_latest(
         check.get("release_compare", "python"), custom=custom_compare
     )
 
+    forgejo_credentials = credentials.get("forgejo")
     apikey = None
+
     if forge in DEFAULT_BASEURLS:
-        apikey = credentials.get(forge)
+        apikey = forgejo_credentials.get(forge)  # e.g. "codeberg: aabbcc..."
         forge = DEFAULT_BASEURLS[forge]
+
+    if apikey is None:
+        apikey = forgejo_credentials.get(
+            forge
+        )  # e.g. "https://codeberg.org/api/v1: aabbcc..."
 
     if not forge.startswith("http://") and not forge.startswith("https://"):
         # unknown forge and no baseurl provided, bail

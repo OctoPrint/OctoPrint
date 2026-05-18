@@ -172,16 +172,20 @@ Configuring the Plugin
          # Helpful if you regularly run into rate limit issues with the GitHub API using
          # the default anonymous access. Use a personal access token:
          #   https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token
-         # Unset by default
+         # Unset by default.
          github:
 
-         # Codeberg API token to use for the codeberg_release or forgejo_release version check with forge set to codeberg.
-         # See https://docs.codeberg.org/advanced/access-token/
-         codeberg:
+         # Forgejo API tokens to use for forgejo_release version check. Key is the API Baseurl of the forge. Special codeberg key
+         # can be used to set codeberg API key without having to use the URL.
+         # See https://docs.codeberg.org/advanced/access-token/ and https://forgejo.org/docs/latest/user/api-usage/#generating-and-listing-api-tokens
+         # Empty by default.
+         forgejo:
+           codeberg: aabbcc...
+           https://git.example.com/api/v1: aabbcc...
 
          # Bitbucket user name and password, used by the bitbucket_commit version check if
          # provided, but only if the check doesn't specify credentials on its own.
-         # Unset by default
+         # Unset by default.
          bitbucket_user:
          bitbucket_password:
 
