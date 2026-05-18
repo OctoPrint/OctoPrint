@@ -302,6 +302,45 @@ types are currently recognized:
 
   .. versionadded:: 2.0.0
 
+* ``forgejo_commit``: Checks against commits pushed to a (reachable) `Forgejo instance <https://forgejo.org/>`_ (e.g. Codeberg). Additional
+  config parameters:
+
+  * ``forge``: (mandatory) Either a known forge name (currently supported: ``codeberg``) or a fully qualified
+    base URL for the API of the forge (e.g. ``https://codeberg.org/api/v1``), starting with ``http://`` or ``https://``
+  * ``user``: (mandatory) user the repository to check belongs to
+  * ``repo``: (mandatory) repository to check
+  * ``branch``: Branch of the repository to check, defaults to
+    ``master`` if not set.
+  * ``current``: Current commit hash. Will be updated automatically.
+
+  .. note::
+
+     Setting ``type`` to ``codeberg_commit`` will automatically set ``type`` to ``forgejo_commit`` and ``forge``
+     to ``codeberg``. Thus, in case of a version check against codeberg, this:
+
+     .. code-block:: python
+
+        {
+          "check": "codeberg_commit",
+          "user": "SomeUser",
+          "repo": "SomeRepo"
+        }
+
+     will internally be turned into:
+
+     .. code-block:: python
+
+        {
+          "check": "forgejo_commit",
+          "forge": "codeberg",
+          "user": "SomeUser",
+          "repo": "SomeRepo"
+        }
+
+     and thus can be used as a shortcut.
+
+  .. versionadded:: 2.0.0
+
 * ``bitbucket_commit``: Checks against commits pushed to Bitbucket. Additional
   config parameters:
 

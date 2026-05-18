@@ -62,7 +62,7 @@ class SoftwareUpdatePlugin(
     octoprint.plugin.WizardPlugin,
     octoprint.plugin.EventHandlerPlugin,
 ):
-    COMMIT_TRACKING_TYPES = ("github_commit", "bitbucket_commit")
+    COMMIT_TRACKING_TYPES = ("github_commit", "forgejo_commit", "bitbucket_commit")
     CURRENT_TRACKING_TYPES = COMMIT_TRACKING_TYPES + ("httpheader", "jsondata")
     RELEASE_TRACKING_TYPES = (
         "github_release",
@@ -2349,6 +2349,9 @@ class SoftwareUpdatePlugin(
 
         if check.get("type") == "codeberg_release":
             result["type"] = "forgejo_release"
+            result["forge"] = "codeberg"
+        elif check.get("type") == "codeberg_commit":
+            result["type"] = "forgejo_commit"
             result["forge"] = "codeberg"
 
         if target == "octoprint":
