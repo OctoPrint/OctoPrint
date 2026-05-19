@@ -36,10 +36,12 @@ thanks to everyone who contributed!
   * James Nangano
   * Jason Kitchens
   * John Cassel
+  * joseosanchez
   * jrytio
   * Justin Kaufman
   * Kaile Riser
   * Keenan Newton
+  * kliment
   * Kurt Wubbels
   * Lachlan Bell
   * Makespace Madrid
@@ -66,4 +68,4 @@ thanks to everyone who contributed!
   * Timothy Efinger
   * Ulrich Kempken
 
-and 2213 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!
+and 2187 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!
