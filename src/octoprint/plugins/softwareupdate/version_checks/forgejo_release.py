@@ -11,7 +11,7 @@ from octoprint.util.version import get_comparable_version
 
 RELEASE_URL = "{baseurl}/repos/{user}/{repo}/releases"
 
-DEFAULT_BASEURLS = {"codeberg": "https://codeberg.org/api/v1"}
+from .common import FORGEJO_DEFAULT_BASEURLS
 
 logger = logging.getLogger(
     "octoprint.plugins.softwareupdate.version_checks.forgejo_release"
@@ -285,10 +285,17 @@ def get_latest(
         check.get("release_compare", "python"), custom=custom_compare
     )
 
+    forgejo_credentials = credentials.get("forgejo", {})
     apikey = None
-    if forge in DEFAULT_BASEURLS:
-        apikey = credentials.get(forge)
-        forge = DEFAULT_BASEURLS[forge]
+
+    if forge in FORGEJO_DEFAULT_BASEURLS:
+        apikey = forgejo_credentials.get(forge)  # e.g. "codeberg: aabbcc..."
+        forge = FORGEJO_DEFAULT_BASEURLS[forge]
+
+    if apikey is None:
+        apikey = forgejo_credentials.get(
+            forge
+        )  # e.g. "https://codeberg.org/api/v1: aabbcc..."
 
     if not forge.startswith("http://") and not forge.startswith("https://"):
         # unknown forge and no baseurl provided, bail

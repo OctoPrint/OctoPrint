@@ -62,7 +62,7 @@ class SoftwareUpdatePlugin(
     octoprint.plugin.WizardPlugin,
     octoprint.plugin.EventHandlerPlugin,
 ):
-    COMMIT_TRACKING_TYPES = ("github_commit", "bitbucket_commit")
+    COMMIT_TRACKING_TYPES = ("github_commit", "forgejo_commit", "bitbucket_commit")
     CURRENT_TRACKING_TYPES = COMMIT_TRACKING_TYPES + ("httpheader", "jsondata")
     RELEASE_TRACKING_TYPES = (
         "github_release",
@@ -2347,8 +2347,11 @@ class SoftwareUpdatePlugin(
 
         result = dict(check)
 
-        if result.get("type") == "codeberg_release":
+        if check.get("type") == "codeberg_release":
             result["type"] = "forgejo_release"
+            result["forge"] = "codeberg"
+        elif check.get("type") == "codeberg_commit":
+            result["type"] = "forgejo_commit"
             result["forge"] = "codeberg"
 
         if target == "octoprint":
@@ -2366,8 +2369,14 @@ class SoftwareUpdatePlugin(
 
             result["released_version"] = is_released_octoprint_version()
 
-            if check["type"] in self.COMMIT_TRACKING_TYPES:
+            if result["type"] in self.COMMIT_TRACKING_TYPES:
                 result["current"] = REVISION if REVISION else "unknown"
+
+                branch = result.get("branch")
+                if branch is None or branch == "master":
+                    result["branch"] = (
+                        "main"  # make sure we default to the existing main branch vs removed master, see #5400
+                    )
             else:
                 result["current"] = VERSION
 
@@ -2404,7 +2413,7 @@ class SoftwareUpdatePlugin(
                 # displayVersion AND current missing or None
                 result["displayVersion"] = "unknown"
 
-            if check["type"] in self.CURRENT_TRACKING_TYPES:
+            if result["type"] in self.CURRENT_TRACKING_TYPES:
                 result["current"] = check.get("current", None)
             else:
                 result["current"] = check.get(
@@ -2412,7 +2421,7 @@ class SoftwareUpdatePlugin(
                 )
 
         if (
-            check["type"] in self.RELEASE_TRACKING_TYPES
+            result["type"] in self.RELEASE_TRACKING_TYPES
             and result["current"]
             and (check.get("prerelease", None) or not is_stable(result["current"]))
         ):
@@ -2546,14 +2555,14 @@ class SoftwareUpdatePlugin(
 
         return None
 
-    def _get_octoprint_tracked_branch(self, checks=None):
+    def _get_octoprint_tracked_branch(self, checks=None, default="main"):
         if checks is None:
             checks = self._get_configured_checks()
 
         if "octoprint" not in checks:
-            return None
+            return default
 
-        return checks["octoprint"].get("branch")
+        return checks["octoprint"].get("branch", default)
 
     def _get_octoprint_pip_target(self, checks=None):
         if checks is None:

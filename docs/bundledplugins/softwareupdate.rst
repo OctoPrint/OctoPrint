@@ -172,16 +172,20 @@ Configuring the Plugin
          # Helpful if you regularly run into rate limit issues with the GitHub API using
          # the default anonymous access. Use a personal access token:
          #   https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token
-         # Unset by default
+         # Unset by default.
          github:
 
-         # Codeberg API token to use for the codeberg_release or forgejo_release version check with forge set to codeberg.
-         # See https://docs.codeberg.org/advanced/access-token/
-         codeberg:
+         # Forgejo API tokens to use for forgejo_release version check. Key is the API Baseurl of the forge. Special codeberg key
+         # can be used to set codeberg API key without having to use the URL.
+         # See https://docs.codeberg.org/advanced/access-token/ and https://forgejo.org/docs/latest/user/api-usage/#generating-and-listing-api-tokens
+         # Empty by default.
+         forgejo:
+           codeberg: aabbcc...
+           https://git.example.com/api/v1: aabbcc...
 
          # Bitbucket user name and password, used by the bitbucket_commit version check if
          # provided, but only if the check doesn't specify credentials on its own.
-         # Unset by default
+         # Unset by default.
          bitbucket_user:
          bitbucket_password:
 
@@ -289,6 +293,45 @@ types are currently recognized:
 
         {
           "check": "forgejo_release",
+          "forge": "codeberg",
+          "user": "SomeUser",
+          "repo": "SomeRepo"
+        }
+
+     and thus can be used as a shortcut.
+
+  .. versionadded:: 2.0.0
+
+* ``forgejo_commit``: Checks against commits pushed to a (reachable) `Forgejo instance <https://forgejo.org/>`_ (e.g. Codeberg). Additional
+  config parameters:
+
+  * ``forge``: (mandatory) Either a known forge name (currently supported: ``codeberg``) or a fully qualified
+    base URL for the API of the forge (e.g. ``https://codeberg.org/api/v1``), starting with ``http://`` or ``https://``
+  * ``user``: (mandatory) user the repository to check belongs to
+  * ``repo``: (mandatory) repository to check
+  * ``branch``: Branch of the repository to check, defaults to
+    ``master`` if not set.
+  * ``current``: Current commit hash. Will be updated automatically.
+
+  .. note::
+
+     Setting ``type`` to ``codeberg_commit`` will automatically set ``type`` to ``forgejo_commit`` and ``forge``
+     to ``codeberg``. Thus, in case of a version check against codeberg, this:
+
+     .. code-block:: python
+
+        {
+          "check": "codeberg_commit",
+          "user": "SomeUser",
+          "repo": "SomeRepo"
+        }
+
+     will internally be turned into:
+
+     .. code-block:: python
+
+        {
+          "check": "forgejo_commit",
           "forge": "codeberg",
           "user": "SomeUser",
           "repo": "SomeRepo"

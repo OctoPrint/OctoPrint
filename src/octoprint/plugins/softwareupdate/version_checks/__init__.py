@@ -7,6 +7,7 @@ from . import (  # noqa: F401
     always_current,
     bitbucket_commit,
     commandline,
+    forgejo_commit,
     forgejo_release,
     git_commit,
     github_commit,
