@@ -477,6 +477,22 @@
                             <li class="divider"></li>
                             <li>
                                 <a href="javascript:void(0)"
+                                   data-bind="click: function() { repositoryplugins.toggleFilter('hide_commercial'); }"><i class="fas fa-check"
+   data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'hide_commercial') ? 'visible' : 'hidden'}"></i> {{ _("Hide commercial plugins") }}</a>
+                            </li>
+                            <li>
+                                <a href="javascript:void(0)"
+                                   data-bind="click: function() { repositoryplugins.toggleFilter('hide_ai_developed'); }"><i class="fas fa-check"
+   data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'hide_ai_developed') ? 'visible' : 'hidden'}"></i> {{ _("Hide AI developed plugins") }}</a>
+                            </li>
+                            <li>
+                                <a href="javascript:void(0)"
+                                   data-bind="click: function() { repositoryplugins.toggleFilter('hide_abandoned'); }"><i class="fas fa-check"
+   data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'hide_abandoned') ? 'visible' : 'hidden'}"></i> {{ _("Hide abandoned plugins") }}</a>
+                            </li>
+                            <li class="divider"></li>
+                            <li>
+                                <a href="javascript:void(0)"
                                    data-bind="click: function() { repositoryplugins.toggleFilter('filter_installed'); }"><i class="fas fa-check"
    data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'filter_installed') ? 'visible' : 'hidden'}"></i> {{ _("Only show uninstalled plugins") }}</a>
                             </li>
@@ -581,6 +597,8 @@
                                            data-bind="visible: $data.attributes.includes('commercial')"><i class="fas fa-coins"></i> {{ _("Commercial") }}</small>
                                     <small class="label label-success"
                                            data-bind="visible: $data.attributes.includes('free-tier')"><i class="fas fa-thumbs-up"></i> {{ _("Free tier") }}</small>
+                                    <small class="label label-important"
+                                           data-bind="visible: $data.attributes.includes('ai-developed')"><i class="fas fa-robot"></i> {{ _("AI developed") }}</small>
                                 </div>
                             </div>
 
