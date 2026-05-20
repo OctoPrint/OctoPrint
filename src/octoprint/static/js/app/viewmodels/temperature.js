@@ -217,6 +217,7 @@ $(function () {
 
         const STOCK_MARKS = [
             "print",
+            "printing",
             "pause",
             "resume",
             "cancel",
@@ -562,6 +563,7 @@ $(function () {
         [
             // mark labels
             gettext("Start"),
+            gettext("Printing"),
             gettext("Done"),
             gettext("Cancel"),
             gettext("Pause"),

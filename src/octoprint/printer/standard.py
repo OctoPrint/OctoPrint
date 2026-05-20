@@ -1267,7 +1267,13 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                 except Exception:
                     self._logger.exception("Error while pausing the analysis queue")
 
-        if (
+        if state == ConnectedPrinterState.PRINTING and state != old_state:
+            eventManager().fire(
+                Events.CHART_MARKED,
+                {"type": "printing", "label": "Printing"},
+            )
+
+        elif (
             state == ConnectedPrinterState.CLOSED
             or state == ConnectedPrinterState.CLOSED_WITH_ERROR
         ):

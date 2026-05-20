@@ -712,7 +712,7 @@ ChartMarked
 
    Payload:
 
-   * ``type``: The marking's ID. Built-in types are ``print``, ``done``, ``cancel``, ``pause``, and ``resume``.
+   * ``type``: The marking's ID. Built-in types are ``print``, ``printing``, ``done``, ``cancel``, ``pause``, and ``resume``.
      Plugins may set arbitrary types, which should be prefixed, e.g. ``pluginname_eventtype``. In the UI, the type
      ID is used to stylize the marking label.
    * ``label``: The human-readable short label of the marking, ideally one short word. Optional but recommended; if
@@ -721,6 +721,10 @@ ChartMarked
      in the past if it makes sense for the event.
 
    .. versionadded:: 1.9.0
+
+   .. versionchanged:: 2.0.0
+
+      Type ``printing`` added, as an additional marker to signify beginning of actual job processing after preheating, leveling etc.
 
 .. _sec-events-available_events-gcode_processing:
 
