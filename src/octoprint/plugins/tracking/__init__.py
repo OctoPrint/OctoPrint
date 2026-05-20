@@ -445,6 +445,9 @@ class TrackingPlugin(
         track_event = None
         args = {"origin": payload.get("origin"), "file": sha.hexdigest()}
 
+        if "connector" in payload:
+            args["printer_connector"] = payload["connector"]
+
         if event == Events.PRINT_STARTED:
             track_event = "print_started"
         elif event == Events.PRINT_DONE:
