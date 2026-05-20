@@ -479,7 +479,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                     extra={"plugin": name},
                 )
 
-        eventManager().fire(Events.CONNECTING)
+        eventManager().fire(Events.CONNECTING, {"connector": connector})
         self._printer_profile_manager.select(profile)
         printer_profile = self._printer_profile_manager.get_current_or_default()
 
@@ -504,7 +504,11 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         """
         self._file_manager.remove_storage(FileDestinations.PRINTER)
 
-        eventManager().fire(Events.DISCONNECTING)
+        payload = {"connector": "unknown"}
+        if self._connection and self._connection.connector:
+            payload["connector"] = self._connection.connector
+
+        eventManager().fire(Events.DISCONNECTING, payload=payload)
         if self._connection is not None:
             self._connection.disconnect()
             self._connection = None
@@ -1267,7 +1271,9 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             state == ConnectedPrinterState.CLOSED
             or state == ConnectedPrinterState.CLOSED_WITH_ERROR
         ):
+            connector = None
             if self._connection is not None:
+                connector = self._connection.connector
                 self._connection = None
 
             self.on_printer_job_changed(None)
@@ -1277,7 +1283,10 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             self._add_temperature_data()
             self._printer_profile_manager.deselect()
 
-            eventManager().fire(Events.DISCONNECTED)
+            payload = {"connector": "unknown"}
+            if connector:
+                payload["connector"] = connector
+            eventManager().fire(Events.DISCONNECTED, payload=payload)
 
         self._set_state(state, state_string=state_str, error_string=error_str)
 
@@ -1567,7 +1576,10 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         self._add_temperature_data(temperatures)
 
     def on_printer_controls_updated(self, controls: list[dict[str, Any]]):
-        eventManager().fire(Events.PRINTER_CONTROLS_CHANGED)
+        payload = {"connector": "unknown"}
+        if self._connection and self._connection.connector:
+            payload["connector"] = self._connection.connector
+        eventManager().fire(Events.PRINTER_CONTROLS_CHANGED, payload=payload)
 
     def on_printer_logs(self, *lines):
         self.log_lines(*lines)
@@ -1707,7 +1719,10 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         payload = {
             "state_id": self.get_state_id(),
             "state_string": state_string,
+            "connector": "unknown",
         }
+        if self._connection and self._connection.connector:
+            payload["connector"] = self._connection.connector
         eventManager().fire(Events.PRINTER_STATE_CHANGED, payload)
 
     def _add_log(self, log):
@@ -1977,7 +1992,16 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         if "/" in name:
             name = path.rsplit("/", maxsplit=1)[1]
 
-        result = {"name": name, "path": path, "origin": storage, "size": size}
+        result = {
+            "connector": "unknown",
+            "name": name,
+            "path": path,
+            "origin": storage,
+            "size": size,
+        }
+
+        if self._connection and self._connection.connector:
+            result["connector"] = self._connection.connector
 
         if position is not None:
             result["position"] = position

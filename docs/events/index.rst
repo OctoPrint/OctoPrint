@@ -192,25 +192,54 @@ Printer communication
 Connecting
    The server is attempting to connect to the printer.
 
-  .. versionadded:: 1.3.0
+   Payload:
+
+   * ``connector``: the used printer connector
+
+   .. versionadded:: 1.3.0
+
+   .. versionchanged:: 2.0.0
+
+      ``connector`` added to payload
 
 Connected
    The server has connected to the printer.
 
    Payload:
 
-   * ``port``: the connected serial port
-   * ``baudrate``: the baud rate
+   * ``connector``: the used printer connector
+
+   Further payload depends on the used printer connector.
+
+   .. versionchanged:: 2.0.0
+
+      ``connector`` added to payload. ``port`` and ``baudrate`` are now only present for the ``serial`` connector.
 
 Disconnecting
    The server is going to disconnect from the printer. Note that this
    event might not always be sent when the server and printer get disconnected
    from each other. Do not depend on this for critical life cycle management.
 
-  .. versionadded:: 1.3.0
+   Payload:
+
+   * ``connector``: the used printer connector
+
+   .. versionadded:: 1.3.0
+
+   .. versionchanged:: 2.0.0
+
+      ``connector`` added to payload
 
 Disconnected
    The server has disconnected from the printer
+
+   Payload:
+
+   * ``connector``: the used printer connector
+
+   .. versionchanged:: 2.0.0
+
+      ``connector`` added to payload
 
 Error
    An unrecoverable error has been encountered, either as reported by the firmware (e.g. a thermal runaway) or
@@ -227,22 +256,32 @@ Error
    * ``consequence``: What was done as a consequence of that error. ``emergency`` if an ``M112`` emergency stop was sent
      and the connection to the printer closed, ``disconnect`` if the connection was just closed, ``cancel`` if the ongoing
      print job was cancelled. Might also be missing if nothing happened as a consequence.
+   * ``connector``: the used printer connector
 
    In case of errors with reason ``firmware``, the following additional fields might be present in the payload:
 
    * ``faq``: a link to the FAQ entry for the error
    * ``logs``: the last lines from the communication log
 
+   .. versionchanged:: 2.0.0
+
+      ``connector`` added to payload
+
 PrinterStateChanged
    The state of the printer changed.
 
    Payload:
 
+   * ``connector``: the used printer connector
    * ``state_id``: Id of the new state. See
      :func:`~octoprint.printer.PrinterInterface.get_state_id` for possible values.
    * ``state_string``: Text representation of the new state.
 
    .. versionadded:: 1.3.0
+
+   .. versionchanged:: 2.0.0
+
+      ``connector`` added to payload
 
 .. _sec-events-available_events-file_handling:
 
@@ -418,11 +457,16 @@ FileSelected
 
    Payload:
 
+   * ``connector``: the used printer connector
    * ``name``: the file's name
    * ``path``: the file's path within its storage location
    * ``origin``: the origin storage location of the file, either ``local`` or ``printer``
 
    .. versionchanged:: 1.4.0
+
+   .. versionchanged:: 2.0.0
+
+      ``connector`` added to payload
 
 FileDeselected
    No file is selected any more for printing.
@@ -476,6 +520,7 @@ PrintStarted
 
    Payload:
 
+   * ``connector``: the used printer connector
    * ``name``: the file's name
    * ``path``: the file's path within its storage location
    * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
@@ -485,11 +530,16 @@ PrintStarted
 
    .. versionchanged:: 1.4.0
 
+   .. versionchanged:: 2.0.0
+
+      ``connector`` added to payload
+
 PrintFailed
    A print failed.
 
    Payload:
 
+   * ``connector``: the used printer connector
    * ``name``: the file's name
    * ``path``: the file's path within its storage location
    * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
@@ -500,11 +550,16 @@ PrintFailed
 
    .. versionchanged:: 1.4.0
 
+   .. versionchanged:: 2.0.0
+
+      ``connector`` added to payload
+
 PrintDone
    A print completed successfully.
 
    Payload:
 
+   * ``connector``: the used printer connector
    * ``name``: the file's name
    * ``path``: the file's path within its storage location
    * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
@@ -514,11 +569,16 @@ PrintDone
 
    .. versionchanged:: 1.4.0
 
+   .. versionchanged:: 2.0.0
+
+      ``connector`` added to payload
+
 PrintCancelling
    The print is about to be cancelled.
 
    Payload:
 
+   * ``connector``: the used printer connector
    * ``name``: the file's name
    * ``path``: the file's path within its storage location
    * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
@@ -529,11 +589,16 @@ PrintCancelling
 
    .. versionadded:: 1.3.7
 
+   .. versionchanged:: 2.0.0
+
+      ``connector`` added to payload
+
 PrintCancelled
    The print has been cancelled.
 
    Payload:
 
+   * ``connector``: the used printer connector
    * ``name``: the file's name
    * ``path``: the file's path within its storage location
    * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
@@ -558,11 +623,16 @@ PrintCancelled
 
    .. versionchanged:: 1.4.0
 
+   .. versionchanged:: 2.0.0
+
+      ``connector`` added to payload
+
 PrintPaused
    The print has been paused.
 
    Payload:
 
+   * ``connector``: the used printer connector
    * ``name``: the file's name
    * ``path``: the file's path within its storage location
    * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
@@ -586,11 +656,16 @@ PrintPaused
 
    .. versionchanged:: 1.4.0
 
+   .. versionchanged:: 2.0.0
+
+      ``connector`` added to payload
+
 PrintResumed
    The print has been resumed.
 
    Payload:
 
+   * ``connector``: the used printer connector
    * ``name``: the file's name
    * ``path``: the file's path within its storage location
    * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
@@ -599,6 +674,10 @@ PrintResumed
    * ``user``: the user who resumed the print job (if available)
 
    .. versionchanged:: 1.4.0
+
+   .. versionchanged:: 2.0.0
+
+      ``connector`` added to payload
 
 GcodeScript${ScriptName}Running
    A custom :ref:`GCODE script <sec-features-gcode_scripts>` has started running.
