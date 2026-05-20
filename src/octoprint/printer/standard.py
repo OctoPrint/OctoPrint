@@ -1210,12 +1210,19 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         old_state = self._state
 
         if old_state in PRINTING_STATES:
-            # if we were in any print-related state and went into an error state, mark the print as failed
+            if state not in PRINTING_STATES:
+                # formerly printing, now no longer printing, restart analysis queue
+                try:
+                    self._analysis_queue.resume()  # printing done, put those cpu cycles to good use
+                except Exception:
+                    self._logger.exception("Error while resuming the analysis queue")
+
             if state in {
                 ConnectedPrinterState.CLOSED,
                 ConnectedPrinterState.ERROR,
                 ConnectedPrinterState.CLOSED_WITH_ERROR,
             }:
+                # if we were in any print-related state and went into an error state, mark the print as failed
                 with self._selected_job_mutex:
                     if self._selected_job is not None:
                         payload = self._payload_for_print_job_event()
@@ -1254,11 +1261,6 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                             thread = threading.Thread(target=finalize)
                             thread.daemon = True
                             thread.start()
-
-                try:
-                    self._analysis_queue.resume()  # printing done, put those cpu cycles to good use
-                except Exception:
-                    self._logger.exception("Error while resuming the analysis queue")
 
         elif state in PRINTING_STATES:
             # else we went from a non-printing to a printing state and need to pause the analysis queue
