@@ -1255,12 +1255,13 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                             thread.daemon = True
                             thread.start()
 
-            try:
-                self._analysis_queue.resume()  # printing done, put those cpu cycles to good use
-            except Exception:
-                self._logger.exception("Error while resuming the analysis queue")
+                try:
+                    self._analysis_queue.resume()  # printing done, put those cpu cycles to good use
+                except Exception:
+                    self._logger.exception("Error while resuming the analysis queue")
 
-        elif state == ConnectedPrinterState.PRINTING:
+        elif state in PRINTING_STATES:
+            # else we went from a non-printing to a printing state and need to pause the analysis queue
             if settings().get(["gcodeAnalysis", "runAt"]) == "idle":
                 try:
                     self._analysis_queue.pause()  # only analyse files while idle
