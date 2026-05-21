@@ -215,6 +215,17 @@ $(function () {
 
         self.markings = [];
 
+        const STOCK_MARKS = [
+            "print",
+            "printing",
+            "pause",
+            "resume",
+            "cancel",
+            "done",
+            "connected",
+            "disconnected"
+        ];
+
         self.showStateMarks = ko.observable(
             loadFromLocalStorage("temperatureGraph.showStateMarks", true)
         );
@@ -222,9 +233,19 @@ $(function () {
             saveToLocalStorage("temperatureGraph.showStateMarks", newValue);
             self.updatePlot();
         });
-
         self.toggleStateMarks = function () {
             self.showStateMarks(!self.showStateMarks());
+        };
+
+        self.showNonStockStateMarks = ko.observable(
+            loadFromLocalStorage("temperatureGraph.showNonStockStateMarks", true)
+        );
+        self.showNonStockStateMarks.subscribe((newValue) => {
+            saveToLocalStorage("temperatureGraph.showNonStockStateMarks", newValue);
+            self.updatePlot();
+        });
+        self.toggleNonStockStateMarks = () => {
+            self.showNonStockStateMarks(!self.showNonStockStateMarks());
         };
 
         self.temperatures = [];
@@ -478,7 +499,12 @@ $(function () {
             var markingsLabelMargin = 0;
             var lineWidth = 2;
 
-            var marks = self.markings.map(function (mark) {
+            var markings = self.markings;
+            if (!self.showNonStockStateMarks()) {
+                markings = markings.filter((mark) => STOCK_MARKS.includes(mark.type));
+            }
+
+            var marks = markings.map(function (mark) {
                 var time = parseInt(mark.time * 1000);
                 var o = self.plot.pointOffset({
                     x: time,
@@ -537,6 +563,7 @@ $(function () {
         [
             // mark labels
             gettext("Start"),
+            gettext("Printing"),
             gettext("Done"),
             gettext("Cancel"),
             gettext("Pause"),

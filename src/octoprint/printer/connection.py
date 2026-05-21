@@ -302,9 +302,12 @@ class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterRegistra
     def error_info(self, value: Union[ErrorInformation, None]) -> None:
         self._error_info = value
         if self._error_info:
-            eventManager().fire(
-                Events.ERROR, self._error_info.model_dump(exclude_none=True)
-            )
+            payload = self._error_info.model_dump(exclude_none=True)
+            if self._connection and self._connection.connector:
+                payload["connector"] = self._connection.connector
+            else:
+                payload["connector"] = "unknown"
+            eventManager().fire(Events.ERROR, payload=payload)
             self._listener.on_printer_error(self._error_info)
 
     @property

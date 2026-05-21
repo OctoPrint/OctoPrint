@@ -3369,7 +3369,12 @@ class MachineCom:
                 self._log(errorMsg)
                 self._errorValue = errorMsg
                 eventManager().fire(
-                    Events.ERROR, {"error": self.getErrorString(), "reason": "crash"}
+                    Events.ERROR,
+                    {
+                        "error": self.getErrorString(),
+                        "reason": "crash",
+                        "connector": "serial",
+                    },
                 )
                 self.close(is_error=True)
         self._log("Connection closed, closing down monitor")
@@ -3459,7 +3464,8 @@ class MachineCom:
                 "Too many consecutive timeouts, printer still connected and alive?"
             )
             eventManager().fire(
-                Events.ERROR, {"error": self._errorValue, "reason": "timeout"}
+                Events.ERROR,
+                {"error": self._errorValue, "reason": "timeout", "connector": "serial"},
             )
             self.close(is_error=True)
 
@@ -4242,7 +4248,7 @@ class MachineCom:
         if error is None:
             error = self.getErrorString()
 
-        payload = {"error": error, "reason": reason}
+        payload = {"error": error, "reason": reason, "connector": "serial"}
 
         if consequence:
             payload["consequence"] = consequence

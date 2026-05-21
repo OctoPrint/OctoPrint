@@ -479,7 +479,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                     extra={"plugin": name},
                 )
 
-        eventManager().fire(Events.CONNECTING)
+        eventManager().fire(Events.CONNECTING, {"connector": connector})
         self._printer_profile_manager.select(profile)
         printer_profile = self._printer_profile_manager.get_current_or_default()
 
@@ -504,7 +504,11 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         """
         self._file_manager.remove_storage(FileDestinations.PRINTER)
 
-        eventManager().fire(Events.DISCONNECTING)
+        payload = {"connector": "unknown"}
+        if self._connection and self._connection.connector:
+            payload["connector"] = self._connection.connector
+
+        eventManager().fire(Events.DISCONNECTING, payload=payload)
         if self._connection is not None:
             self._connection.disconnect()
             self._connection = None
@@ -1206,12 +1210,19 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         old_state = self._state
 
         if old_state in PRINTING_STATES:
-            # if we were in any print-related state and went into an error state, mark the print as failed
+            if state not in PRINTING_STATES:
+                # formerly printing, now no longer printing, restart analysis queue
+                try:
+                    self._analysis_queue.resume()  # printing done, put those cpu cycles to good use
+                except Exception:
+                    self._logger.exception("Error while resuming the analysis queue")
+
             if state in {
                 ConnectedPrinterState.CLOSED,
                 ConnectedPrinterState.ERROR,
                 ConnectedPrinterState.CLOSED_WITH_ERROR,
             }:
+                # if we were in any print-related state and went into an error state, mark the print as failed
                 with self._selected_job_mutex:
                     if self._selected_job is not None:
                         payload = self._payload_for_print_job_event()
@@ -1251,23 +1262,27 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                             thread.daemon = True
                             thread.start()
 
-            try:
-                self._analysis_queue.resume()  # printing done, put those cpu cycles to good use
-            except Exception:
-                self._logger.exception("Error while resuming the analysis queue")
-
-        elif state == ConnectedPrinterState.PRINTING:
+        elif state in PRINTING_STATES:
+            # else we went from a non-printing to a printing state and need to pause the analysis queue
             if settings().get(["gcodeAnalysis", "runAt"]) == "idle":
                 try:
                     self._analysis_queue.pause()  # only analyse files while idle
                 except Exception:
                     self._logger.exception("Error while pausing the analysis queue")
 
-        if (
+        if state == ConnectedPrinterState.PRINTING and state != old_state:
+            eventManager().fire(
+                Events.CHART_MARKED,
+                {"type": "printing", "label": "Printing"},
+            )
+
+        elif (
             state == ConnectedPrinterState.CLOSED
             or state == ConnectedPrinterState.CLOSED_WITH_ERROR
         ):
+            connector = None
             if self._connection is not None:
+                connector = self._connection.connector
                 self._connection = None
 
             self.on_printer_job_changed(None)
@@ -1277,7 +1292,10 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             self._add_temperature_data()
             self._printer_profile_manager.deselect()
 
-            eventManager().fire(Events.DISCONNECTED)
+            payload = {"connector": "unknown"}
+            if connector:
+                payload["connector"] = connector
+            eventManager().fire(Events.DISCONNECTED, payload=payload)
 
         self._set_state(state, state_string=state_str, error_string=error_str)
 
@@ -1567,7 +1585,10 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         self._add_temperature_data(temperatures)
 
     def on_printer_controls_updated(self, controls: list[dict[str, Any]]):
-        eventManager().fire(Events.PRINTER_CONTROLS_CHANGED)
+        payload = {"connector": "unknown"}
+        if self._connection and self._connection.connector:
+            payload["connector"] = self._connection.connector
+        eventManager().fire(Events.PRINTER_CONTROLS_CHANGED, payload=payload)
 
     def on_printer_logs(self, *lines):
         self.log_lines(*lines)
@@ -1707,7 +1728,10 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         payload = {
             "state_id": self.get_state_id(),
             "state_string": state_string,
+            "connector": "unknown",
         }
+        if self._connection and self._connection.connector:
+            payload["connector"] = self._connection.connector
         eventManager().fire(Events.PRINTER_STATE_CHANGED, payload)
 
     def _add_log(self, log):
@@ -1977,7 +2001,16 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         if "/" in name:
             name = path.rsplit("/", maxsplit=1)[1]
 
-        result = {"name": name, "path": path, "origin": storage, "size": size}
+        result = {
+            "connector": "unknown",
+            "name": name,
+            "path": path,
+            "origin": storage,
+            "size": size,
+        }
+
+        if self._connection and self._connection.connector:
+            result["connector"] = self._connection.connector
 
         if position is not None:
             result["position"] = position
