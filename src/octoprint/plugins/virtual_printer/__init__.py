@@ -153,7 +153,7 @@ __plugin_homepage__ = (
 )
 __plugin_license__ = "AGPLv3"
 __plugin_description__ = "Provides a virtual printer via a virtual serial port for development and testing purposes"
-__plugin_pythoncompat__ = ">=3.9,<4"
+__plugin_pythoncompat__ = ">=3.10,<4"
 
 
 def __plugin_load__():

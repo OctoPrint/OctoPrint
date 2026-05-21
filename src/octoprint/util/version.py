@@ -13,6 +13,7 @@ The `packaging library <https://packaging.pypa.io>`_ is heavily used.
 
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 
+import importlib.metadata as meta
 import logging
 from typing import Optional, Union
 
@@ -21,11 +22,6 @@ from packaging.version import Version
 from packaging.version import parse as parse_version
 
 from octoprint import __version__
-
-try:
-    import importlib.metadata as meta
-except ImportError:  # Python 3.7
-    import importlib_metadata as meta
 
 
 def get_package_version(package: str) -> str:

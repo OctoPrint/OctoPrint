@@ -243,7 +243,7 @@ __plugin_description__ = (
     "A printer connector plugin to support serial communication (e.g. Marlin, Prusa, ...)"
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=3.9,<4"
+__plugin_pythoncompat__ = ">=3.10,<4"
 __plugin_disabling_discouraged__ = gettext(
     "Without this plugin you will no longer be able to connect "
     "to printers based on serial communication."

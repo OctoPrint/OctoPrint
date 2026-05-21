@@ -72,7 +72,7 @@ class EventManagerPlugin(
 
 
 __plugin_name__ = gettext("Event Manager")
-__plugin_pythoncompat__ = ">=3.9,<4"
+__plugin_pythoncompat__ = ">=3.10,<4"
 __plugin_author__ = "jneilliii"
 __plugin_license__ = "AGPLv3"
 __plugin_description__ = gettext(

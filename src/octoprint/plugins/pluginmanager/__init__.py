@@ -2460,7 +2460,7 @@ __plugin_author__ = "Gina Häußge"
 __plugin_url__ = "https://docs.octoprint.org/en/main/bundledplugins/pluginmanager.html"
 __plugin_description__ = "Allows installing and managing OctoPrint plugins"
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=3.9,<4"
+__plugin_pythoncompat__ = ">=3.10,<4"
 __plugin_hidden__ = True
 
 
