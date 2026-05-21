@@ -4,7 +4,6 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import base64
 import datetime
-import hmac
 import logging
 import sys
 from typing import Optional, Union
@@ -206,44 +205,28 @@ def get_user_for_apikey(
     if apikey is None:
         return None
 
-    user = None
+    user = octoprint.server.userManager.find_user(apikey=apikey)
 
-    global_apikey = settings().get(["api", "key"])
+    if user is None:
+        apikey_hooks = plugin_manager().get_hooks("octoprint.accesscontrol.keyvalidator")
+        for name, hook in apikey_hooks.items():
+            try:
+                user = hook(apikey)
+                if user is not None:
+                    break
+            except Exception:
+                logging.getLogger(__name__).exception(
+                    "Error running api key validator for plugin {} and key {}".format(
+                        name, apikey
+                    ),
+                    extra={"plugin": name},
+                )
 
-    if global_apikey is not None and hmac.compare_digest(
-        apikey, global_apikey
-    ):  # TODO remove in 2.1.0
-        # global api key was used
-        logging.getLogger(__name__).warning(
-            "The global API key was just used. The global API key is deprecated and will cease to function with OctoPrint 2.1.0 (formerly known as 2.1.0)."
-        )
-        user = octoprint.server.userManager.api_user_factory()
-
-    else:
-        user = octoprint.server.userManager.find_user(apikey=apikey)
-
-        if user is None:
-            apikey_hooks = plugin_manager().get_hooks(
-                "octoprint.accesscontrol.keyvalidator"
-            )
-            for name, hook in apikey_hooks.items():
-                try:
-                    user = hook(apikey)
-                    if user is not None:
-                        break
-                except Exception:
-                    logging.getLogger(__name__).exception(
-                        "Error running api key validator for plugin {} and key {}".format(
-                            name, apikey
-                        ),
-                        extra={"plugin": name},
-                    )
-
-            else:
-                if is_loopback_address(remote_address):
-                    plugin = plugin_manager().resolve_plugin_apikey(apikey)
-                    if plugin:
-                        user = octoprint.server.userManager.internal_user_factory()
+        else:
+            if is_loopback_address(remote_address):
+                plugin = plugin_manager().resolve_plugin_apikey(apikey)
+                if plugin:
+                    user = octoprint.server.userManager.internal_user_factory()
 
     if user:
         _flask.session["login_mechanism"] = LoginMechanism.APIKEY

@@ -49,14 +49,6 @@
         return this.save(data, opts);
     };
 
-    OctoPrintSettingsClient.prototype.generateApiKey = function (opts) {
-        return this.base.postJson(apiKeyUrl, opts);
-    };
-
-    OctoPrintSettingsClient.prototype.deleteApiKey = function (opts) {
-        return this.base.delete(apiKeyUrl, opts);
-    };
-
     OctoPrintClient.registerComponent("settings", OctoPrintSettingsClient);
     return OctoPrintSettingsClient;
 });

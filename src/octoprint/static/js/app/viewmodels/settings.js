@@ -124,11 +124,7 @@ $(function () {
         );
         self.locale_languages = _.keys(AVAILABLE_LOCALES);
 
-        self.api_key = ko.observable(undefined);
         self.api_allowCrossOrigin = ko.observable(undefined);
-
-        self.apiKeyVisible = ko.observable(false);
-        self.revealingApiKey = ko.observable(false);
 
         self.reauthReqs = undefined;
         self.accessControl_defaultReauthenticationTimeout = ko.observable(undefined);
@@ -681,52 +677,6 @@ $(function () {
             self.settingsDialog.modal("hide");
         };
 
-        self.generateApiKey = () => {
-            showConfirmationDialog(
-                gettext(
-                    "This will generate a new API Key. The old API Key will cease to function immediately."
-                ),
-                () => {
-                    self.loginState.reauthenticateIfNecessary(() => {
-                        OctoPrint.settings.generateApiKey().done((response) => {
-                            self.api_key(response.apikey);
-                            self.requestData();
-                        });
-                    });
-                }
-            );
-        };
-
-        self.deleteApiKey = () => {
-            if (!self.api_key()) return;
-
-            showConfirmationDialog(
-                gettext(
-                    "This will delete the API Key. It will cease to function immediately."
-                ),
-                () => {
-                    self.loginState.reauthenticateIfNecessary(() => {
-                        OctoPrint.settings.deleteApiKey().done(() => {
-                            self.api_key(undefined);
-                        });
-                    });
-                }
-            );
-        };
-
-        self.copyApiKey = function () {
-            copyToClipboard(self.api_key());
-        };
-
-        self.revealApiKey = () => {
-            self.loginState.reauthenticateIfNecessary(() => {
-                self.revealingApiKey(true);
-                self.requestData().always(() => {
-                    self.revealingApiKey(false);
-                });
-            });
-        };
-
         self.showTranslationManager = function () {
             self.translationManagerDialog.modal();
             return false;
@@ -1108,9 +1058,6 @@ $(function () {
 
             firstRequest.resolve();
 
-            // this should only ever return true if we triggered the request through the "reveal api key" button
-            self.apiKeyVisible(self.revealingApiKey());
-
             // if autologinLocal is enabled and the heads-up not yet acknowledged, show it now
             if (
                 self.settings.accessControl &&
@@ -1350,7 +1297,6 @@ $(function () {
                 };
 
         self.onUserCredentialsOutdated = () => {
-            self.apiKeyVisible(false);
             self.requestData();
         };
 

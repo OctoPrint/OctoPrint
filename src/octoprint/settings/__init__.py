@@ -39,7 +39,6 @@ from octoprint.util import (
     atomic_write,
     dict_merge,
     fast_deepcopy,
-    generate_api_key,
     is_hidden_path,
     time_this,
     yaml,
@@ -2394,16 +2393,6 @@ class Settings:
             os.makedirs(path)
         with atomic_write(filename, mode="wt", max_permissions=0o666) as f:
             f.write(script)
-
-    def generateApiKey(self):
-        apikey = generate_api_key()
-        self.set(["api", "key"], apikey)
-        self.save(force=True)
-        return apikey
-
-    def deleteApiKey(self):
-        self.set(["api", "key"], None)
-        self.save(force=True)
 
 
 def _default_basedir(applicationName):

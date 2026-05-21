@@ -231,18 +231,18 @@ class SettingsTest(unittest.TestCase):
 
     def test_get(self):
         with self.settings() as settings:
-            expected_api_key = "test"
+            expected_server_port = 8080
 
-            api_key = settings.get(["api", "key"])
+            server_port = settings.get(["server", "port"])
 
-            self.assertIsNotNone(api_key)
-            self.assertEqual(api_key, expected_api_key)
+            self.assertIsNotNone(server_port)
+            self.assertEqual(server_port, expected_server_port)
 
     def test_get_int(self):
         with self.settings() as settings:
             expected_server_port = 8080
 
-            server_port = settings.get(["server", "port"])
+            server_port = settings.getInt(["server", "port"])
 
             self.assertIsNotNone(server_port)
             self.assertEqual(server_port, expected_server_port)
@@ -477,8 +477,8 @@ class SettingsTest(unittest.TestCase):
 
     def test_has(self):
         with self.settings() as settings:
-            self.assertTrue(settings.has(["api", "key"]))
-            self.assertFalse(settings.has(["api", "lock"]))
+            self.assertTrue(settings.has(["server", "port"]))
+            self.assertFalse(settings.has(["server", "port2"]))
 
     ##~~ test properties
 
@@ -594,11 +594,11 @@ class SettingsTest(unittest.TestCase):
             _dump_yaml(configfile, config)
 
             # set some value, should also reload file before setting new api key
-            settings.set(["api", "key"], "key")
+            settings.set(["server", "port"], 8081)
 
             # verify updated values
             self.assertEqual("127.0.0.1", settings.get(["server", "host"]))
-            self.assertEqual("key", settings.get(["api", "key"]))
+            self.assertEqual(8081, settings.get(["server", "port"]))
 
     ##~~ test update callbacks
 
@@ -607,13 +607,13 @@ class SettingsTest(unittest.TestCase):
     ):
         with self.settings() as settings:
             callback = unittest.mock.Mock()
-            settings.add_path_update_callback(["api", "key"], callback)
+            settings.add_path_update_callback(["server", "port"], callback)
 
             # set a new value
-            settings.set(["api", "key"], "newkey")
+            settings.set(["server", "port"], 8081)
 
             # verify callback was called
-            callback.assert_called_once_with(["api", "key"], "test", "newkey")
+            callback.assert_called_once_with(["server", "port"], 8080, 8081)
 
     def test_update_callback_reset_to_default(self):
         with self.settings() as settings:
@@ -632,7 +632,7 @@ class SettingsTest(unittest.TestCase):
             settings.add_path_update_callback(["wrong", "path"], callback)
 
             # set a new value
-            settings.set(["api", "key"], "newkey")
+            settings.set(["server", "port"], 8081)
 
             # verify callback was not called
             callback.assert_not_called()
@@ -640,22 +640,22 @@ class SettingsTest(unittest.TestCase):
     def test_update_callback_removal(self):
         with self.settings() as settings:
             callback = unittest.mock.Mock()
-            settings.add_path_update_callback(["api", "key"], callback)
+            settings.add_path_update_callback(["server", "port"], callback)
 
             # set a new value
-            settings.set(["api", "key"], "newkey")
+            settings.set(["server", "port"], 8081)
 
             # verify callback was called
-            callback.assert_called_once_with(["api", "key"], "test", "newkey")
+            callback.assert_called_once_with(["server", "port"], 8080, 8081)
 
             # remove callback
-            settings.remove_path_update_callback(["api", "key"], callback)
+            settings.remove_path_update_callback(["server", "port"], callback)
 
             # set a new value
-            settings.set(["api", "key"], "newkey2")
+            settings.set(["server", "port"], 8082)
 
             # verify callback was not called again
-            callback.assert_called_once_with(["api", "key"], "test", "newkey")
+            callback.assert_called_once_with(["server", "port"], 8080, 8081)
 
     def test_update_callback_child_write(self):
         with self.settings() as settings:
@@ -793,7 +793,7 @@ class SettingsTest(unittest.TestCase):
             time.sleep(1.0)
 
             # set a new value
-            settings.set(["api", "key"], "newkey")
+            settings.set(["server", "port"], 8081)
 
             # should not be written automatically
             self.assertEqual(current_modified, os.stat(config_path).st_mtime)
@@ -1119,7 +1119,7 @@ class ChainmapTest(unittest.TestCase):
         )
 
     def test_has_path(self):
-        self.assertTrue(self.chainmap.has_path(["api", "key"]))
+        self.assertTrue(self.chainmap.has_path(["server", "port"]))
         self.assertTrue(self.chainmap.has_path(["devel"]))
         self.assertTrue(self.chainmap.has_path(["devel", "virtualPrinter"]))
         self.assertTrue(self.chainmap.has_path(["devel", "virtualPrinter", "enabled"]))
@@ -1277,7 +1277,7 @@ class ChainmapTest(unittest.TestCase):
 
     def test_prefix_caching_scalars_ignored(self):
         # this shouldn't populate the prefix cache
-        self.chainmap.has_path(["api", "key"])
+        self.chainmap.has_path(["server", "port"])
 
         # validate that
         self.assertTrue(len(self.chainmap._prefixed_keys) == 0)
