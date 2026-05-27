@@ -378,8 +378,8 @@ $(function () {
                     (child) =>
                         isCurrentlySelected(child) ||
                         !(
-                            child.prints !== undefined &&
-                            child.prints.success !== undefined &&
+                            child.prints &&
+                            typeof child.prints.success === "number" &&
                             child.prints.success > 0
                         )
                 )
