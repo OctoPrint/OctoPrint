@@ -97,7 +97,7 @@ jobs:
       - name: 🐳 Build Dockerfile (1st try)
         id: dockerbuild_1
         continue-on-error: true
-        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: ${{ github.workspace }}/OctoPrint
           file: ${{ env.DOCKERFILE }}
@@ -119,7 +119,7 @@ jobs:
         id: dockerbuild_2
         continue-on-error: true
         if: steps.dockerbuild_1.outcome != 'success'
-        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: ${{ github.workspace }}/OctoPrint
           file: ${{ env.DOCKERFILE }}
@@ -140,7 +140,7 @@ jobs:
       - name: 🐳 Build Dockerfile (3rd & final try)
         id: dockerbuild_3
         if: steps.dockerbuild_1.outcome != 'success' && steps.dockerbuild_2.outcome != 'success'
-        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: ${{ github.workspace }}/OctoPrint
           file: ${{ env.DOCKERFILE }}
