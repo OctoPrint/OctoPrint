@@ -138,9 +138,6 @@ $(function () {
                         plugin.attributes && plugin.attributes.includes("ai-developed")
                     );
                 },
-                hide_abandoned: (plugin) => {
-                    return !plugin.abandoned;
-                },
                 filter_installed: function (plugin) {
                     return !self.installed(plugin);
                 },
