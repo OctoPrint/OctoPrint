@@ -101,17 +101,17 @@ jobs:
           fi
 
       - name: 📧 Discord success notification
-        continue-on-error: true
+        if: github.repository == 'OctoPrint/OctoPrint'
         env:
           DISCORD_WEBHOOK: ${{ secrets.discord_webhook }}
-        uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554 # 0.4.0
-        with:
-          args: "☑️ Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ matrix.branch }}` was successful"
+          BODY: '{"content": "☑️ Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ matrix.branch }}` was successful"}'
+        run: |
+          curl -H "Content-Type: application/json" -d "$BODY" "$DISCORD_WEBHOOK"
+
       - name: 📧 Discord failure notification
-        continue-on-error: true
-        if: failure()
+        if: failure() && github.repository == 'OctoPrint/OctoPrint'
         env:
           DISCORD_WEBHOOK: ${{ secrets.discord_webhook }}
-        uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554 # 0.4.0
-        with:
-          args: "🚫 Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ matrix.branch }}` failed"
+          BODY: '{"content": "🚫 Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ matrix.branch }}` failed"}'
+        run: |
+          curl -H "Content-Type: application/json" -d "$BODY" "$DISCORD_WEBHOOK"
