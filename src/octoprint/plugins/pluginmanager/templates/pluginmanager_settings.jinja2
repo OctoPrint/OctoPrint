@@ -477,29 +477,28 @@
                             <li class="divider"></li>
                             <li>
                                 <a href="javascript:void(0)"
-                                   data-bind="click: function() { repositoryplugins.toggleFilter('hide_commercial'); }"><i class="fas fa-check"
-   data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'hide_commercial') ? 'visible' : 'hidden'}"></i> {{ _("Hide commercial plugins") }}</a>
-                            </li>
-                            <li>
-                                <a href="javascript:void(0)"
-                                   data-bind="click: function() { repositoryplugins.toggleFilter('hide_ai_developed'); }"><i class="fas fa-check"
-   data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'hide_ai_developed') ? 'visible' : 'hidden'}"></i> {{ _("Hide AI developed plugins") }}</a>
-                            </li>
-                            <li class="divider"></li>
-                            <li>
-                                <a href="javascript:void(0)"
                                    data-bind="click: function() { repositoryplugins.toggleFilter('filter_installed'); }"><i class="fas fa-check"
-   data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'filter_installed') ? 'visible' : 'hidden'}"></i> {{ _("Only show uninstalled plugins") }}</a>
+   data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'filter_installed') ? 'visible' : 'hidden'}"></i> {{ _("Hide installed plugins") }}</a>
                             </li>
                             <li>
                                 <a href="javascript:void(0)"
                                    data-bind="click: function() { repositoryplugins.toggleFilter('filter_incompatible'); }"><i class="fas fa-check"
-   data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'filter_incompatible') ? 'visible' : 'hidden'}"></i> {{ _("Only show compatible plugins") }}</a>
+   data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'filter_incompatible') ? 'visible' : 'hidden'}"></i> {{ _("Hide incompatible plugins") }}</a>
                             </li>
                             <li>
                                 <a href="javascript:void(0)"
                                    data-bind="click: function() { repositoryplugins.toggleFilter('filter_abandoned'); }"><i class="fas fa-check"
-   data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'filter_abandoned') ? 'visible' : 'hidden'}"></i> {{ _("Only show unabandoned plugins") }}</a>
+   data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'filter_abandoned') ? 'visible' : 'hidden'}"></i> {{ _("Hide abandoned plugins") }}</a>
+                            </li>
+                            <li>
+                                <a href="javascript:void(0)"
+                                   data-bind="click: function() { repositoryplugins.toggleFilter('filter_commercial'); }"><i class="fas fa-check"
+   data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'filter_commercial') ? 'visible' : 'hidden'}"></i> {{ _("Hide commercial plugins") }}</a>
+                            </li>
+                            <li>
+                                <a href="javascript:void(0)"
+                                   data-bind="click: function() { repositoryplugins.toggleFilter('filter_ai_developed'); }"><i class="fas fa-check"
+   data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'filter_ai_developed') ? 'visible' : 'hidden'}"></i> {{ _("Hide AI developed plugins") }}</a>
                             </li>
                             <li class="divider"></li>
                             <li>
