@@ -12,14 +12,14 @@ RUN [ "$BUILD_TYPE" != "raspi" ] || \
     ( [ "$(dpkg --print-architecture)" != "armhf" ] || echo "deb http://raspbian.raspberrypi.org/raspbian/ $DEBIAN_VERSION main contrib non-free rpi" > /etc/apt/sources.list.d/raspbian.list ) && \
     echo "deb http://archive.raspberrypi.org/debian/ $DEBIAN_VERSION main" > /etc/apt/sources.list.d/raspi.list && \
     # FIXME: switch key file to pi-gen version once https://github.com/RPi-Distro/pi-gen/pull/863 has been merged
-    curl -sL --compressed "https://octoprint.org/files/raspberrypi-keys-sha256.gpg" | gpg --dearmor > /etc/apt/trusted.gpg.d/raspberrypi.gpg && \
-    apt-get -y update \
+    curl -sL --compressed "https://octoprint.org/files/raspberrypi-keys-sha256.gpg" | gpg --dearmor > /etc/apt/trusted.gpg.d/raspberrypi.gpg \
   )
 
 # Default packages
-RUN apt-get -y install python3 python3-venv python3-dev git \
-    cmake cmake-data g++ libffi-dev libssl-dev \
-    libjpeg62-turbo-dev imagemagick coreutils
+RUN apt-get -y update \
+  && apt-get -y install python3 python3-venv python3-dev git \
+     cmake cmake-data g++ libffi-dev libssl-dev \
+     libjpeg62-turbo-dev imagemagick
 
 FROM build_env AS build
 ADD / /octoprint/src
