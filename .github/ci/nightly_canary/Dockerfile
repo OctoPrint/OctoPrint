@@ -19,7 +19,7 @@ RUN [ "$BUILD_TYPE" != "raspi" ] || \
 # Default packages
 RUN apt-get -y install python3 python3-venv python3-dev git \
     cmake cmake-data g++ libffi-dev libssl-dev \
-    libjpeg62-turbo-dev imagemagick
+    libjpeg62-turbo-dev imagemagick coreutils
 
 FROM build_env AS build
 ADD / /octoprint/src
@@ -28,6 +28,7 @@ RUN [ "$BUILD_TYPE" != "raspi" ] || \
   echo "[global]\nextra-index-url=https://piwheels.org/simple" > /etc/pip.conf
 RUN python3 -m venv /octoprint/venv \
   && /octoprint/venv/bin/pip install .
+RUN sha256sum $(find $(/octoprint/venv/bin/pip cache dir) -iname "tornado-*.whl")
 
 FROM build AS runtime
 ENTRYPOINT ["/octoprint/venv/bin/octoprint", "serve", "--basedir", "/octoprint/config", "--iknowwhatimdoing"]
