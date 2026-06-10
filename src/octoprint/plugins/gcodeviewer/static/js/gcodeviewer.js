@@ -651,7 +651,9 @@ $(function () {
                     self.renderer_syncProgress() &&
                     !self.waitForApproval()
                 ) {
-                    self._renderPercentage(data.progress.completion);
+                    self._renderPercentage(
+                        (data.progress.filepos * 100.0) / self.loadedFileSize
+                    );
                 }
             } else {
                 if (self.status === "idle") self.clear();
