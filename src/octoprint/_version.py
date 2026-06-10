@@ -182,7 +182,7 @@ def _get_short():
 
 def _get_tag():
     return os.environ.get(
-        "GIT_VERSION_TAG", _git("describe", "--tags", "--abbrev=0", "--always")
+        "GIT_VERSION_TAG", _git("describe", "--tags", "--abbrev=0", hide_stderr=True)
     )
 
 
@@ -196,6 +196,9 @@ def _get_dirty():
 
 
 def _get_distance(ref):
+    if ref is None:
+        return None
+
     distance = _git("rev-list", f"{ref}..HEAD", "--count")
     if distance is None:
         return None
@@ -245,19 +248,19 @@ def _get_data_from_git():
     # retrieves version info from git checkout, taking virtual tags into account
     branch = _get_branch()
     if _verbose:
-        print(f"Branch: {branch}")
+        print(f"Branch:   {branch}")
 
     is_dirty = _get_dirty()
     if _verbose:
-        print(f"Dirty:  {is_dirty}")  # noqa: E241
+        print(f"Dirty:    {is_dirty}")  # noqa: E241
 
     sha = _get_long()
     if _verbose:
-        print(f"SHA:    {sha}")  # noqa: E241
+        print(f"SHA:      {sha}")  # noqa: E241
 
     short = _get_short()
     if _verbose:
-        print(f"Short:  {short}")  # noqa: E241
+        print(f"Short:    {short}")  # noqa: E241
 
     tag = _get_tag()
     distance = _get_distance(tag)
@@ -276,6 +279,11 @@ def _get_data_from_git():
                 template = "{tag}.dev{distance}+g{short}"
                 dirty = ".dirty"
                 break
+
+    if _verbose:
+        print(f"Tag:      {tag}")  # noqa: E241
+    if _verbose:
+        print(f"Distance: {distance}")  # noqa: E241
 
     if is_dirty:
         template += dirty
