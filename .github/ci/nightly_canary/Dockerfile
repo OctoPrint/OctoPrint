@@ -27,8 +27,7 @@ WORKDIR /octoprint/src
 RUN [ "$BUILD_TYPE" != "raspi" ] || \
   echo "[global]\nextra-index-url=https://piwheels.org/simple" > /etc/pip.conf
 RUN python3 -m venv /octoprint/venv \
-  && /octoprint/venv/bin/pip install .
-RUN sha256sum $(find $(/octoprint/venv/bin/pip cache dir) -iname "tornado-*.whl")
+  && /octoprint/venv/bin/pip install -v .
 
 FROM build AS runtime
 ENTRYPOINT ["/octoprint/venv/bin/octoprint", "serve", "--basedir", "/octoprint/config", "--iknowwhatimdoing"]
