@@ -29,5 +29,8 @@ RUN [ "$BUILD_TYPE" != "raspi" ] || \
 RUN python3 -m venv /octoprint/venv \
   && /octoprint/venv/bin/pip install -v .
 
+WORKDIR /octoprint
+RUN /octoprint/venv/bin/pip wheel tornado && sha256sum *.whl && rm *.whl
+
 FROM build AS runtime
 ENTRYPOINT ["/octoprint/venv/bin/octoprint", "serve", "--basedir", "/octoprint/config", "--iknowwhatimdoing"]
