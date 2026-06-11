@@ -90,6 +90,8 @@ def _create_lastmodified(path, recursive):
             return fileManager.last_modified(
                 storage, path=path_in_storage, recursive=recursive
             )
+        except FileNotFoundError:
+            return None
         except Exception:
             logging.getLogger(__name__).exception(
                 "There was an error retrieving the last modified data from storage {} and path {}".format(
