@@ -6,7 +6,6 @@
     }
 })(this, function (OctoPrintClient, $) {
     const url = "api/settings";
-    const apiKeyUrl = url + "/apikey";
     const reauthReqUrl = url + "/reauthReq";
 
     const OctoPrintSettingsClient = function (base) {
