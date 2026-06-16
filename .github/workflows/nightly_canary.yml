@@ -98,6 +98,9 @@ jobs:
         id: dockerbuild_1
         continue-on-error: true
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        env:
+          DOCKER_BUILD_SUMMARY: "false"
+          DOCKER_BUILD_RECORD_UPLOAD: "false"
         with:
           context: ${{ github.workspace }}/OctoPrint
           file: ${{ env.DOCKERFILE }}
@@ -120,6 +123,9 @@ jobs:
         continue-on-error: true
         if: steps.dockerbuild_1.outcome != 'success'
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        env:
+          DOCKER_BUILD_SUMMARY: "false"
+          DOCKER_BUILD_RECORD_UPLOAD: "false"
         with:
           context: ${{ github.workspace }}/OctoPrint
           file: ${{ env.DOCKERFILE }}
@@ -141,6 +147,9 @@ jobs:
         id: dockerbuild_3
         if: steps.dockerbuild_1.outcome != 'success' && steps.dockerbuild_2.outcome != 'success'
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        env:
+          DOCKER_BUILD_SUMMARY: "false"
+          DOCKER_BUILD_RECORD_UPLOAD: "false"
         with:
           context: ${{ github.workspace }}/OctoPrint
           file: ${{ env.DOCKERFILE }}
