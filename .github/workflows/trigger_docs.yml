@@ -4,6 +4,7 @@ on:
     branches:
       - main
       - dev
+      - next
   release:
     types:
       - released
