@@ -37,7 +37,7 @@ class ApiJobInfo_pre_2_0_0(ApiJobInfo):
 
 
 class ApiProgressInfo(BaseModel):
-    completion: Optional[int] = None
+    completion: Optional[float] = None
     """Completion in percentage, if known"""
     filepos: Optional[int] = None
     """Current file position, if known"""
