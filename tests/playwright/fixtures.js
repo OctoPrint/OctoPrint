@@ -104,10 +104,11 @@ exports.test = base.test.extend({
 
     filesApi: async ({context, baseURL}, use) => {
         const filesApi = {
-            ensureFileUnknown: async (location, name) => {
+            ensureFileUnknown: async (location, name, headers) => {
+                headers = headers || {};
                 return await context.request.delete(
                     baseURL + `/api/files/${location}/${name}`,
-                    {headers: defaultHeaders}
+                    {headers: {...defaultHeaders, ...headers}}
                 );
             },
             getEntryId: (origin, path) => {
