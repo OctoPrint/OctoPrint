@@ -99,6 +99,8 @@ def _create_lastmodified(path, recursive):
             )
         except octoprint.filemanager.NoSuchStorage:
             pass
+        except FileNotFoundError:
+            pass
         except Exception:
             _logger.exception(
                 "There was an error retrieving the last modified data from storage {} and path {}".format(

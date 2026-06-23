@@ -21,6 +21,11 @@ class ParseHeaderTest(unittest.TestCase):
         ('form-data; filename="test.gco"', "form-data", {"filename": "test.gco"}),
         ("form-data; filename=test\\\\.gco", "form-data", {"filename": "test\\\\.gco"}),
         ('form-data; filename="test\\\\.gco"', "form-data", {"filename": "test\\.gco"}),
+        (
+            'form-data; filename="x\\"; name=\\"file.path\\"; z=\\"y"',
+            "form-data",
+            {"filename": 'x"; name="file.path"; z="y'},
+        ),
     )
     @unpack
     def test_parse_header_strip_quotes(self, value, expected_key, expected_dict):
@@ -45,6 +50,11 @@ class ParseHeaderTest(unittest.TestCase):
             "form-data",
             {"filename": "iso-8859-1'en'test.gco"},
         ),
+        (
+            'form-data; filename="x\\"; name=\\"file.path\\"; z=\\"y"',
+            "form-data",
+            {"filename": '"x\\"; name=\\"file.path\\"; z=\\"y"'},
+        ),
     )
     @unpack
     def test_parse_header_leave_quotes(self, value, expected_key, expected_dict):
@@ -56,11 +66,11 @@ class ParseHeaderTest(unittest.TestCase):
         self.assertDictEqual(expected_dict, actual_dict)
 
 
-##~~ _strip_value_quotes
+##~~ _strip_value_quotes & _escape_quotes
 
 
 @ddt
-class StripValueQuotesTest(unittest.TestCase):
+class QuotesHandlingTest(unittest.TestCase):
     @data(
         ("", ""),
         (None, None),
@@ -68,12 +78,29 @@ class StripValueQuotesTest(unittest.TestCase):
         ('"test".gco', '"test".gco'),
         ("test\\\\.gco", "test\\\\.gco"),
         ('"test\\\\.gco"', "test\\.gco"),
+        ('"x\\"; name=\\"file.path\\"; z=\\"y"', 'x"; name="file.path"; z="y'),
     )
     @unpack
     def test_strip_value_quotes(self, value, expected):
         from octoprint.server.util.tornado import _strip_value_quotes
 
         actual = _strip_value_quotes(value)
+
+        self.assertEqual(expected, actual)
+
+    @data(
+        ("", ""),
+        (None, None),
+        (b"test.gco", b'"test.gco"'),
+        (b'test"123.gco', b'"test\\"123.gco"'),
+        (b"test\\.gco", b'"test\\\\.gco"'),
+        (b'x"; name="file.path"; z="y', b'"x\\"; name=\\"file.path\\"; z=\\"y"'),
+    )
+    @unpack
+    def test_add_value_quotes(self, value, expected):
+        from octoprint.server.util.tornado import _add_value_quotes
+
+        actual = _add_value_quotes(value)
 
         self.assertEqual(expected, actual)
 

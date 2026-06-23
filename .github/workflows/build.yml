@@ -219,6 +219,116 @@ jobs:
           python: ${{ matrix.python }}
           suffix: "-py${{ matrix.python }}"
 
+  test-http:
+    name: 🧪 HTTP/API tests
+    runs-on: ubuntu-22.04 # change back to ubuntu-latest once we drop Python 3.7
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.9", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: 🏗 Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ matrix.python }}
+      - name: 🧰 Determine cache key
+        run: |
+          hash=$(cat setup.py | sha256sum | cut -d" " -f1)
+          echo "CACHE_KEY=${{ github.job }}-${{ runner.os }}-python-${{ matrix.python }}-setuppy-$hash" >> $GITHUB_ENV
+      - name: 🧰 Cache pip cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        id: pip-cache
+        with:
+          path: "~/.cache/pip"
+          key: "${{ env.CACHE_KEY }}"
+      - name: 🏗 Set up test dependencies
+        run: |
+          pip install -e .[develop]
+
+      - name: "🔎 Figure out location of CI related files"
+        shell: bash
+        run: |
+          if [ -d ".github/ci" ]; then
+            echo "CI_FILES=.github/ci" >> $GITHUB_ENV
+          else
+            echo "CI_FILES=.github/fixtures" >> $GITHUB_ENV
+          fi
+
+      - name: 🏗 Create base config for test server
+        shell: bash
+        run: |
+          mkdir e2econfig
+
+          CONFIG="$CI_FILES/e2econfig"
+          if [ ! -d "$CONFIG" ]; then
+            # old config location
+            CONFIG="$CI_FILES/with_acl"
+          fi
+
+          cp -r "$CONFIG"/* e2econfig
+
+      - name: 🏗 Install mfa dummy plugin if available
+        shell: bash
+        run: |
+          mfa_dummy="$CI_FILES/mfa_dummy"
+          if [ -d "$mfa_dummy" ]; then
+            mkdir -p e2econfig/plugins
+            cp -r "$mfa_dummy" "e2econfig/plugins/mfa_dummy"
+            echo "TEST_MFA=1" >> $GITHUB_ENV
+          fi
+
+      - name: 🏗 Install csrf test plugin if available
+        shell: bash
+        run: |
+          csrf_test="$CI_FILES/csrf_test.py"
+          if [ -f "$csrf_test" ]; then
+            mkdir -p e2econfig/plugins
+            cp -r "$csrf_test" "e2econfig/plugins/csrf_test.py"
+            echo "TEST_CSRF=1" >> $GITHUB_ENV
+          fi
+
+      - name: 🐙 Start & test OctoPrint server
+        shell: bash
+        run: |
+          npx start-server-and-test "octoprint -b ${{ github.workspace }}/e2econfig serve --host 127.0.0.1 --port 5000" http://127.0.0.1:5000 "pytest -v -m http_api"
+        env:
+          OCTOPRINT_SERVER_BASE: ${{ github.workspace }}/e2econfig
+          TEST_MFA: ${{ env.TEST_MFA }}
+          TEST_CSRF: ${{ env.TEST_CSRF }}
+
+      #- name: 🔎 Check octoprint.log for errors
+      #  shell: bash
+      #  run: |
+      #    echo "::group::Checking octoprint.log for errors"
+      #    log=${{ github.workspace }}/e2econfig/logs/octoprint.log
+      #    if grep "\- ERROR \-" $log; then
+      #      grep -Pazo '(?m)^\N+\- ERROR \-\N*\n(^\N*?\n)*?(?=\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} \- )' $log > octoprint-log-errors.txt
+      #
+      #      echo "::error::Errors were logged to octoprint.log"
+      #      cat octoprint-log-errors.txt
+      #
+      #      cat << EOF >> $GITHUB_STEP_SUMMARY
+      #    ### Errors logged to \`octoprint.log\`
+      #
+      #    \`\`\`
+      #    $(cat octoprint-log-errors.txt)
+      #    \`\`\`
+      #    EOF
+      #
+      #      exit 1
+      #    fi
+      #    echo "::endgroup::"
+
+      - name: ⬆ Upload OctoPrint logs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: failure()
+        with:
+          name: octoprint-http-logs${{ inputs.suffix }}
+          path: ${{ github.workspace }}/e2econfig/logs
+
   publish-on-release:
     name: 📦 Publish build & source on GitHub release
     if: github.event_name == 'release' && github.repository == 'OctoPrint/OctoPrint'
@@ -228,6 +338,7 @@ jobs:
       - test-js-unit
       - test-install
       - test-e2e
+      - test-http
     runs-on: ubuntu-latest
     permissions:
       contents: write

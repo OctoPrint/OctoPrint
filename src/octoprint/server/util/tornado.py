@@ -3,11 +3,15 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import asyncio
+import collections
+import io
 import logging
 import mimetypes
 import os
 import re
+import secrets
 import sys
+from typing import Any
 from urllib.parse import urlparse
 
 import tornado
@@ -24,6 +28,8 @@ import tornado.util
 import tornado.web
 from tornado.concurrent import dummy_executor
 from tornado.ioloop import IOLoop
+from werkzeug.formparser import parse_form_data
+from werkzeug.http import parse_options_header
 from zipstream.ng import ZIP_DEFLATED, ZipStream
 
 import octoprint.util
@@ -297,6 +303,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
 
         # content type of request body
         self._content_type = None
+        self._content_type_attrs = {}
 
         # bytes left to read according to content_length of request body
         self._bytes_left = 0
@@ -307,6 +314,9 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         # buffer for new body
         self._new_body = b""
 
+        # new multipart boundary
+        self._new_multipart_boundary = None
+
         # logger
         self._logger = logging.getLogger(__name__)
 
@@ -316,9 +326,17 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         :attr:`UploadStorageFallbackHandler.BODY_METHODS`) prepares the multipart parsing if content type fits. If it's a
         body-less request, just calls the ``fallback`` with an empty body and finishes the request.
         """
+        content_type_header = self.request.headers.get("Content-Type", None)
+        if content_type_header:
+            self._content_type, self._content_type_attrs = parse_options_header(
+                content_type_header
+            )
+            self._content_type = self._content_type.lower()
+
+        self._deny_reserved_fields()  # block even unhandled requests with reserved fields
+
         if self.request.method in UploadStorageFallbackHandler.BODY_METHODS:
             self._bytes_left = self.request.headers.get("Content-Length", 0)
-            self._content_type = self.request.headers.get("Content-Type", None)
 
             # request might contain a body
             if self.is_multipart():
@@ -329,16 +347,10 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
                     )
 
                 # extract the multipart boundary
-                fields = self._content_type.split(";")
-                for field in fields:
-                    k, sep, v = field.strip().partition("=")
-                    if k == "boundary" and v:
-                        if v.startswith('"') and v.endswith('"'):
-                            self._multipart_boundary = tornado.escape.utf8(v[1:-1])
-                        else:
-                            self._multipart_boundary = tornado.escape.utf8(v)
-                        break
-                else:
+                self._multipart_boundary = tornado.escape.utf8(
+                    self._content_type_attrs.get("boundary")
+                )
+                if not self._multipart_boundary:
                     # RFC2046 section 5.1 (as referred to from RFC 7578) defines the boundary
                     # parameter as mandatory for multipart requests:
                     #
@@ -349,6 +361,12 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
                     raise tornado.web.HTTPError(
                         400, log_message="No multipart boundary supplied"
                     )
+
+                token = secrets.token_hex(16)
+                self._new_multipart_boundary = tornado.escape.utf8(
+                    "MultiPartBoundary-" + token
+                )
+                assert len(self._new_multipart_boundary) <= 70
         else:
             self._fallback(self.request, b"")
             self._finished = True
@@ -371,9 +389,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
 
     def is_multipart(self):
         """Checks whether this request is a ``multipart`` request"""
-        return self._content_type is not None and self._content_type.startswith(
-            "multipart"
-        )
+        return self._content_type == "multipart/form-data"
 
     def _process_multipart_data(self, data):
         """
@@ -465,10 +481,14 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         if filename is not None:
             try:
                 filename = _extended_header_value(filename)
+                if "\r" in filename or "\n" in filename:
+                    raise tornado.web.HTTPError(
+                        400, "line feeds detected in RFC 5987 header"
+                    )
             except Exception:
-                # parse error, this is not RFC 5987 compliant after all
+                # parse error, this is not RFC 5987 compliant after all or contains newlines
                 self._logger.warning(
-                    "extended filename* value {!r} is not RFC 5987 compliant".format(
+                    "extended filename* value {!r} is not RFC 5987 compliant or contains newlines".format(
                         filename
                     )
                 )
@@ -563,17 +583,6 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
             del part["file"]
 
         name = part["name"]
-        if any(
-            name.endswith(b"." + suffix)
-            for suffix in map(octoprint.util.to_bytes, self._suffixes.values())
-        ):
-            # don't add any fields matching our internal suffixes, they shouldn't be there and can't be trusted
-            self._logger.debug(
-                f"Throwing away part with name {name}, it matches one of our internal suffixes"
-            )
-            finish_file()
-            return
-
         self._parts[name] = part
         if "file" in part:
             self._files.append(part["path"])
@@ -607,22 +616,30 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
                     if n is None or p is None:
                         continue
                     key = name + b"." + octoprint.util.to_bytes(n)
-                    self._new_body += b"--%s\r\n" % self._multipart_boundary
+                    self._new_body += b"--%s\r\n" % self._new_multipart_boundary
                     self._new_body += (
-                        b'Content-Disposition: form-data; name="%s"\r\n' % key
+                        b"Content-Disposition: form-data; name=%s\r\n"
+                        % _add_value_quotes(key)
                     )
                     self._new_body += b"Content-Type: text/plain; charset=utf-8\r\n"
                     self._new_body += b"\r\n"
                     self._new_body += octoprint.util.to_bytes(p) + b"\r\n"
             elif "data" in part:
-                self._new_body += b"--%s\r\n" % self._multipart_boundary
+                self._new_body += b"--%s\r\n" % self._new_multipart_boundary
                 value = part["data"]
-                self._new_body += b'Content-Disposition: form-data; name="%s"\r\n' % name
+                self._new_body += (
+                    b"Content-Disposition: form-data; name=%s\r\n"
+                    % _add_value_quotes(name)
+                )
                 if "content_type" in part and part["content_type"] is not None:
                     self._new_body += b"Content-Type: %s\r\n" % part["content_type"]
                 self._new_body += b"\r\n"
                 self._new_body += value + b"\r\n"
-        self._new_body += b"--%s--\r\n" % self._multipart_boundary
+        self._new_body += b"--%s--\r\n" % self._new_multipart_boundary
+
+        _validate_multipart_body(
+            self._new_body, self._new_multipart_boundary, self._parts, self._suffixes
+        )
 
     async def _handle_method(self, *args, **kwargs):
         """
@@ -650,9 +667,16 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
             # use rewritten body
             body = self._new_body
 
+            # and change boundary
+            self.request.headers["Content-Type"] = (
+                f'multipart/form-data; boundary="{self._new_multipart_boundary.decode()}"'
+            )
+
         elif self.request.method in UploadStorageFallbackHandler.BODY_METHODS:
             # directly use data from buffer
             body = self._buffer
+
+        self._deny_reserved_fields()  # second check here, since now we have the multipart data
 
         self.request.headers["Content-Length"] = str(len(body))
 
@@ -674,6 +698,33 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         """
         for f in self._files:
             octoprint.util.silent_remove(f)
+
+    def _deny_reserved_fields(self):
+        # reject client supplied fields matching our internal suffixes, they can't be trusted
+        if self._has_reserved_field():
+            raise tornado.web.HTTPError(
+                400, log_message="Request contains a reserved field name"
+            )
+
+    def _has_reserved_field(self):
+        """Checks whether the request carries a field matching one of our internal suffixes."""
+        keys = list(self.request.query_arguments.keys())
+        if self.is_multipart():
+            keys += list(self._parts.keys())
+        elif self._content_type:
+            arguments = {}
+            files = {}
+            try:
+                tornado.httputil.parse_body_arguments(
+                    self._content_type, self._buffer, arguments, files
+                )
+            except Exception:
+                pass
+            keys += list(arguments.keys())
+        suffixes = tuple(
+            b"." + octoprint.util.to_bytes(suffix) for suffix in self._suffixes.values()
+        )
+        return any(octoprint.util.to_bytes(key).endswith(suffixes) for key in keys)
 
     # make all http methods trigger _handle_method
     get = _handle_method
@@ -700,7 +751,7 @@ def _parse_header(line, strip_quotes=True):
     return key, pdict
 
 
-def _strip_value_quotes(value):
+def _strip_value_quotes(value: str) -> str:
     if not value:
         return value
 
@@ -709,6 +760,13 @@ def _strip_value_quotes(value):
         value = value.replace("\\\\", "\\").replace('\\"', '"')
 
     return value
+
+
+def _add_value_quotes(value: bytes) -> bytes:
+    if not value:
+        return value
+
+    return b'"' + value.replace(b"\\", b"\\\\").replace(b'"', b'\\"') + b'"'
 
 
 def _extended_header_value(value):
@@ -724,6 +782,52 @@ def _extended_header_value(value):
     else:
         # no encoding provided, strip potentially present quotes and call it a day
         return octoprint.util.to_unicode(_strip_value_quotes(value), encoding="utf-8")
+
+
+def _validate_multipart_body(
+    body: bytes,
+    boundary: bytes,
+    parts: dict[bytes, dict[str, Any]],
+    suffixes: dict[str, str],
+) -> None:
+    environ = {
+        "wsgi.input": io.BytesIO(body),
+        "CONTENT_LENGTH": str(len(body)),
+        "CONTENT_TYPE": "multipart/form-data; boundary=" + boundary.decode(),
+        "REQUEST_METHOD": "POST",
+    }
+    try:
+        _, form, files = parse_form_data(environ)
+
+        expected_form_fields = []
+        for name, part in parts.items():
+            if "filename" in part:
+                if "path" not in part:
+                    continue
+
+                parameters = ["name", "path", "size"]
+                if part.get("content_type"):
+                    parameters.append("content_type")
+                for p in parameters:
+                    suffix = suffixes.get(p)
+                    expected_form_fields.append(name.decode() + "." + suffix)
+
+            elif "data" in part:
+                expected_form_fields.append(name.decode())
+
+        actual = [k for k, _ in form.items(multi=True)]
+
+        if collections.Counter(actual) != collections.Counter(expected_form_fields):
+            raise ValueError("form fields not as expected")
+
+        if files:
+            raise ValueError("files not empty")
+
+    except Exception as exc:
+        logging.getLogger(__name__).exception("Error while validating multipart body")
+        raise tornado.web.HTTPError(
+            400, "new body generated based on client input was invalid"
+        ) from exc
 
 
 class WsgiInputContainer:

@@ -46,15 +46,15 @@ BRANCH_VERSIONS = [
     # bugfix is the branch for preparation of the 1.11.x bugfix releases
     # so are any bug/... branches
     {
-        "tag": "1.11.8",
-        "commit": "4bef84e2966fc2eee8c8e7eed2c4f21be6a9c159",
+        "tag": "1.11.9",
+        "commit": "42be7409d4820431043da48ece30014e26b47073",
         "patterns": ["bugfix", "bug/.*"],
     },
     # next is currently the branch for preparation of 2.0.0rc3
     # so is regression/...
     {
-        "tag": "2.0.0rc3",
-        "commit": "d5e0d6a317d2ff50649b63e9dd4ce623e529b420",
+        "tag": "2.0.0rc4",
+        "commit": "3e1fa9c6679df57bd50d425b90bef89e880d1385",
         "patterns": ["next", "regression/*"],
     },
     # dev is ongoing work towards 2.1.0

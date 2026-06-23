@@ -384,6 +384,7 @@ def init_logging(
                     "handlers": ["tornadoFile", "tornadoToConsole", "tornadoToFile"],
                     "propagate": False,
                 },
+                "tornado.general": {"level": "WARNING"},
                 "tornado": {"level": "ERROR"},
                 "sentry_sdk.errors": {"level": "ERROR"},
                 "octoprint": {"level": "INFO"},
