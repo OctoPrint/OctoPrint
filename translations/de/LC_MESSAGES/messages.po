@@ -7850,7 +7850,7 @@ msgstr "Bitte gib einen neuen Wert ein:"
 msgid "Progress"
 msgstr "Fortschritt"
 
-#: src/octoprint/static/js/app/main.js:229
+#: src/octoprint/static/js/app/main.js:227
 msgid "Reloading..."
 msgstr "Lade neu..."
 
@@ -8868,11 +8868,11 @@ msgstr "Der Befehl <code>%(command)s</code> wurde nicht zum Drucker gesendet:"
 msgid "Suppressed command"
 msgstr "Unterdrückter Befehl"
 
-#: src/octoprint/static/js/app/viewmodels/terminal.js:545
+#: src/octoprint/static/js/app/viewmodels/terminal.js:548
 msgid "Invalid tool reported"
 msgstr "Invalides Werkzeug gemeldet"
 
-#: src/octoprint/static/js/app/viewmodels/terminal.js:547
+#: src/octoprint/static/js/app/viewmodels/terminal.js:550
 #, python-format
 msgid ""
 "Your printer reported tool T%(tool)d as invalid, reverting back to "
