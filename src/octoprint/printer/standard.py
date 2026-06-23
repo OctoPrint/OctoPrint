@@ -746,6 +746,9 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         if self._connection is None:
             return
 
+        if not self._connection.current_printer_capabilities.temperature_offsets:
+            return
+
         if offsets is None:
             offsets = {}
 
@@ -992,6 +995,8 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
     def get_current_temperatures(self, *args, **kwargs):
         if self._connection is None:
+            offsets = {}
+        elif not self._connection.current_printer_capabilities.temperature_offsets:
             offsets = {}
         else:
             offsets = self._connection.temperature_offsets

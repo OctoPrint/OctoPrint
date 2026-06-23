@@ -1401,9 +1401,10 @@ class StorageFileDownloadHandler(
         if content_type:
             self.set_header("Content-Type", content_type)
 
+        escaped_filename = tornado.escape.url_escape(filename, plus=False)
         self.set_header(
             "Content-Disposition",
-            f"attachment; filename=\"{filename}\"; filename*=UTF-8''{filename}",
+            f"attachment; filename=\"{escaped_filename}\"; filename*=UTF-8''{escaped_filename}",
         )
 
         # FIXME implement cache control via ETag and/or last modified, if possible for storage
