@@ -53,8 +53,8 @@ BRANCH_VERSIONS = [
     # next is currently the branch for preparation of 2.0.0rc3
     # so is regression/...
     {
-        "tag": "2.0.0rc3",
-        "commit": "d5e0d6a317d2ff50649b63e9dd4ce623e529b420",
+        "tag": "2.0.0rc4",
+        "commit": "3e1fa9c6679df57bd50d425b90bef89e880d1385",
         "patterns": ["next", "regression/*"],
     },
     # dev is ongoing work towards 2.0.0
