@@ -188,13 +188,16 @@ def test_multipart_obs_fold_rejection(baseURL, headers, setup):
         + body
     )
 
-    # send request
-    s = socket.create_connection((url.hostname, url.port))
-    s.sendall(req.encode())
+    try:
+        # send request
+        s = socket.create_connection((url.hostname, url.port))
+        s.sendall(req.encode())
 
-    # parse response
-    resp = http.client.HTTPResponse(s, method="POST")
-    resp.begin()
+        # parse response
+        resp = http.client.HTTPResponse(s, method="POST")
+        resp.begin()
+    finally:
+        s.close()
 
     # verify
     _verify_rejected(baseURL, headers, resp)
