@@ -30,9 +30,9 @@ SETUP_REQUIRES = []
 
 # Requirements for our application
 bundled_plugins = [
-    "OctoPrint-FileCheck>=2024.11.12",
-    "OctoPrint-FirmwareCheck>=2025.5.14",
-    "OctoPrint-PiSupport>=2023.10.10",
+    "OctoPrint-FileCheck>=2025.7.23",
+    "OctoPrint-FirmwareCheck>=2025.7.23",
+    "OctoPrint-PiSupport>=2025.7.23",
 ]
 core_deps = [
     "argon2-cffi>=23.1.0",
