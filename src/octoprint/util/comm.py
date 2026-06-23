@@ -1210,6 +1210,8 @@ class MachineCom:
         def deactivate_monitoring_and_send_queue():
             self._monitoring_active = False
             self._send_queue_active = False
+            self._clear_to_send.acquire()
+            self._send_queue.put(SendQueueMarker())
 
         if self._serial is not None:
             if not is_error and self._state in self.OPERATIONAL_STATES:
@@ -3301,7 +3303,7 @@ class MachineCom:
                     Events.ERROR, {"error": self.getErrorString(), "reason": "crash"}
                 )
                 self.close(is_error=True)
-        self._log("Connection closed, closing down monitor")
+        self._dual_log("Connection closed, closing down monitor", level=logging.INFO)
 
     def _handle_ok(self):
         if self._resend_ok_timer:
@@ -4787,7 +4789,7 @@ class MachineCom:
                 self._clear_to_send.wait()
             except Exception:
                 self._logger.exception("Caught an exception in the send loop")
-        self._log("Closing down send loop")
+        self._dual_log("Closing down send loop", level=logging.INFO)
 
     def _log_command_phase(self, phase, command, *args, **kwargs):
         if self._phaseLogger.isEnabledFor(logging.DEBUG):
@@ -6890,7 +6892,7 @@ def _normalize_command_handler_result(
 
 
 class QueueMarker:
-    def __init__(self, callback):
+    def __init__(self, callback=None):
         self.callback = callback
 
     def run(self):
