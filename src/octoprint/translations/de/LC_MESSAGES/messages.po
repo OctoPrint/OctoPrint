@@ -3,9 +3,9 @@
 # This file is distributed under the same license as the OctoPrint project.
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.11.7\n"
+"Project-Id-Version: OctoPrint 1.11.8\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2026-02-17 16:43+0100\n"
+"POT-Creation-Date: 2026-06-23 09:02+0200\n"
 "PO-Revision-Date: 2025-12-01 12:05+0100\n"
 "Last-Translator: Gina Häußge <gina@octoprint.org>\n"
 "Language: de\n"
@@ -6448,94 +6448,94 @@ msgstr "Bitte gib einen neuen Wert ein:"
 msgid "Progress"
 msgstr "Fortschritt"
 
-#: src/octoprint/static/js/app/main.js:229
+#: src/octoprint/static/js/app/main.js:227
 msgid "Reloading..."
 msgstr "Lade neu..."
 
-#: src/octoprint/static/js/app/main.js:308
+#: src/octoprint/static/js/app/main.js:306
 msgid "Offline"
 msgstr "Offline"
 
-#: src/octoprint/static/js/app/main.js:309
+#: src/octoprint/static/js/app/main.js:307
 msgid "Offline after error"
 msgstr "Offline nach Fehler"
 
-#: src/octoprint/static/js/app/main.js:310
+#: src/octoprint/static/js/app/main.js:308
 #: src/octoprint/static/js/app/viewmodels/system.js:152
 msgid "Error"
 msgstr "Fehler"
 
-#: src/octoprint/static/js/app/main.js:311
+#: src/octoprint/static/js/app/main.js:309
 msgid "Opening serial connection"
 msgstr "Öffne serielle Verbindung"
 
-#: src/octoprint/static/js/app/main.js:312
+#: src/octoprint/static/js/app/main.js:310
 msgid "Detecting serial connection"
 msgstr "Detektiere serielle Verbindung"
 
-#: src/octoprint/static/js/app/main.js:313
+#: src/octoprint/static/js/app/main.js:311
 msgid "Connecting"
 msgstr "Verbinde"
 
-#: src/octoprint/static/js/app/main.js:314
+#: src/octoprint/static/js/app/main.js:312
 msgid "Operational"
 msgstr "Bereit"
 
-#: src/octoprint/static/js/app/main.js:315
+#: src/octoprint/static/js/app/main.js:313
 msgid "Starting"
 msgstr "Starte"
 
-#: src/octoprint/static/js/app/main.js:316
+#: src/octoprint/static/js/app/main.js:314
 msgid "Starting print from SD"
 msgstr "Starte Druck von SD"
 
-#: src/octoprint/static/js/app/main.js:317
+#: src/octoprint/static/js/app/main.js:315
 msgid "Starting to send file to SD"
 msgstr "Starte Dateitransfer zu SD"
 
-#: src/octoprint/static/js/app/main.js:318
+#: src/octoprint/static/js/app/main.js:316
 msgid "Printing from SD"
 msgstr "Drucke von SD"
 
-#: src/octoprint/static/js/app/main.js:319
+#: src/octoprint/static/js/app/main.js:317
 msgid "Sending file to SD"
 msgstr "Sende Datei zu SD"
 
-#: src/octoprint/static/js/app/main.js:320
+#: src/octoprint/static/js/app/main.js:318
 msgid "Printing"
 msgstr "Drucke"
 
-#: src/octoprint/static/js/app/main.js:321
+#: src/octoprint/static/js/app/main.js:319
 msgid "Paused"
 msgstr "Pausiert"
 
-#: src/octoprint/static/js/app/main.js:322
+#: src/octoprint/static/js/app/main.js:320
 msgid "Closed"
 msgstr "Geschlossen"
 
-#: src/octoprint/static/js/app/main.js:323
+#: src/octoprint/static/js/app/main.js:321
 msgid "Transferring file to SD"
 msgstr "Sende Datei zu SD"
 
-#: src/octoprint/static/js/app/main.js:324
+#: src/octoprint/static/js/app/main.js:322
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:576
 msgid "Pausing"
 msgstr "Pausiere"
 
-#: src/octoprint/static/js/app/main.js:325
+#: src/octoprint/static/js/app/main.js:323
 msgid "Resuming"
 msgstr "Setze fort"
 
-#: src/octoprint/static/js/app/main.js:326
+#: src/octoprint/static/js/app/main.js:324
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:585
 msgid "Cancelling"
 msgstr "Breche ab"
 
-#: src/octoprint/static/js/app/main.js:327
+#: src/octoprint/static/js/app/main.js:325
 msgid "Finishing"
 msgstr "Beende"
 
-#: src/octoprint/static/js/app/main.js:1132
+#: src/octoprint/static/js/app/main.js:1130
 msgid "Loading OctoPrint's UI, please wait..."
 msgstr "Lade OctoPrints Userinterface, bitte warten..."
 
@@ -7523,11 +7523,11 @@ msgstr "Der Befehl <code>%(command)s</code> wurde nicht zum Drucker gesendet:"
 msgid "Suppressed command"
 msgstr "Unterdrückter Befehl"
 
-#: src/octoprint/static/js/app/viewmodels/terminal.js:545
+#: src/octoprint/static/js/app/viewmodels/terminal.js:548
 msgid "Invalid tool reported"
 msgstr "Invalides Werkzeug gemeldet"
 
-#: src/octoprint/static/js/app/viewmodels/terminal.js:547
+#: src/octoprint/static/js/app/viewmodels/terminal.js:550
 #, python-format
 msgid ""
 "Your printer reported tool T%(tool)d as invalid, reverting back to "
