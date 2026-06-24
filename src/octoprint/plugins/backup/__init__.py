@@ -1247,7 +1247,7 @@ class BackupPlugin(
                         if backup_version > get_octoprint_version(cut=1):
                             if callable(on_invalid_backup):
                                 on_invalid_backup(
-                                    "Backup is from a newer version of OctoPrint and cannot be applied"
+                                    f"Backup is from a newer version of OctoPrint and cannot be applied, you need at least OctoPrint {str(backup_version)}.0 to restore this backup"
                                 )
                             if callable(on_restore_failed):
                                 on_restore_failed(path)
