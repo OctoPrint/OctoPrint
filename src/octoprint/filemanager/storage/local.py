@@ -20,7 +20,6 @@ except ImportError:
     logging.getLogger(__name__).exception("Error while loading gcode thumbnail tool")
     gtt = None
 
-import psutil
 import pylru
 
 import octoprint.filemanager
@@ -1081,7 +1080,7 @@ class LocalFileStorage(StorageInterface):
         return os.path.join(path, name)
 
     def get_usage(self) -> typing.Optional[StorageUsage]:
-        usage = psutil.disk_usage(self.basefolder)
+        usage = shutil.disk_usage(self.basefolder)
         return StorageUsage(used=usage.used, total=usage.total)
 
     ##~~ internals

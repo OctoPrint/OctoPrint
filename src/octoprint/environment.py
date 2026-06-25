@@ -109,7 +109,7 @@ class EnvironmentDetector:
         result = {"cores": "unknown", "freq": "unknown", "ram": "unknown"}
 
         try:
-            cores = psutil.cpu_count()
+            cores = os.cpu_count()
             cpu_freq = psutil.cpu_freq()
             ram = psutil.virtual_memory()
             if cores:

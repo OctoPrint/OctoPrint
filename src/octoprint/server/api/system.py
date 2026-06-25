@@ -4,9 +4,9 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import collections
 import logging
 import re
+import shutil
 import threading
 
-import psutil
 from flask import abort, jsonify, request, url_for
 from flask_babel import gettext
 
@@ -89,7 +89,7 @@ def _usageForFolders():
     for folder_name in s().get(["folder"]).keys():
         path = s().getBaseFolder(folder_name, check_writable=False)
         if path is not None:
-            usage = psutil.disk_usage(path)
+            usage = shutil.disk_usage(path)
             data[folder_name] = {"free": usage.free, "total": usage.total}
     return data
 

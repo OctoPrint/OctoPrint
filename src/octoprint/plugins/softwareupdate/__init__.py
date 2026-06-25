@@ -373,9 +373,8 @@ class SoftwareUpdatePlugin(
 
     def _check_storage(self):
         import distutils.sysconfig
+        import shutil
         import tempfile
-
-        import psutil
 
         storage_info = {}
         paths = {
@@ -388,7 +387,7 @@ class SoftwareUpdatePlugin(
             info = {"path": path, "free": None}
 
             try:
-                data = psutil.disk_usage(path)
+                data = shutil.disk_usage(path)
                 info["free"] = data.free
             except Exception:
                 self._logger.exception(f"Error while determining disk usage of {path}")

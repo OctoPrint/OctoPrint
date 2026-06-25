@@ -15,7 +15,7 @@ class GetFolderUsageTest(unittest.TestCase):
     def test_readUsageForFolder(self):
         from octoprint.server.api.system import _usageForFolders
 
-        with mock.patch("psutil.disk_usage") as disk_usage_mock:
+        with mock.patch("shutil.disk_usage") as disk_usage_mock:
             disk_usage = mock.MagicMock()
             disk_usage.free = 50
             disk_usage.total = 512

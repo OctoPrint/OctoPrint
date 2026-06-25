@@ -161,9 +161,9 @@ class LoggingPlugin(
     # ~~ Internals
 
     def _get_usage(self):
-        import psutil
+        import shutil
 
-        usage = psutil.disk_usage(settings().getBaseFolder("logs", check_writable=False))
+        usage = shutil.disk_usage(settings().getBaseFolder("logs", check_writable=False))
         return usage.free, usage.total
 
     def _getLogFiles(self):

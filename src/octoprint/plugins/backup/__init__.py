@@ -854,9 +854,7 @@ class BackupPlugin(
 
     @classmethod
     def _free_space(cls, path, size):
-        from psutil import disk_usage
-
-        return disk_usage(path).free > size
+        return shutil.disk_usage(path).free > size
 
     @classmethod
     def _get_plugin_repository_data(cls, url, logger=None):

@@ -5,12 +5,13 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import datetime
 import hashlib
 import logging
+import os
+import shutil
 import threading
 from collections.abc import Iterable
 from typing import Optional
 from urllib.parse import quote as urlquote
 
-import psutil
 from flask import abort, jsonify, make_response, request, url_for
 from werkzeug.exceptions import HTTPException
 
@@ -203,7 +204,7 @@ def readGcodeFiles():  # pre 2.0.0
         except octoprint.filemanager.NoSuchStorage:
             pass
 
-    usage = psutil.disk_usage(settings().getBaseFolder("uploads", check_writable=False))
+    usage = shutil.disk_usage(settings().getBaseFolder("uploads", check_writable=False))
 
     data = apischema.ReadGcodeFilesResponse_pre_2_0_0(
         files=files,
@@ -1098,7 +1099,7 @@ def gcodeFileCommand(storage, path=""):
                 ):
                     abort(415, description="Cannot slice file, not a model file")
 
-                cores = psutil.cpu_count()
+                cores = os.cpu_count()
                 if (
                     slicer_instance.get_slicer_properties().get("same_device", True)
                     and (printer.is_printing() or printer.is_paused())
@@ -1117,8 +1118,6 @@ def gcodeFileCommand(storage, path=""):
                     destination = data["gcode"]
                     del data["gcode"]
                 else:
-                    import os
-
                     name, _ = os.path.splitext(path)
                     destination = (
                         name
