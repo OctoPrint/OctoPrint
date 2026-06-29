@@ -73,7 +73,15 @@
                     <input type="checkbox"
                            data-bind="value: name, checked: $root.markedForBackupDeletion">
                 </td>
-                <td class="settings_plugin_backup_name" data-bind="text: name"></td>
+                <td class="settings_plugin_backup_name">
+                    <span data-bind="text: name"></span>
+                    <br>
+                    <small class="muted"
+                           data-bind="css: { 'text-error': $parent.isVersionIncompatible($data) }">{{ _("Version:") }} <span data-bind="text: version"></span></small>
+                    <br>
+                    <small class="muted"
+                           data-bind="css: { 'text-error': $parent.isAboveFreeTempSpace($data) }">{{ _("Uncompressed size:") }} <span data-bind="text: formatSize($data.uncompressed)"></span></small>
+                </td>
                 <td class="settings_plugin_backup_date"
                     data-bind="text: formatDate(date)"></td>
                 <td class="settings_plugin_backup_size">
@@ -88,9 +96,10 @@
                        data-bind="click: function() { $parent.removeBackup($data.name) }, css: {disabled: $root.backupInProgress() || $root.restoreInProgress()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)"
    title="{{ _('Download') |edq }}"
    class="fas fa-download"
-   data-bind="click: function() { $parent.reauthenticateDownload($data.url) }, attr: { href: url }"></a><span data-bind="visible: $parent.restoreSupported()">&nbsp;|&nbsp;<a href="javascript:void(0)"
+   data-bind="click: function() { $parent.reauthenticateDownload($data.url) }, attr: { href: url }"></a>&nbsp;|&nbsp;<a href="javascript:void(0)"
    title="{{ _('Restore') |edq }}"
-   data-bind="click: function() { $parent.restoreBackup($data.name) }, css: {disabled: $root.backupInProgress() || $root.restoreInProgress()}"><i class="fas fa-sync"></i></a></span>
+   class="fas fa-sync"
+   data-bind="click: function() { if ($parent.enableRestore($data)) { $parent.restoreBackup($data.name) } }, css: {disabled: !$parent.enableRestore($data)}"></a>
                 </td>
             </tr>
         </tbody>
@@ -123,6 +132,16 @@
         zip prior to uploading. Backups exceeding this size limit are marked with a
         {{ marker }} up there.
     {% endtrans %}
+</p>
+<p>
+    {# djlint: off H008 #}{% trans red="<span class='text-error'>" | safe, endred="</span>" | safe %}
+    If a backup's "version" is shown in {{ red }}red{{ endred }}, it means the version under which the backup was made is newer than the current OctoPrint version and restore is therefore unsupported.
+{% endtrans %}
+</p>
+<p>
+    {# djlint: off H008 #}{% trans red="<span class='text-error'>" | safe, endred="</span>" | safe %}
+    If a backup's "uncompressed size" is shown in {{ red }}red{{ endred }}, it means there is not enough space in the temporary files to unpack the backup and restore is therefore unsupported.
+{% endtrans %}
 </p>
 </div>
 

@@ -146,12 +146,17 @@ class BackupPlugin(
     def get_state(self):
         backups = self._get_backups()
         unknown_plugins = self._get_unknown_plugins()
+
+        with tempfile.NamedTemporaryFile() as tmp:
+            usage = shutil.disk_usage(tmp.name)
+
         return flask.jsonify(
             backups=backups,
             backup_in_progress=self._backup_in_progress.locked(),
             unknown_plugins=unknown_plugins,
             restore_supported=self._restore_supported(self._settings),
             max_upload_size=MAX_UPLOAD_SIZE,
+            free_temp_space=max(usage.free - FREE_CHECK_BUFFER, 0),
         )
 
     @octoprint.plugin.BlueprintPlugin.route("/unknown_plugins", methods=["GET"])
@@ -772,11 +777,26 @@ class BackupPlugin(
             if not self._valid_backup(entry.path):
                 continue
 
+            version = "?"
+            uncompressed = -1
+            try:
+                with zipfile.ZipFile(entry.path, "r") as zip:
+                    uncompressed = sum([info.file_size for info in zip.filelist])
+                    with zip.open("metadata.json") as m:
+                        metadata = json.load(m)
+                        version = metadata.get("version", "?")
+            except Exception:
+                self._logger.exception(
+                    f"Error reading uncompressed size and/or version from backup f{entry.name}"
+                )
+
             backups.append(
                 {
                     "name": entry.name,
                     "date": entry.stat().st_mtime,
                     "size": entry.stat().st_size,
+                    "uncompressed": uncompressed,
+                    "version": version,
                     "url": flask.url_for("index")
                     + "plugin/backup/download/"
                     + entry.name,

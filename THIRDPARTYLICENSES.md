@@ -38,6 +38,7 @@
   * [SockJS](https://github.com/sockjs/sockjs-client): MIT
   * [sprintf-js](http://alexei.ro/): BSD
   * [UAParser.js](https://faisalman.github.io/ua-parser-js/): MIT
+  * [zip.js](https://gildas-lormeau.github.io/zip.js/): BSD
 
 ## Server
 

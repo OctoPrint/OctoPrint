@@ -13,13 +13,26 @@
                 </span>
                 <span class="add-on" data-bind="text: backupUploadName"></span>
             </div>
+            <div class="help-block"
+                 data-bind="visible: backupUploadName() && backupUploadValid()">
+                <small>
+                    <span data-bind="css: { 'text-error': backupUploadVersionIncompatible }">{{ _("OctoPrint version:") }} <span data-bind="text: backupUploadVersion"></span></span>
+                    <br>
+                    <span data-bind="css: { 'text-error': backupUploadTooBig }">{{ _("Size:") }} <span data-bind="text: formatSize(backupUploadCompressed())"></span> {{ _("compressed") }} / <span data-bind="text: formatSize(backupUploadUncompressed())"></span> {{ _("uncompressed") }}</span>
+                    <br>
+                </small>
+            </div>
+            <div class="help-block text-error"
+                 data-bind="visible: backupUploadName() && !backupUploadValid()">
+                {{ _("This is not a valid OctoPrint backup file!") }}
+            </div>
         </div>
     </div>
 
     <div class="control-group">
         <div class="controls">
             <button class="btn btn-primary"
-                    data-bind="enable: !backupInProgress() && !restoreInProgress(), click: performRestoreFromUpload">
+                    data-bind="enable: enableUploadAndRestore, click: performRestoreFromUpload">
                 <i class="fa fa-spinner fa-spin" data-bind="visible: restoreInProgress"></i> {{ _("Upload & restore") }}
             </button>
         </div>
