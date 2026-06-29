@@ -147,8 +147,8 @@ class BackupPlugin(
         backups = self._get_backups()
         unknown_plugins = self._get_unknown_plugins()
 
-        with tempfile.NamedTemporaryFile() as tmp:
-            usage = shutil.disk_usage(tmp.name)
+        with tempfile.TemporaryDirectory() as temp:
+            usage = shutil.disk_usage(temp)
 
         return flask.jsonify(
             backups=backups,
@@ -1312,8 +1312,8 @@ class BackupPlugin(
 
                         # unzip to temporary folder
                         try:
-                            with tempfile.TemporaryDirectory(dir=tmpfolder) as tmp:
-                                temp = os.path.abspath(tmp.name)
+                            with tempfile.TemporaryDirectory(dir=tmpfolder) as temp:
+                                temp = os.path.abspath(temp)
 
                                 needed = sum([info.file_size for info in zip.filelist])
                                 log_progress(
