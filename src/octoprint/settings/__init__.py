@@ -726,6 +726,7 @@ class Settings:
                 "logs",
             ]
         )
+        self.clean_temps(folders=["uploadtemp"])
         self.warn_about_risky_settings()
 
     def _init_basedir(self, basedir):
@@ -758,6 +759,26 @@ class Settings:
         # validate uniqueness of folder paths
         if len(folder_map.values()) != len(set(folder_map.values())):
             raise DuplicateFolderPaths(folders)
+
+    def clean_temps(self, folders=None):
+        if folders is None:
+            return
+
+        import shutil
+
+        for folder in folders:
+            try:
+                path = self.getBaseFolder(folder, create=False, check_writable=False)
+            except OSError:
+                continue
+
+            self._logger.info(f"Cleaning up {path}...")
+            try:
+                shutil.rmtree(path)
+            except Exception:
+                self._logger.exception(
+                    f"Error while trying to delete {path}, leaving it alone"
+                )
 
     def warn_about_risky_settings(self):
         if not self.getBoolean(["devel", "enableRateLimiter"]):

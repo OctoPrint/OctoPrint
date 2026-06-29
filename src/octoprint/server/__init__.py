@@ -2220,6 +2220,8 @@ class Server:
             "path": self._settings.get(["server", "uploads", "pathSuffix"]),
         }
 
+        uploadtemp = self._settings.getBaseFolder("uploadtemp")
+
         server_routes.append(
             (
                 r".*",
@@ -2233,6 +2235,7 @@ class Server:
                         headers=added_headers,
                         removed_headers=removed_headers,
                     ),
+                    "path": uploadtemp,
                     "file_prefix": "octoprint-file-upload-",
                     "file_suffix": ".tmp",
                     "suffixes": upload_suffixes,

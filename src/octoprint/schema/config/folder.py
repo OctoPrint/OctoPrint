@@ -45,3 +45,6 @@ class FolderConfig(BaseModel):
 
     data: Optional[str] = None
     """Absolute path where to store additional data. Defaults to the ``data`` folder in OctoPrint's base folder."""
+
+    uploadtemp: Optional[str] = None
+    """Absolute path to use for buffering uploads so that they don't have to be held in memory."""

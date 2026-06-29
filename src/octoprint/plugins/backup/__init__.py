@@ -947,11 +947,7 @@ class BackupPlugin(
         if logger is None:
             logger = logging.getLogger(__name__)
 
-        exclude_by_default = (
-            "generated",
-            "logs",
-            "watched",
-        )
+        exclude_by_default = ("generated", "logs", "watched", "uploadtemp")
 
         with cls._backup_in_progress:
             if name is None:

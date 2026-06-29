@@ -11,7 +11,7 @@ import os
 import re
 import secrets
 import sys
-from typing import Any
+from typing import Any, Optional
 from urllib.parse import urlparse
 
 import tornado
@@ -638,7 +638,11 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         self._new_body += b"--%s--\r\n" % self._new_multipart_boundary
 
         _validate_multipart_body(
-            self._new_body, self._new_multipart_boundary, self._parts, self._suffixes
+            self._new_body,
+            self._new_multipart_boundary,
+            self._parts,
+            self._suffixes,
+            path=self._path,
         )
 
     async def _handle_method(self, *args, **kwargs):
@@ -789,7 +793,11 @@ def _validate_multipart_body(
     boundary: bytes,
     parts: dict[bytes, dict[str, Any]],
     suffixes: dict[str, str],
+    path: Optional[str] = None,
 ) -> None:
+    if path:
+        path = octoprint.util.to_bytes(os.path.abspath(path) + "/")
+
     environ = {
         "wsgi.input": io.BytesIO(body),
         "CONTENT_LENGTH": str(len(body)),
@@ -811,6 +819,10 @@ def _validate_multipart_body(
                 for p in parameters:
                     suffix = suffixes.get(p)
                     expected_form_fields.append(name.decode() + "." + suffix)
+
+                filepath = os.path.abspath(part.get("path"))
+                if path and filepath and not filepath.startswith(path):
+                    raise ValueError("path outside temporary upload folder")
 
             elif "data" in part:
                 expected_form_fields.append(name.decode())
