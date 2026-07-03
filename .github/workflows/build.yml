@@ -78,7 +78,7 @@ jobs:
           hash=$(cat setup.py | sha256sum | cut -d" " -f1)
           echo "CACHE_KEY=${{ github.job }}-${{ runner.os }}-python-${{ matrix.python }}-setuppy-$hash" >> $GITHUB_ENV
       - name: 🧰 Cache pip cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: pip-cache
         with:
           path: "~/.cache/pip"
@@ -170,7 +170,7 @@ jobs:
           hash=$(tar -axzf "$sdist" "$setup" -O | sha256sum | cut -d" " -f1)
           echo "CACHE_KEY=${{ github.job }}-${{ runner.os }}-python-${{ matrix.python }}-setuppy-$hash" >> $GITHUB_ENV
       - name: 🧰 Cache pip cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: pip-cache
         with:
           path: "~/.cache/pip"
@@ -204,7 +204,7 @@ jobs:
           echo "CACHE_KEY=${{ github.job }}-${{ runner.os }}-python-${{ matrix.python }}-wheel-$hash" >> $GITHUB_ENV
 
       - name: 🧰 Cache pip cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: pip-cache
         with:
           path: "~/.cache/pip"
@@ -239,7 +239,7 @@ jobs:
           hash=$(cat setup.py | sha256sum | cut -d" " -f1)
           echo "CACHE_KEY=${{ github.job }}-${{ runner.os }}-python-${{ matrix.python }}-setuppy-$hash" >> $GITHUB_ENV
       - name: 🧰 Cache pip cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: pip-cache
         with:
           path: "~/.cache/pip"
