@@ -26,7 +26,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: 🏗 Set up Python ${{ env.DEFAULT_PYTHON }}
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
       - name: 🏗 Set up PR environment
@@ -49,7 +49,7 @@ jobs:
         with:
           persist-credentials: false
       - name: 🏗 Set up Python ${{ env.DEFAULT_PYTHON }}
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
       - name: 🚀 Run pre-commit
@@ -70,7 +70,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: 🏗 Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: ${{ matrix.python }}
       - name: 🧰 Determine cache key
@@ -148,7 +148,7 @@ jobs:
           name: dist
           path: dist
       - name: 🏗 Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: ${{ matrix.python }}
       - name: 🧰 Determine installable & cache key for wheel
@@ -231,7 +231,7 @@ jobs:
         with:
           persist-credentials: false
       - name: 🏗 Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: ${{ matrix.python }}
       - name: 🧰 Determine cache key
