@@ -22,6 +22,7 @@ repos:
       - id: trailing-whitespace
       - id: check-case-conflict
       - id: check-json
+        exclude: ^(\.devcontainer/.*|\.vscode/.*)\.json$
       - id: check-yaml
       - id: check-toml
       - id: check-merge-conflict
@@ -52,7 +53,7 @@ repos:
     rev: v3.6.0
     hooks:
       - id: prettier
-        files: "\\.(js|json|css|less|md|yml|yaml)$"
+        files: "\\.(js|json|jsonc|css|less|md|yml|yaml)$"
   - repo: https://github.com/pre-commit/mirrors-eslint
     rev: v9.29.0
     hooks:
