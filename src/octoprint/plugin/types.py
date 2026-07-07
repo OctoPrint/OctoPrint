@@ -20,8 +20,6 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-from functools import partial
-
 from .core import Plugin, RestartNeedingPlugin, SortablePlugin
 
 
@@ -1858,73 +1856,15 @@ class SettingsPlugin(OctoPrintPlugin):
 
         from flask_login import current_user
 
-        from octoprint.access.permissions import OctoPrintPermission, Permissions
+        from octoprint.server.util.flask import apply_path_restrictions
 
         data = copy.deepcopy(self._settings.get_all_data(merged=True))
         if self.config_version_key in data:
             del data[self.config_version_key]
 
-        restricted_paths = self.get_settings_restricted_paths()
-
-        # noinspection PyShadowingNames
-        def restrict_path_unless(data, path, condition):
-            if not path:
-                return
-
-            if condition():
-                return
-
-            node = data
-
-            if len(path) > 1:
-                for entry in path[:-1]:
-                    if entry not in node:
-                        return
-                    node = node[entry]
-
-            key = path[-1]
-            default_value_available = False
-            default_value = None
-            if isinstance(key, (list, tuple)):
-                # key, default_value tuple
-                key, default_value = key
-                default_value_available = True
-
-            if key in node:
-                if default_value_available:
-                    if callable(default_value):
-                        default_value = default_value()
-                    node[key] = default_value
-                else:
-                    if isinstance(node[key], dict):
-                        node[key] = {}
-                    elif isinstance(node[key], (list, tuple)):
-                        node[key] = []
-                    else:
-                        node[key] = None
-
-        conditions = {
-            "user": lambda: current_user is not None and not current_user.is_anonymous,
-            "admin": lambda: current_user is not None
-            and current_user.has_permission(Permissions.SETTINGS),
-            "never": lambda: False,
-        }
-
-        for level, paths in restricted_paths.items():
-            if isinstance(level, OctoPrintPermission):
-                condition = partial(
-                    lambda p: (
-                        current_user is not None and current_user.has_permission(p)
-                    ),
-                    level,
-                )
-            else:
-                condition = conditions.get(level, lambda: False)
-
-            for path in paths:
-                restrict_path_unless(data, path, condition)
-
-        return data
+        return apply_path_restrictions(
+            data, self.get_settings_restricted_paths(), current_user
+        )
 
     def on_settings_save(self, data):
         """

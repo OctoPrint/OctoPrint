@@ -2120,3 +2120,100 @@ def api_version_matches(specifier):
         request_version = parse_version(request_version)
         return is_version_compatible(request_version.base_version, specifier)
     return False
+
+
+def apply_path_restrictions(data, restrictions, user, inplace=True, keep_leaves=False):
+    from functools import partial
+
+    from octoprint.access.permissions import OctoPrintPermission, Permissions
+
+    if not inplace:
+        import copy
+
+        data = copy.deepcopy(data)
+
+    def restrict_key(
+        node, key, default_value_available=False, default_value=None, recursive=False
+    ):
+        if key not in node:
+            return
+
+        if default_value_available:
+            if callable(default_value):
+                default_value = default_value()
+            node[key] = default_value
+
+        else:
+            if isinstance(node[key], dict):
+                if recursive:
+                    n = node[key]
+                    for k in n.keys():
+                        restrict_key(n, k, recursive=recursive)
+                else:
+                    node[key] = {}
+
+            elif isinstance(node[key], (list, tuple)):
+                node[key] = []
+
+            else:
+                node[key] = None
+
+    # noinspection PyShadowingNames
+    def restrict_path_unless(data, path, condition, keep_leaves=False):
+        if not path:
+            return
+
+        if condition():
+            return
+
+        node = data
+
+        if len(path) > 1:
+            for entry in path[:-1]:
+                if entry not in node:
+                    return
+                node = node[entry]
+
+        key = path[-1]
+        default_value_available = False
+        default_value = None
+        if isinstance(key, (list, tuple)):
+            # key, default_value tuple
+            key, default_value = key
+            default_value_available = True
+
+        restrict_key(
+            node,
+            key,
+            default_value_available=default_value_available,
+            default_value=default_value,
+            recursive=keep_leaves,
+        )
+
+    conditions = {
+        "user": lambda: user is not None and not user.is_anonymous,
+        "admin": lambda: user is not None and user.has_permission(Permissions.SETTINGS),
+        "never": lambda: False,
+    }
+
+    for condition, paths in restrictions.items():
+        if isinstance(condition, OctoPrintPermission):
+            # condition is a permission
+            condition = partial(
+                lambda p: (user is not None and user.has_permission(p)),
+                condition,
+            )
+
+        elif isinstance(condition, str):
+            # condition is a general user type name or "never"
+            condition = conditions.get(condition, lambda: False)
+
+        else:
+            raise RuntimeError(
+                f"expected condition to be a permission or a string, got {condition!r}"
+            )
+
+        for path in paths:
+            restrict_path_unless(data, path, condition, keep_leaves=keep_leaves)
+
+    return data

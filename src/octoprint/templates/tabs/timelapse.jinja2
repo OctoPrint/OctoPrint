@@ -1,6 +1,6 @@
 <div data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_ADMIN)">
     <div style="display: none"
-         data-bind="visible: canSnapshot() && settings.webcam_ffmpegPath()">
+         data-bind="visible: canSnapshot() && settings.webcam_ffmpegPathConfigured()">
         <div class="alert" data-bind="visible: isPrinting()">
             {{ _("Take note that timelapse configuration is disabled while your printer is printing.") }}
         </div>
@@ -138,7 +138,7 @@
     </div>
     <div class="alert"
          style="display: none"
-         data-bind="visible: !canSnapshot() || !settings.webcam_ffmpegPath()">
+         data-bind="visible: !canSnapshot() || !settings.webcam_ffmpegPathConfigured()">
         <p>
             <strong>{{ _("Timelapse not fully configured") }}</strong>
         </p>
@@ -164,7 +164,12 @@
                 {{ _("Currently configured default webcam cannot take snapshots") }}
                 <br />
                 <!-- /ko -->
-                {{ _("Currently configured path to FFMPEG") }}: <span data-bind="text: settings.webcam_ffmpegPath"></span>
+                <!-- ko if: settings.webcam_ffmpegPathConfigured -->
+                {{ _("Path to FFMPEG is configured") }}
+                <!-- /ko -->
+                <!-- ko ifnot: settings.webcam_ffmpegPathConfigured -->
+                {{ _("Path to FFMPEG is not configured") }}
+                <!-- /ko -->
             </small>
         </p>
     </div>
