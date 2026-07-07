@@ -63,6 +63,15 @@ class SerialConnectorPlugin(
 
         return SerialConfig().model_dump()
 
+    def get_settings_restricted_paths(self):
+        return {
+            "admin": [
+                [key]
+                for key in self.get_settings_defaults().keys()
+                if key not in ("log", "ignoreEmptyPorts")
+            ]
+        }
+
     def on_settings_save(self, data: dict) -> dict:
         if "log" in data:
             old_log = self._settings.get_boolean(["log"])

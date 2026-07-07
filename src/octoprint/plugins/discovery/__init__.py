@@ -94,6 +94,11 @@ class DiscoveryPlugin(
             "ignoredInterfaces": None,
         }
 
+    def get_settings_restricted_paths(self):
+        keys = self.get_settings_defaults().keys()
+
+        return {"never": [[key] for key in keys]}
+
     ##~~ BlueprintPlugin API -- used for providing the SSDP device descriptor XML
 
     @octoprint.plugin.BlueprintPlugin.route("/discovery.xml", methods=["GET"])

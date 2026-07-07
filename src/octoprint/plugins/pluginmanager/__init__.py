@@ -352,6 +352,20 @@ class PluginManagerPlugin(
         self._notices_cache_ttl = self._settings.get_int(["notices_ttl"]) * 60
         self._pip_caller.force_user = self._settings.get_boolean(["pip_force_user"])
 
+    def get_settings_restricted_paths(self):
+        return {
+            "admin": [
+                ["repository"],
+                ["repository_ttl"],
+                ["notices"],
+                ["notices_ttl"],
+                ["pip_args"],
+                ["pip_force_user"],
+                ["confirm_disable"],
+            ],
+            "never": [["hidden"], ["dependency_links"]],
+        }
+
     ##~~ AssetPlugin
 
     def get_assets(self):

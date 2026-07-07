@@ -79,7 +79,7 @@ class TrackingPlugin(
     def get_settings_restricted_paths(self):
         return {
             "admin": [["enabled"], ["unique_id"], ["events"]],
-            "never": [["server"], ["ping"]],
+            "never": [["server"], ["ping"], ["pong"]],
         }
 
     def on_settings_save(self, data):

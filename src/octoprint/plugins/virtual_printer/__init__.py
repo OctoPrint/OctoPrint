@@ -108,6 +108,9 @@ class VirtualPrinterPlugin(
                 )
                 self._settings.global_remove(["devel", "virtualPrinter"])
 
+    def get_settings_restricted_paths(self):
+        return {"admin": [[key] for key in self.get_settings_defaults().keys()]}
+
     def virtual_printer_factory(self, comm_instance, port, baudrate, read_timeout):
         if not port == "VIRTUAL":
             return None

@@ -118,6 +118,14 @@ class ErrorTrackingPlugin(
         if old_enabled != enabled:
             _enable_errortracking()
 
+    def get_settings_restricted_paths(self):
+        return {
+            "admin": [
+                ["unique_id"],
+            ],
+            "never": [["enabled_unreleased"], ["url_server"], ["url_coreui"]],
+        }
+
 
 _enabled = False
 

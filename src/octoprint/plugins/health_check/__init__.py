@@ -201,6 +201,16 @@ class HealthCheckPlugin(
 
         return result
 
+    def get_settings_restricted_paths(self):
+        return {
+            "admin": [["ignore_info_results"], ["ignore_warning_results"]],
+            "never": [
+                ["checks"],
+                ["disabled"],
+                ["check_interval"],
+            ],
+        }
+
     ##~~ SimpleApiPlugin
 
     def on_api_get(self, request):

@@ -767,7 +767,23 @@ class SoftwareUpdatePlugin(
         return data
 
     def get_settings_restricted_paths(self):
-        return {"never": [["credentials"]]}
+        return {
+            "never": [
+                [
+                    "checks"
+                ],  # actually handled by on_settings_load, but just to be on the safe side...
+                ["credentials"],
+                ["check_overlay_url"],
+                ["check_overlay_py2_url"],
+                ["check_overlay_ttl"],
+                ["updatelog_cutoff"],
+            ],
+            Permissions.PLUGIN_SOFTWAREUPDATE_CONFIGURE: [
+                ["pip_command"],
+                ["cache_ttl"],
+                ["minimum_free_storage"],
+            ],
+        }
 
     def on_settings_save(self, data):
         # ~~ plugin settings

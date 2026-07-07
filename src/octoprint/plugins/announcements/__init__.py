@@ -166,6 +166,17 @@ class AnnouncementPlugin(
                 enabled.append("_blog")
             self._settings.set(["enabled_channels"], enabled)
 
+    def get_settings_restricted_paths(self):
+        return {
+            "never": [
+                ["channels"],
+                ["enabled_channels"],
+                ["forced_channels"],
+                ["channel_order"],
+                ["ttl"],
+            ]
+        }
+
     # AssetPlugin
 
     def get_assets(self):
