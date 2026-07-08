@@ -37,11 +37,7 @@ $(function () {
         OctoPrint.plugins.appkeys
             .decide(USER_TOKEN, true)
             .done(function () {
-                if (REDIRECT_URL) {
-                    window.location.href = REDIRECT_URL;
-                } else {
-                    showDone();
-                }
+                showDone();
             })
             .fail(showError);
 
@@ -51,11 +47,7 @@ $(function () {
         OctoPrint.plugins.appkeys
             .decide(USER_TOKEN, false)
             .done(function () {
-                if (REDIRECT_URL) {
-                    window.location.href = REDIRECT_URL;
-                } else {
-                    showDone();
-                }
+                showDone();
             })
             .fail(showError);
 
