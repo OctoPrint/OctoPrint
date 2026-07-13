@@ -10,6 +10,7 @@ import tornado.websocket
 from flask_babel import gettext
 
 import octoprint.plugin
+from octoprint.access.permissions import Permissions
 from octoprint.util import get_fully_qualified_classname as fqcn  # noqa: F401
 from octoprint.util.version import (
     get_octoprint_version_string,
@@ -120,7 +121,7 @@ class ErrorTrackingPlugin(
 
     def get_settings_restricted_paths(self):
         return {
-            "admin": [
+            Permissions.SETTINGS: [
                 ["unique_id"],
             ],
             "never": [["enabled_unreleased"], ["url_server"], ["url_coreui"]],

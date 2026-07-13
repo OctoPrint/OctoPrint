@@ -13,6 +13,7 @@ import requests
 from flask_babel import gettext
 
 import octoprint.plugin
+from octoprint.access.permissions import Permissions
 from octoprint.events import Events
 from octoprint.util import RepeatedTimer
 from octoprint.util.version import get_octoprint_version_string
@@ -78,7 +79,7 @@ class TrackingPlugin(
 
     def get_settings_restricted_paths(self):
         return {
-            "admin": [["enabled"], ["unique_id"], ["events"]],
+            Permissions.SETTINGS: [["enabled"], ["unique_id"], ["events"]],
             "never": [["server"], ["ping"], ["pong"]],
         }
 

@@ -3,6 +3,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import octoprint.plugin
+from octoprint.access.permissions import Permissions
 
 
 class VirtualPrinterPlugin(
@@ -109,7 +110,9 @@ class VirtualPrinterPlugin(
                 self._settings.global_remove(["devel", "virtualPrinter"])
 
     def get_settings_restricted_paths(self):
-        return {"admin": [[key] for key in self.get_settings_defaults().keys()]}
+        return {
+            Permissions.SETTINGS: [[key] for key in self.get_settings_defaults().keys()]
+        }
 
     def virtual_printer_factory(self, comm_instance, port, baudrate, read_timeout):
         if not port == "VIRTUAL":

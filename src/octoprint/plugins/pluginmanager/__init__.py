@@ -354,7 +354,7 @@ class PluginManagerPlugin(
 
     def get_settings_restricted_paths(self):
         return {
-            "admin": [
+            Permissions.SETTINGS: [
                 ["repository"],
                 ["repository_ttl"],
                 ["notices"],
