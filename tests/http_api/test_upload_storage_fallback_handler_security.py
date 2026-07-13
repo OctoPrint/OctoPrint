@@ -70,41 +70,43 @@ SEMICOL_ENCODED = _percent_encode_fully(";")
         ),
     ],
 )
-def test_regular_uploads_working(baseURL, headers, setup, body, content_type, path):
+def test_regular_uploads_working(base_url, headers, setup, body, content_type, path):
     hdrs = dict(**headers, **{"Content-Type": content_type})
 
-    resp = urllib3.request("POST", baseURL + "/api/files/local", body=body, headers=hdrs)
+    resp = urllib3.request("POST", base_url + "/api/files/local", body=body, headers=hdrs)
 
-    _verify_created(baseURL, headers, resp, path)
+    _verify_created(base_url, headers, resp, path)
 
 
 ##~~ request parameters
 
 
 @pytest.mark.parametrize("method", ["POST", "GET", "HEAD"])
-def test_request_parameter_rejection(baseURL, headers, setup, method):
+def test_request_parameter_rejection(base_url, headers, setup, method):
     query = urlencode({"file.name": FILENAME, "file.path": PATH})
 
-    resp = urllib3.request(method, baseURL + "/api/files/local?" + query, headers=headers)
+    resp = urllib3.request(
+        method, base_url + "/api/files/local?" + query, headers=headers
+    )
 
-    _verify_rejected(baseURL, headers, resp)
+    _verify_rejected(base_url, headers, resp)
 
 
 ##~~ application/x-www-form-urlencoded
 
 
-def test_form_rejection(baseURL, headers, setup):
+def test_form_rejection(base_url, headers, setup):
     body = urlencode({"file.name": FILENAME, "file.path": PATH})
     hdrs = dict(**headers, **{"Content-Type": "aPplicaTion/X-wWW-FOrm-uRLenCodEd"})
 
     resp = urllib3.request(
         "POST",
-        baseURL + "/api/files/local",
+        base_url + "/api/files/local",
         headers=hdrs,
         body=body,
     )
 
-    _verify_rejected(baseURL, headers, resp)
+    _verify_rejected(base_url, headers, resp)
 
 
 ##~~ multipart/form-data
@@ -152,19 +154,19 @@ def test_form_rejection(baseURL, headers, setup):
         ),
     ],
 )
-def test_multipart_rejection(baseURL, headers, setup, body, content_type):
+def test_multipart_rejection(base_url, headers, setup, body, content_type):
     hdrs = dict(**headers, **{"Content-Type": content_type})
 
-    resp = urllib3.request("POST", baseURL + "/api/files/local", body=body, headers=hdrs)
+    resp = urllib3.request("POST", base_url + "/api/files/local", body=body, headers=hdrs)
 
-    _verify_rejected(baseURL, headers, resp)
+    _verify_rejected(base_url, headers, resp)
 
 
-def test_multipart_obs_fold_rejection(baseURL, headers, setup):
+def test_multipart_obs_fold_rejection(base_url, headers, setup):
     # we do this via a socket to make sure nothing transparently removes the obs fold
     import socket
 
-    url = urlsplit(baseURL)
+    url = urlsplit(base_url)
 
     body = (
         f"--{BOUNDARY}{CRLF}"
@@ -200,7 +202,7 @@ def test_multipart_obs_fold_rejection(baseURL, headers, setup):
         s.close()
 
     # verify
-    _verify_rejected(baseURL, headers, resp)
+    _verify_rejected(base_url, headers, resp)
 
 
 @pytest.mark.parametrize(
@@ -234,12 +236,12 @@ def test_multipart_obs_fold_rejection(baseURL, headers, setup):
         ),
     ],
 )
-def test_multipart_noop(baseURL, headers, setup, body, content_type):
+def test_multipart_noop(base_url, headers, setup, body, content_type):
     hdrs = dict(**headers, **{"Content-Type": content_type})
 
-    resp = urllib3.request("POST", baseURL + "/api/files/local", body=body, headers=hdrs)
+    resp = urllib3.request("POST", base_url + "/api/files/local", body=body, headers=hdrs)
 
-    _verify_noop(baseURL, headers, resp)
+    _verify_noop(base_url, headers, resp)
 
 
 ##~~ helpers
@@ -308,11 +310,11 @@ def _verify_path_missing(baseURL, headers, path):
 
 
 @pytest.fixture
-def headers(credentials):
-    return {"Authorization": f"Bearer {credentials['apikey']}"}
+def headers(user_credentials):
+    return {"Authorization": f"Bearer {user_credentials['apikey']}"}
 
 
 @pytest.fixture
-def setup(baseURL, headers, caplog):
-    _ensure_path_unknown(baseURL, headers, FILENAME)
-    _ensure_path_unknown(baseURL, headers, FILENAME)
+def setup(base_url, headers, caplog):
+    _ensure_path_unknown(base_url, headers, FILENAME)
+    _ensure_path_unknown(base_url, headers, FILENAME)
