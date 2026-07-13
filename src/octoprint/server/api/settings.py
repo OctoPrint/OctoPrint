@@ -169,6 +169,9 @@ def getSettings():
             "autologinHeadsupAcknowledged": s.getBoolean(
                 ["accessControl", "autologinHeadsupAcknowledged"]
             ),
+            "defaultReauthenticationTimeout": s.getInt(
+                ["accessControl", "defaultReauthenticationTimeout"]
+            ),
         },
         "api": {
             "key": s.get(["api", "key"]),
@@ -871,6 +874,9 @@ def _saveSettings(data):
     if "system" in data:
         if "actions" in data["system"]:
             s.set(["system", "actions"], data["system"]["actions"])
+        if "events" in data["system"] and not api_version_matches(">=2.0.0"):
+            # Keep this! Backwards compatibility for <2.0.0, see data model docs!
+            s.set(["events"], data["system"]["events"])
 
     if "scripts" in data:
         if "gcode" in data["scripts"] and isinstance(data["scripts"]["gcode"], dict):
@@ -1063,7 +1069,7 @@ def _get_serial_settings():
             ["printerConnection", "preferred", "parameters"]
         )
 
-    return {
+    result = {
         "port": preferred_connection_params.get("port"),
         "baudrate": preferred_connection_params.get("baudrate"),
         "exclusive": s.getBoolean(["plugins", "serial_connector", "exclusive"]),
@@ -1241,6 +1247,16 @@ def _get_serial_settings():
             ["plugins", "serial_connector", "enableShutdownActionCommand"]
         ),
     }
+
+    restricted_paths = {
+        Permissions.SETTINGS: [
+            [key] for key in result.keys() if key not in ("log", "ignoreEmptyPorts")
+        ]
+    }
+
+    return apply_path_restrictions(
+        result, restricted_paths, current_user, keep_leaves=True
+    )
 
 
 def _set_serial_settings(data: dict[str, Any]):
