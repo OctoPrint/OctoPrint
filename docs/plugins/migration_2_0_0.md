@@ -439,6 +439,18 @@ Clients still relying on the old endpoints need to switch to the new ones.
 
 Any API responses related to users no longer contain the `admin` and `user` fields. You can still determine these from the returned `groups`.
 
+(sec-plugins-octo_2_0_0-api-settings)=
+### Settings API has more granular permission checks
+
+The [Settings retrieval endpoint](#sec-api-settings-retrieve) now only returns the settings the user actually needs access to, depending on their permissions.
+
+With the `SETTINGS_READ` permission, only frontend-related settings are returned. Anything backend-only that the user also can't write is not returned.
+
+With the `SETTINGS` permission, most backend related settings are returned as well, except those related to access control and the (deprecated) global API key,
+which require the `ADMIN` permission.
+
+The data model will still be returned in full, however the restricted values will be set to `null` (in case of singular values) or an empty list (in case of lists).
+
 (sec-plugins-octo_2_0_0-project)=
 ## Project organisation
 
