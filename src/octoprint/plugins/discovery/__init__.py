@@ -19,6 +19,7 @@ from flask_babel import gettext
 
 import octoprint.plugin
 import octoprint.util
+from octoprint.access.permissions import Permissions
 
 
 def __plugin_load__():
@@ -95,9 +96,20 @@ class DiscoveryPlugin(
         }
 
     def get_settings_restricted_paths(self):
-        keys = self.get_settings_defaults().keys()
-
-        return {"never": [[key] for key in keys]}
+        return {
+            Permissions.SETTINGS_READ: [["zeroConf"], ["model"], ["upnpUuid"]],
+            "never": [
+                ["publicHost"],
+                ["publicPort"],
+                ["pathPrefix"],
+                ["addresses"],
+                ["ignoredAddresses"],
+                ["interfaces"],
+                ["ignoredInterfaces"],
+                ["httpUsername"],
+                ["httpPassword"],
+            ],
+        }
 
     ##~~ BlueprintPlugin API -- used for providing the SSDP device descriptor XML
 
