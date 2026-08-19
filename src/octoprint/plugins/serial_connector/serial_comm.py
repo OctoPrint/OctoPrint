@@ -4238,7 +4238,6 @@ class MachineCom:
             faq=payload.get("faq"),
             logs=payload.get("logs"),
         )
-        eventManager().fire(Events.ERROR, payload)
 
         if close:
             if trigger_m112:
