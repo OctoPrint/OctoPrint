@@ -159,24 +159,6 @@ const sendAnalyzeDone = () => {
     });
 };
 
-const purgeLayers = () => {
-    let purge = true;
-    model.forEach((cmds) => {
-        purge = true;
-        if (!cmds) {
-            purge = true;
-        } else {
-            if (cmds instanceof Uint8Array) cmds = decompress(cmds);
-            cmds.forEach((cmd) => {
-                if (cmd.extrude) purge = false;
-            });
-        }
-        if (!purge) {
-            layerCnt++;
-        }
-    });
-};
-
 const bedBounds = () => {
     if (!bed) {
         return {xMin: 0, xMax: 0, yMin: 0, yMax: 0};
@@ -307,13 +289,14 @@ const analyzeModel = () => {
             }
         });
 
-        if (!layerExtrude) {
+        if (layerExtrude) {
+            layerCnt++;
+        } else {
             emptyLayers[i] = true;
         }
 
         sendSizeProgress((i / model.length) * 100);
     });
-    purgeLayers();
 
     modelSize.x = Math.abs(max.x - min.x);
     modelSize.y = Math.abs(max.y - min.y);
