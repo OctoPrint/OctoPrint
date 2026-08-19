@@ -62,6 +62,18 @@ def test_user(base_url, user_credentials):
         {"log": _not_none, "ignoreEmptyPorts": _not_none},
     )
 
+    # discovery
+    _verify_tree_restricted(
+        data["plugins"]["discovery"],
+        {
+            key: _not_none
+            for key in (
+                "upnpUuid",
+                "model",
+            )
+        },
+    )
+
     # API version 2.0.0
     assert "printerConnection" in data
     assert "serial" not in data
