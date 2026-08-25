@@ -100,10 +100,10 @@ However, it is *strongly* recommended to think whether some more granular (and p
 (sec-plugins-octo_2_0_0-server-storage-sdcard_value)=
 #### Changed value of `octoprint.filemanager.FileDestinations.SDCARD`
 
-The value of `FileDestinations.SDCARD` has changed from `printer` to `sdcard`. Any plugins that compared it against the hardcoded string will fail the comparison. Switch your code to using `FileDestinations.PRINTER` for all required checks! Example:
+The value of `FileDestinations.SDCARD` has changed from `sdcard` to `printer`. Any plugins that compared it against the hardcoded string will fail the comparison. Switch your code to using `FileDestinations.PRINTER` for all required checks! Example:
 
 ``` python
-from octoprint.storage import FileDestinations
+from octoprint.filemanager.destinations import FileDestinations
 
 if storage == FileDestinations.PRINTER:  # preferred!
     # do something
