@@ -1782,6 +1782,10 @@ class LocalFileStorage(StorageInterface):
     def _save_metadata(self, path, metadata):
         import json
 
+        serialized = json.dumps(
+            metadata, indent=2, separators=(",", ": "), allow_nan=False
+        )
+
         with self._get_metadata_lock(path):
             self._metadata_cache[path] = metadata
 
@@ -1789,9 +1793,7 @@ class LocalFileStorage(StorageInterface):
             metadata_path = os.path.join(path, ".metadata.json")
             try:
                 with atomic_write(metadata_path, mode="wb") as f:
-                    f.write(
-                        to_bytes(json.dumps(metadata, indent=2, separators=(",", ": ")))
-                    )
+                    f.write(to_bytes(serialized))
                 self._update_last_activity()
             except Exception:
                 self._logger.exception(f"Error while writing .metadata.json to {path}")
