@@ -903,6 +903,12 @@ class LocalFileStorage(StorageInterface):
         return metadata[name].get(key)
 
     def set_additional_metadata(self, path, key, data, overwrite=False, merge=False):
+        if not self.validate_additional_metadata(data):
+            raise StorageError(
+                f"Additional metadata at {key} for {path} contains invalid values (positive or negative infinity, NaN, unserializable json)",
+                code=StorageError.INVALID_METADATA,
+            )
+
         path, name = self.sanitize(path)
         metadata = self._get_metadata(path)
         metadata_dirty = False
@@ -930,6 +936,9 @@ class LocalFileStorage(StorageInterface):
 
         if metadata_dirty:
             self._save_metadata(path, metadata)
+
+    def validate_additional_metadata(self, data):
+        return self._valid_json(data)
 
     def remove_additional_metadata(self, path, key):
         path, name = self.sanitize(path)
@@ -1751,19 +1760,9 @@ class LocalFileStorage(StorageInterface):
                             f"Error while reading .metadata.json from {path}"
                         )
 
-        def valid_json(value):
-            try:
-                json.dumps(value, allow_nan=False)
-                return True
-            except Exception:
-                return False
-
         if isinstance(metadata, dict):
             old_size = len(metadata)
-            metadata = {k: v for k, v in metadata.items() if valid_json(v)}
-            metadata = {
-                k: v for k, v in metadata.items() if os.path.exists(os.path.join(path, k))
-            }
+            metadata = self._sanitized_metadata(path, metadata)
             new_size = len(metadata)
             if new_size != old_size:
                 self._logger.info(
@@ -1781,6 +1780,14 @@ class LocalFileStorage(StorageInterface):
 
     def _save_metadata(self, path, metadata):
         import json
+
+        old_keys = metadata.keys()
+        metadata = self._sanitized_metadata(path, metadata, must_exist=False)
+        if len(metadata.keys()) != len(old_keys):
+            missing_keys = [key for key in old_keys if key not in metadata]
+            raise ValueError(
+                f"Invalid data detected in metadata for {path} and keys {missing_keys!r}, refusing to save"
+            )
 
         serialized = json.dumps(
             metadata, indent=2, separators=(",", ": "), allow_nan=False
@@ -1821,6 +1828,33 @@ class LocalFileStorage(StorageInterface):
         metadata = copy.copy(metadata)
         metadata[name] = copy.deepcopy(metadata.get(name, {}))
         return metadata
+
+    @staticmethod
+    def _valid_json(value):
+        import json
+
+        try:
+            json.dumps(value, allow_nan=False)
+            return True
+        except Exception:
+            return False
+
+    @classmethod
+    def _sanitized_metadata(clz, path, metadata, must_exist=True):
+        if not isinstance(metadata, dict):
+            return {}
+
+        if isinstance(metadata, dict):
+            metadata = {k: v for k, v in metadata.items() if clz._valid_json(v)}
+            if must_exist:
+                metadata = {
+                    k: v
+                    for k, v in metadata.items()
+                    if os.path.exists(os.path.join(path, k))
+                }
+            return metadata
+        else:
+            return {}
 
     def _migrate_metadata(self, path):
         # we switched to json in 1.3.9 - if we still have yaml here, migrate it now

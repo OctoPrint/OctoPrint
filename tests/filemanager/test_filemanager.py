@@ -915,3 +915,30 @@ class FileManagerTest(unittest.TestCase):
 
         # assert that the temporary file was deleted
         mocked_os.assert_called_once_with("tmp.file")
+
+    def test_add_additional_metadata(self):
+        self.local_storage.validate_additional_metadata.return_value = True
+
+        self.assertTrue(
+            self.file_manager.validate_additional_metadata(
+                octoprint.filemanager.FileDestinations.LOCAL, {"foo": "bar"}
+            )
+        )
+
+    def test_add_additional_metadata_invalid_value(self):
+        self.local_storage.validate_additional_metadata.return_value = True
+
+        self.assertFalse(
+            self.file_manager.validate_additional_metadata(
+                octoprint.filemanager.FileDestinations.LOCAL, "value"
+            )
+        )
+
+    def test_add_additional_metadata_storage_validation_fails(self):
+        self.local_storage.validate_additional_metadata.return_value = False
+
+        self.assertFalse(
+            self.file_manager.validate_additional_metadata(
+                octoprint.filemanager.FileDestinations.LOCAL, {"foo": "bar"}
+            )
+        )
