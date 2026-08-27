@@ -1,9 +1,11 @@
 .. _sec-jsclientlib-files:
 
-:mod:`OctoPrintClient.files`
-----------------------------
+.. js:module:: OctoPrintClient.files
 
-.. js:function:: OctoPrintClient.files.get(location, path, opts)
+``OctoPrintClient.files``
+-------------------------
+
+.. js:function:: get(location, path, opts)
 
    Retrieves information about the file or folder ``path`` at ``location``.
 
@@ -14,7 +16,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.files.list(recursively, force, opts)
+.. js:function:: list(recursively, force, opts)
 
    Retrieves a list of all files from the server.
 
@@ -56,12 +58,12 @@
 
       ``force`` parameter added
 
-   :param boolean recursively: Whether to list the files recursively (including all sub folders, true) or not (false, default)
-   :param boolean force: Whether to force the list to be refreshed, bypassing internal caching
+   :param bool recursively: Whether to list the files recursively (including all sub folders, true) or not (false, default)
+   :param bool force: Whether to force the list to be refreshed, bypassing internal caching
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.files.listForLocation(location, recursively, force, opts)
+.. js:function:: listForLocation(location, recursively, force, opts)
 
    Retrieves a list of all files stored at the specified ``location`` from the server.
 
@@ -78,12 +80,12 @@
       ``force`` parameter added
 
    :param string location: The location for which to retrieve the list
-   :param boolean recursively: Whether to list the files recursively (including all sub folders, true) or not (false, default)
-   :param boolean force: Whether to force refresh the file list from the storage
+   :param bool recursively: Whether to list the files recursively (including all sub folders, true) or not (false, default)
+   :param bool force: Whether to force refresh the file list from the storage
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.files.select(location, path, print, opts)
+.. js:function:: select(location, path, print, opts)
 
    Selects a file at ``location`` named ``path`` for printing. If ``print`` is supplied and
    truthy, also starts printing the file immediately.
@@ -92,11 +94,11 @@
 
    :param string location: The location of the file to select
    :param string path: The name of the file to select
-   :param boolean print: Whether to print the file after selection (true) or not (false, default)
+   :param bool print: Whether to print the file after selection (true) or not (false, default)
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.files.analyse(location, path, parameters, opts)
+.. js:function:: analyse(location, path, parameters, opts)
 
    (Re)analyses a file at ``location`` called ``path``.
 
@@ -108,7 +110,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.files.refreshThumbnails(location, path, parameters, opts)
+.. js:function:: refreshThumbnails(location, path, parameters, opts)
 
    Refreshes the thumbnails for the file or folder at ``location`` called ``path``.
 
@@ -122,7 +124,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.files.slice(location, path, parameters, opts)
+.. js:function:: slice(location, path, parameters, opts)
 
    Slices a file at ``location`` called ``path``, using the supplied slice command ``parameters``.
 
@@ -134,7 +136,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.files.delete(location, path, opts)
+.. js:function:: delete(location, path, opts)
 
    Deletes the file or folder at ``location`` and ``path``.
 
@@ -145,7 +147,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.files.copy(location, path, destination, allowOverwrite, opts)
+.. js:function:: copy(location, path, destination, allowOverwrite, opts)
 
    Copies file or folder ``path`` on ``location`` to new parent folder ``destination`` on ``location``.
 
@@ -162,11 +164,11 @@
    :param string location: The location of the file to copy, currently only "local" is supported
    :param string path: The path of the file or folder to copy
    :param string destination: The path of the parent to which to copy the file or folder
-   :param boolean allowOverwrite: Whether to allow overwriting the destination if it already exists
+   :param bool allowOverwrite: Whether to allow overwriting the destination if it already exists
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.files.copyAcrossStorage(storage, path, destinationStorage, destinationPath, allowOverwrite, opts)
+.. js:function:: copyAcrossStorage(storage, path, destinationStorage, destinationPath, allowOverwrite, opts)
 
    Copies file or folder ``path`` on ``storage`` to new parent folder ``destinationPath`` on ``destinationStorage``.
 
@@ -186,11 +188,11 @@
    :param string path: The path of the file or folder to copy
    :param string destinationStorage: The destination storage
    :param string destinationPath: The path of the parent to which to copy the file or folder
-   :param boolean allowOverwrite: Whether to allow overwriting the destination if it already exists
+   :param bool allowOverwrite: Whether to allow overwriting the destination if it already exists
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.files.move(location, filename, destination, allowOverwrite, opts)
+.. js:function:: move(location, filename, destination, allowOverwrite, opts)
 
    Moves file or folder ``path`` on ``location`` to new parent folder ``destination`` on ``location``.
 
@@ -207,11 +209,11 @@
    :param string location: The location of the file to move, currently only "local" is supported
    :param string path: The path of the file or folder to move
    :param string destination: The path of the parent to which to move the file or folder
-   :param boolean allowOverwrite: Whether to allow overwriting the destination if it already exists
+   :param bool allowOverwrite: Whether to allow overwriting the destination if it already exists
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.files.moveAcrossStorage(storage, path, destinationStorage, destinationPath, allowOverwrite, opts)
+.. js:function:: moveAcrossStorage(storage, path, destinationStorage, destinationPath, allowOverwrite, opts)
 
    Moves file or folder ``path`` on ``storage`` to new parent folder ``destinationPath`` on ``destinationStorage``.
 
@@ -231,11 +233,11 @@
    :param string path: The path of the file or folder to move
    :param string destinationStorage: The destination storage
    :param string destinationPath: The path of the parent to which to move the file or folder
-   :param boolean allowOverwrite: Whether to allow overwriting the destination if it already exists
+   :param bool allowOverwrite: Whether to allow overwriting the destination if it already exists
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.files.createFolder(location, name, path, opts)
+.. js:function:: createFolder(location, name, path, opts)
 
    Creates a new folder ``name`` on ``location``. If ``path`` is provided and not empty the folder
    will be created as a new child of it.
@@ -259,7 +261,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.files.upload(location, file, data)
+.. js:function:: upload(location, file, data)
 
    Uploads a ``file`` to the specified ``location``.
 
@@ -269,24 +271,25 @@
        A string value, the filename to assign to the uploaded file. Optional, if not provided the filename
        will be taken from the provided ``file`` object's ``name`` property.
    select
-       A boolean value, specifies whether to immediately select the uploaded file for printing once
+       A bool value, specifies whether to immediately select the uploaded file for printing once
        the upload completes (true) or not (false, default)
    print
-       A boolean value, specifies whether to immediately start printing the file after the upload
+       A bool value, specifies whether to immediately start printing the file after the upload
        completes (true) or not (false, default)
    userdata
        An optional object or a serialized JSON string of additional user supplied data to associate with
        the uploaded file.
 
    See :ref:`Upload file or create folder <sec-api-fileops-uploadfile>` for more details on the file upload API and
-   :js:func:`OctoPrint.upload` for more details on the underlying library upload mechanism, including
+   :js:func:`OctoPrintClient.upload` for more details on the underlying library upload mechanism, including
    what values are accepted for the ``file`` parameter.
 
    :param string location: The location to upload the file to
-   :param object or string file: The file to upload, see :js:func:`OctoPrint.upload` for more details
+   :param string file: The file to upload, see :js:func:`OctoPrintClient.upload` for more details
+   :param object data: additional command data as described
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.files.download(location, path, opts)
+.. js:function:: download(location, path, opts)
 
    Downloads the file at ``path`` in ``location``.
 
@@ -308,7 +311,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.files.bulkDownloadUrl(storage, files)
+.. js:function:: bulkDownloadUrl(storage, files)
 
    Requests a zip-based bulk download of the provided ``files`` on the defined ``storage``.
 
@@ -316,7 +319,7 @@
    :param list files: The paths of the files to bulk download
    :returns string: The URL for the bulk download
 
-.. js:function:: OctoPrintClient.files.pathForEntry(entry)
+.. js:function:: pathForEntry(entry)
 
    Utility function to retrieve the path within its location for a given ``entry``.
 
@@ -336,7 +339,7 @@
    :param object entry: The entry object for which to retrieve the path
    :returns string: The path of the entry within its location
 
-.. js:function:: OctoPrintClient.files.entryForPath(path, root)
+.. js:function:: entryForPath(path, root)
 
    Utility function to retrieve an entry by its ``path`` based on an entry tree provided by its
    ``root``.

@@ -1,14 +1,16 @@
 .. _sec-jsclientlib-util:
 
-:mod:`OctoPrintClient.util`
----------------------------
+.. js:module:: OctoPrintClient.util
+
+``OctoPrintClient.util``
+------------------------
 
 .. note::
 
    All methods here require that the used API token or the existing browser session
    has admin rights.
 
-.. js:function:: OctoPrintClient.util.test(command, parameters, opts)
+.. js:function:: test(command, parameters, opts)
 
    Execute a :ref:`test command <sec-api-util-test>`.
 
@@ -19,7 +21,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.util.testPath(path, additional, opts)
+.. js:function:: testPath(path, additional, opts)
 
    Test the provided ``path`` for existence. More test criteria supported by the :ref:`path test command <sec-api-util-test-path>`
    can be provided via the ``additional`` object.
@@ -59,7 +61,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.util.testExecutable(path, opts)
+.. js:function:: testExecutable(path, opts)
 
    Shortcut to test if a provided ``path`` exists and is executable by OctoPrint.
 
@@ -78,7 +80,7 @@
               }
           });
 
-   This is equivalent to calling :js:func:`OctoPrint.util.testPath` like this:
+   This is equivalent to calling :js:func:`testPath` like this:
 
    .. code-block:: javascript
 
@@ -95,7 +97,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.util.testUrl(url, additional, opts)
+.. js:function:: testUrl(url, additional, opts)
 
    Test if a URL can be accessed. More test criteria supported by the :ref:`URL test command <sec-api-util-test-url>`
    can be provided via the ``additional`` object.
@@ -161,7 +163,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.util.testServer(host, port, additional, opts)
+.. js:function:: testServer(host, port, additional, opts)
 
    Test if a server is reachable. More options supported by the :ref:`server test command <sec-api-util-test-server>`
    can be provided via the ``additional`` object.
@@ -203,7 +205,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.util.testResolution(name, additional, opts)
+.. js:function:: testResolution(name, additional, opts)
 
    Test if a host name can be resolved.
 

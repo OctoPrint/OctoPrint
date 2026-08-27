@@ -1,25 +1,27 @@
 .. _sec-jsclientlib-wizard:
 
-:mod:`OctoPrintClient.wizard`
------------------------------
+.. js:module:: OctoPrintClient.wizard
+
+``OctoPrintClient.wizard``
+--------------------------
 
 .. note::
 
    All methods here require that the used API token or the existing browser session
    has admin rights.
 
-.. js:function:: OctoPrintClient.wizard.get(opts)
+.. js:function:: get(opts)
 
    Retrieve additional data about registered wizards.
 
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.wizard.finish(handled, opts)
+.. js:function:: finish(handled, opts)
 
    Inform wizards that the wizard dialog has been finished.
 
-   :param list handled: List of identifiers of handled wizards
+   :param array handled: List of identifiers of handled wizards
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 

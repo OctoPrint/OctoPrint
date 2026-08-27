@@ -1,16 +1,18 @@
 .. _sec-jsclientlib-slicing:
 
-:mod:`OctoPrintClient.slicing`
-------------------------------
+.. js:module:: OctoPrintClient.slicing
 
-.. js:function:: OctoPrintClient.slicing.listAllSlicersAndProfiles(opts)
+``OctoPrintClient.slicing``
+---------------------------
+
+.. js:function:: listAllSlicersAndProfiles(opts)
 
    Retrieves a list of all slicers and their available slicing profiles.
 
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.slicing.listProfilesForSlicer(slicer, opts)
+.. js:function:: listProfilesForSlicer(slicer, opts)
 
    Retrieves a list of all slicing profiles for the specified ``slicer``.
 
@@ -18,7 +20,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.slicing.getProfileForSlicer(slicer, profileId, opts)
+.. js:function:: getProfileForSlicer(slicer, profileId, opts)
 
    Retrieves the slicing profile with ``profileId`` for the specified ``slicer``.
 
@@ -27,7 +29,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.slicing.addProfileForSlicer(slicer, profileId, profile, opts)
+.. js:function:: addProfileForSlicer(slicer, profileId, profile, opts)
 
    Adds the profile with identifier ``profileId`` to the specified ``slicer``, using the provided ``profile`` data.
 
@@ -37,7 +39,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.slicing.updateProfileForSlicer(slicer, profileId, profile, opts)
+.. js:function:: updateProfileForSlicer(slicer, profileId, profile, opts)
 
    Updates the profile ``profileId`` for ``slicer`` with the provided ``profile`` data.
 
@@ -47,7 +49,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.slicing.deleteProfileForSlicer(slicer, profileId, opts)
+.. js:function:: deleteProfileForSlicer(slicer, profileId, opts)
 
    Deletes the profile ``profileId`` for ``slicer``.
 

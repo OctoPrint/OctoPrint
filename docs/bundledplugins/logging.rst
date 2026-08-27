@@ -193,15 +193,17 @@ References
 JS Client Library
 -----------------
 
-:mod:`OctoPrintClient.plugins.logging`
---------------------------------------
+.. js:module:: OctoPrintClient.plugins.logging
+
+``OctoPrintClient.plugins.logging``
+-----------------------------------
 
 .. note::
 
    All methods here require that the used API token or the existing browser session
    has admin rights.
 
-.. js:function:: OctoPrintClient.plugins.logging.listLogs(opts)
+.. js:function:: listLogs(opts)
 
    Retrieves a list of log files.
 
@@ -210,7 +212,7 @@ JS Client Library
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.plugins.logging.deleteLog(path, opts)
+.. js:function:: deleteLog(path, opts)
 
    Deletes the specified log ``path``.
 
@@ -220,11 +222,11 @@ JS Client Library
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.plugins.logging.downloadLog(path, opts)
+.. js:function:: downloadLog(path, opts)
 
    Downloads the specified log ``file``.
 
-   See :js:func:`OctoPrint.download` for more details on the underlying library download mechanism.
+   See :js:func:`OctoPrintClient.download` for more details on the underlying library download mechanism.
 
    :param string path: The path to the log file to download
    :param object opts: Additional options for the request

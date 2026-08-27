@@ -1,7 +1,7 @@
 .. _sec-jsclientlib-base:
 
-:mod:`OctoPrintClient`
-----------------------
+``OctoPrintClient``
+-------------------
 
 .. js:class:: OctoPrintClient([options])
 
@@ -69,7 +69,7 @@
 .. js:function:: OctoPrintClient.getBaseUrl()
 
    Returns the canonical base URL to use for OctoPrint's API. Uses the current value of
-   :js:data:`OctoPrint.options.baseurl <OctoPrint.options>`. If that doesn't end in a ``/``,
+   :js:attr:`OctoPrint.options.baseurl <OctoPrintClient.options>`. If that doesn't end in a ``/``,
    a trailing ``/`` will be appended to the URL before the result is returned.
 
    :returns string: The base url to use to access OctoPrint's API.
@@ -137,10 +137,10 @@
 
    The URL to perform the request against may be defined through ``opts.url`` or -- if that is not provided --
    through the ``url`` parameter. If neither is available, an empty string will be used (plain base URL). If the
-   URL starts with ``http://`` or ``https://`` it will be used directly. Otherwise the return value of :js:func:`OctoPrint.getBaseUrl`
+   URL starts with ``http://`` or ``https://`` it will be used directly. Otherwise the return value of :js:func:`OctoPrintClient.getBaseUrl`
    will be prepended.
 
-   As headers everything returned by :js:func:`OctoPrint.getRequestHeaders` will be used. Additional headers to set
+   As headers everything returned by :js:func:`OctoPrintClient.getRequestHeaders` will be used. Additional headers to set
    may be defined by providing them through ``opts.headers``.
 
    If ``opts.dataType`` is set, it will be used for setting the corresponding option on the jQuery ``ajax`` call, otherwise
@@ -157,7 +157,7 @@
 
    Performs an AJAX request against the OctoPrint API, including the provided ``data`` in the body of the request.
 
-   Utilizes :js:func:`OctoPrint.ajax`, see that for more details.
+   Utilizes :js:func:`OctoPrintClient.ajax`, see that for more details.
 
    :param string method: The HTTP method to use for the request (optional)
    :param string url: The URL to perform the request against (optional)
@@ -241,27 +241,27 @@
 
    Performs ``PUT`` request against ``url`` using the provided ``data`` as request body.
 
-   See :js:func:`OctoPrint.post` for details.
+   See :js:func:`OctoPrintClient.post` for details.
 
 .. js:function:: OctoPrintClient.putJson(url, data, opts)
 
    Performs ``PUT`` request against ``url`` using the provided ``data`` as request body after
    serializing it to JSON.
 
-   See :js:func:`OctoPrint.postJson` for details.
+   See :js:func:`OctoPrintClient.postJson` for details.
 
 .. js:function:: OctoPrintClient.patch(url, data, opts)
 
    Performs ``PATCH`` request against ``url`` using the provided ``data`` as request body.
 
-   See :js:func:`OctoPrint.post` for details.
+   See :js:func:`OctoPrintClient.post` for details.
 
 .. js:function:: OctoPrintClient.patchJson(url, data, opts)
 
    Performs ``PATCH`` request against ``url`` using the provided ``data`` as request body after
    serializing it to JSON.
 
-   See :js:func:`OctoPrint.postJson` for details.
+   See :js:func:`OctoPrintClient.postJson` for details.
 
 .. js:function:: OctoPrintClient.delete(url, opts)
 
@@ -496,7 +496,7 @@
       };
 
    :param string identifier: The identifier of the plugin for which ``clientClass`` is the client
-   :param class clientClass: The client class to register. Constructor must follow the signature ``ClientClass(base)``
+   :param clientClass: The client class to register. Constructor must follow the signature ``ClientClass(base)``
        where ``base`` will be assigned to the instance as ``this.base`` and be the :js:class:`OctoPrintClient`
        instance to use for API calls etc via ``this.base``.
 

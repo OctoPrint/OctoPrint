@@ -1,9 +1,11 @@
 .. _sec-jsclientlib-socket:
 
-:mod:`OctoPrintClient.socket`
------------------------------
+.. js:module:: OctoPrintClient.socket
 
-.. js:attribute:: OctoPrintClient.socket.options
+``OctoPrintClient.socket``
+--------------------------
+
+.. js:attribute:: options
 
    The socket client's options.
 
@@ -27,7 +29,7 @@
        communication throttling. See :ref:`Communication Throttling <sec-jsclient-socket-throttling>`
        below.
 
-.. js:function:: OctoPrintClient.socket.connect(opts)
+.. js:function:: connect(opts)
 
    Connects the socket client to OctoPrint's `SockJS <http://sockjs.org/>`_ socket.
 
@@ -36,15 +38,15 @@
 
    :param object opts: Additional options for the SockJS constructor.
 
-.. js:function:: OctoPrintClient.socket.reconnect()
+.. js:function:: reconnect()
 
    Reconnects the socket client. If the socket is currently connected it will be disconnected first.
 
-.. js:function:: OctoPrintClient.socket.disconnect()
+.. js:function:: disconnect()
 
    Disconnects the socket client.
 
-.. js:function:: OctoPrintClient.socket.onMessage(message, handler)
+.. js:function:: onMessage(message, handler)
 
    Registers the ``handler`` for messages of type ``message``.
 
@@ -69,7 +71,7 @@
    :param string message: The type of message for which to register
    :param function handler: The handler function
 
-.. js:function:: OctoPrintClient.socket.removeMessage(message, handler)
+.. js:function:: removeMessage(message, handler)
 
    Removes the ``handler`` for messages of type ``message``.
 
@@ -86,7 +88,7 @@
    :param string message: The type of message for which to remove the handler
    :param function handler: The handler function
 
-.. js:function:: OctoPrintClient.socket.sendMessage(type, payload)
+.. js:function:: sendMessage(type, payload)
 
    Sends a message of type ``type`` with the provided ``payload`` to the server.
 
@@ -96,7 +98,7 @@
    :param string type: Type of message to send
    :param object payload: Payload to send
 
-.. js:function:: OctoPrintClient.socket.sendAuth(userId, session)
+.. js:function:: sendAuth(userId, session)
 
    Sends an ``auth`` message with the provided ``userId`` and ``session`` to the server.
 
@@ -108,35 +110,35 @@
    :param string userId: An existing OctoPrint username
    :param string session: A valid session id for the provided username
 
-.. js:function:: OctoPrintClient.socket.onRateTooLow(measured, minimum)
+.. js:function:: onRateTooLow(measured, minimum)
 
    Called by the socket client when the measured message round trip times have been lower than
    the current lower processing limit over the full sliding window, indicating that messages
    are now processed faster than the current rate and a faster rate might be possible.
 
    Can be overwritten with custom handler methods. The default implementation will call
-   :js:func:`OctoPrint.socket.increaseRate`.
+   :js:func:`increaseRate`.
 
    :param Number measured: Maximal measured message round trip time
    :param Number minimum: Lower round trip time limit for keeping the rate
 
-.. js:function:: OctoPrintClient.socket.onRateTooHigh(measured, maximum)
+.. js:function:: onRateTooHigh(measured, maximum)
 
    Called by the socket client when the last measured round trip time was higher than the
    current upper processing limit, indicating that the messages are now processed slower than
    the current rate requires and a slower rate might be necessary.
 
    Can be overwritten with custom handler methods. The default implementation will call
-   :js:func:`OctoPrint.socket.decreaseRate`.
+   :js:func:`decreaseRate`.
 
    :param Number measured: Measured message round trip time
    :param Number maximum: Upper round trip time limit for keeping the rate
 
-.. js:function:: OctoPrintClient.socket.increaseRate()
+.. js:function:: increaseRate()
 
    Instructs the server to increase the message rate by 500ms.
 
-.. js:function:: OctoPrintClient.socket.decreaseRate()
+.. js:function:: decreaseRate()
 
    Instructs the server to decrease the message rate by 500ms.
 

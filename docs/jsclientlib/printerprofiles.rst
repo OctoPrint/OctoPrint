@@ -1,22 +1,24 @@
 .. _sec-jsclientlib-printerprofiles:
 
-:mod:`OctoPrintClient.printerprofiles`
---------------------------------------
+.. js:module:: OctoPrintClient.printerprofiles
 
-.. js:function:: OctoPrintClient.printerprofiles.list(opts)
+``OctoPrintClient.printerprofiles``
+-----------------------------------
+
+.. js:function:: list(opts)
 
    Retrieves a list of all configured printer profiles.
 
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.printerprofiles.get(id, opts)
+.. js:function:: get(id, opts)
 
    :param string id: The identifier of the profile to retrieve
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.printerprofiles.add(profile, additional, opts)
+.. js:function:: add(profile, additional, opts)
 
    Adds a new profile to OctoPrint.
 
@@ -25,7 +27,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.printerprofiles.update(id, profile, opts)
+.. js:function:: update(id, profile, opts)
 
    Updates an existing profile in OctoPrint.
 
@@ -34,7 +36,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.printerprofiles.delete(id, opts)
+.. js:function:: delete(id, opts)
 
    Deletes a profile in OctoPrint.
 
