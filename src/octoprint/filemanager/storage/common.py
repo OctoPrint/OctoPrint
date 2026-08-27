@@ -589,6 +589,9 @@ class StorageInterface:
 
         The default implementation always returns ``True``.
 
+        Args:
+            data: metadata to check
+
         Returns:
             (bool) ``True`` if the data is considered valid, ``False`` otherwise
 
