@@ -505,6 +505,12 @@ class PrinterFileStorage(StorageInterface):
                 code=StorageError.UNSUPPORTED,
             )
 
+        if not self.validate_additional_metadata(data):
+            raise StorageError(
+                f"Additional metadata for {path} with {key} is invalid: {data!r}",
+                code=StorageError.INVALID_METADATA,
+            )
+
         metadata = self._connection.get_printer_file_metadata(path)
         if metadata is None:
             metadata = MetadataEntry()
@@ -516,7 +522,11 @@ class PrinterFileStorage(StorageInterface):
             if not overwrite:
                 return
 
-            if merge:
+            if (
+                merge
+                and isinstance(metadata.additional[key], dict)
+                and isinstance(data, dict)
+            ):
                 import octoprint.util
 
                 data = octoprint.util.dict_merge(metadata.additional[key], data)
@@ -524,6 +534,15 @@ class PrinterFileStorage(StorageInterface):
         metadata.additional[key] = data
         self._connection.set_printer_file_metadata(path, metadata)
         self._update_last_activity()
+
+    def validate_additional_metadata(self, data):
+        if not self.capabilities.metadata:
+            raise StorageError(
+                "Printer does not support storing additional metadata",
+                code=StorageError.UNSUPPORTED,
+            )
+
+        return self._connection.validate_printer_file_additional_metadata(data)
 
     def remove_additional_metadata(self, path, key):
         if not self.capabilities.metadata:

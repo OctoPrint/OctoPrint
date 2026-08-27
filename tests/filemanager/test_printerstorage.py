@@ -102,6 +102,100 @@ def test_list_storage_entries(path, filters, recursive, level, expected):
     assert actual == expected
 
 
+def test_set_additional_metadata():
+    from octoprint.filemanager.storage import MetadataEntry
+    from octoprint.filemanager.storage.printer import (
+        PrinterFileStorage,
+        StorageCapabilities,
+    )
+
+    capabilities = StorageCapabilities(metadata=True)
+    meta = MetadataEntry()
+
+    path = "test/foo.gcode"
+    key = "unittest"
+    data = {"foo": "bar"}
+
+    connection = mock.MagicMock(PrinterFilesMixin)
+    connection.current_storage_capabilities = capabilities
+    connection.validate_printer_file_additional_metadata.return_value = True
+    connection.get_printer_file_metadata.return_value = meta
+
+    printer_storage = PrinterFileStorage(connection)
+    printer_storage.set_additional_metadata(path, key, data)
+
+    assert meta.additional.get(key) == data
+    connection.set_printer_file_metadata.assert_called_with(path, meta)
+
+
+def test_set_additional_metadata_unsupported():
+    from octoprint.filemanager.storage import MetadataEntry
+    from octoprint.filemanager.storage.printer import (
+        PrinterFileStorage,
+        StorageCapabilities,
+        StorageError,
+    )
+
+    capabilities = StorageCapabilities()
+    meta = MetadataEntry()
+
+    path = "test/foo.gcode"
+    key = "unittest"
+    data = {"foo": "bar"}
+
+    connection = mock.MagicMock(PrinterFilesMixin)
+    connection.current_storage_capabilities = capabilities
+    connection.validate_printer_file_additional_metadata.return_value = True
+    connection.get_printer_file_metadata.return_value = meta
+
+    printer_storage = PrinterFileStorage(connection)
+    with pytest.raises(StorageError) as exc:
+        printer_storage.set_additional_metadata(path, key, data)
+
+    assert exc.value.code == StorageError.UNSUPPORTED
+    assert meta.additional.get(key) is None
+    connection.set_printer_file_metadata.assert_not_called()
+
+
+def test_set_additional_metadata_invalid():
+    from octoprint.filemanager.storage import MetadataEntry
+    from octoprint.filemanager.storage.printer import (
+        PrinterFileStorage,
+        StorageCapabilities,
+        StorageError,
+    )
+
+    capabilities = StorageCapabilities(metadata=True)
+    meta = MetadataEntry()
+
+    path = "test/foo.gcode"
+    key = "unittest"
+    data = {"foo": "bar"}
+
+    connection = mock.MagicMock(PrinterFilesMixin)
+    connection.current_storage_capabilities = capabilities
+    connection.validate_printer_file_additional_metadata.return_value = False
+    connection.get_printer_file_metadata.return_value = meta
+
+    printer_storage = PrinterFileStorage(connection)
+    with pytest.raises(StorageError) as exc:
+        printer_storage.set_additional_metadata(path, key, data)
+
+    assert exc.value.code == StorageError.INVALID_METADATA
+    assert meta.additional.get(key) is None
+    connection.set_printer_file_metadata.assert_not_called()
+
+
+def test_validate_additional_metadata():
+    from octoprint.filemanager.storage.printer import PrinterFileStorage
+
+    connection = mock.MagicMock(PrinterFilesMixin)
+    connection.validate_printer_file_additional_metadata.return_value = True
+
+    printer_storage = PrinterFileStorage(connection)
+    printer_storage.validate_additional_metadata({"foo": "bar"})
+
+
 def _extract_paths_from_files(nodes: dict[str, dict]) -> list[str]:
     result = []
 
