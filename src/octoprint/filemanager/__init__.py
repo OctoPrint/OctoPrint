@@ -1410,18 +1410,11 @@ class FileManager:
     def set_additional_metadata(
         self, location, path, key, data, overwrite=False, merge=False
     ):
-        if not self.validate_additional_metadata(location, data):
-            raise StorageError(
-                f"Additional metadata for {path} and {key} is invalid: {data!r}",
-                code=StorageError.INVALID_METADATA,
-            )
         self._storage(location).set_additional_metadata(
             path, key, data, overwrite=overwrite, merge=merge
         )
 
     def validate_additional_metadata(self, location, data):
-        if not isinstance(data, dict):
-            return False
         return self._storage(location).validate_additional_metadata(data)
 
     def remove_additional_metadata(self, location, path, key):

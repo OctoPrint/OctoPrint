@@ -557,7 +557,7 @@ class StorageInterface:
         self,
         path: str,
         key: str,
-        data: dict[str, Any],
+        data: Any,
         overwrite: bool = False,
         merge: bool = False,
     ):
@@ -572,18 +572,18 @@ class StorageInterface:
         Args:
             path (str): the virtual path to the file for which to add additional metadata
             key (str): key of metadata to add
-            data (dict): metadata to add
+            data: metadata to add
             overwrite (bool): if True and ``key`` already exists, it will be overwritten
             merge (bool): if True and ``key`` already exists and both ``data`` and the existing data are dictionaries, they
                 will be merged
 
         Raises:
-            StorageError: if the underlying storage doesn't support metadata, or if the provided ``data`` contains invalid values
-                (e.g. positive or negative infinity, NaN)
+            StorageError: if the underlying storage doesn't support metadata (code ``unsupported``), or if the provided ``data`` contains invalid values
+                (e.g. positive or negative infinity, NaN; code ``invalid_metadata``)
         """
         raise NotImplementedError()
 
-    def validate_additional_metadata(self, data: dict[str, Any]) -> bool:
+    def validate_additional_metadata(self, data: Any) -> bool:
         """
         Checks whether the provided ``data`` is considered valid as additional metadata.
 
@@ -593,7 +593,7 @@ class StorageInterface:
             (bool) ``True`` if the data is considered valid, ``False`` otherwise
 
         Raises:
-            StorageError: if the underlying storage doesn't support metadata
+            StorageError: if the underlying storage doesn't support metadata (code ``unsupported``)
         """
         return True
 

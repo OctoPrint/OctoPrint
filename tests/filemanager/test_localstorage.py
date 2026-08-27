@@ -809,12 +809,12 @@ class LocalStorageTest(unittest.TestCase):
         data = {"foo": "bar"}
         self.assertTrue(self.storage.validate_additional_metadata(data))
 
-    @data({"foo": float("inf")}, {"foo": float("-inf")}, {"foo": float("nan")})
+    @data(float("inf"), float("-inf"), float("nan"))
     def test_validate_additional_metadata_invalid(self, data):
         self.assertFalse(self.storage.validate_additional_metadata(data))
 
-    @data({"foo": float("inf")}, {"foo": float("-inf")}, {"foo": float("nan")})
-    def test_set_additional_metadata(self, data):
+    @data(float("inf"), float("-inf"), float("nan"))
+    def test_set_additional_metadata_invalid(self, data):
         try:
             self.storage.set_additional_metadata("bp_case.gcode", "unittest", data)
             self.fail("Expected StorageError")
