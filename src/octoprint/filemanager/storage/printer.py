@@ -507,7 +507,7 @@ class PrinterFileStorage(StorageInterface):
 
         if not self.validate_additional_metadata(data):
             raise StorageError(
-                f"Additional metadata for {path} and {key} is invalid: {data!r}",
+                f"Additional metadata for {path} with {key} is invalid: {data!r}",
                 code=StorageError.INVALID_METADATA,
             )
 
@@ -522,7 +522,11 @@ class PrinterFileStorage(StorageInterface):
             if not overwrite:
                 return
 
-            if merge:
+            if (
+                merge
+                and isinstance(metadata.additional[key], dict)
+                and isinstance(data, dict)
+            ):
                 import octoprint.util
 
                 data = octoprint.util.dict_merge(metadata.additional[key], data)

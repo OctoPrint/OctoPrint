@@ -124,7 +124,7 @@ def test_set_additional_metadata():
     printer_storage = PrinterFileStorage(connection)
     printer_storage.set_additional_metadata(path, key, data)
 
-    assert meta.additional.get("unittest") == data
+    assert meta.additional.get(key) == data
     connection.set_printer_file_metadata.assert_called_with(path, meta)
 
 
@@ -153,7 +153,7 @@ def test_set_additional_metadata_unsupported():
         printer_storage.set_additional_metadata(path, key, data)
 
     assert exc.value.code == StorageError.UNSUPPORTED
-    assert meta.additional.get("unittest") is None
+    assert meta.additional.get(key) is None
     connection.set_printer_file_metadata.assert_not_called()
 
 
@@ -182,7 +182,7 @@ def test_set_additional_metadata_invalid():
         printer_storage.set_additional_metadata(path, key, data)
 
     assert exc.value.code == StorageError.INVALID_METADATA
-    assert meta.additional.get("unittest") is None
+    assert meta.additional.get(key) is None
     connection.set_printer_file_metadata.assert_not_called()
 
 

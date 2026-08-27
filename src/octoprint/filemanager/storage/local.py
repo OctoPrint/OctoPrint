@@ -905,7 +905,7 @@ class LocalFileStorage(StorageInterface):
     def set_additional_metadata(self, path, key, data, overwrite=False, merge=False):
         if not self.validate_additional_metadata(data):
             raise StorageError(
-                f"Additional metadata at {key} for {path} contains invalid values (positive or negative infinity, NaN, unserializable json)",
+                f"Additional metadata for {path} with {key} is invalid (e.g. contains +/-inf or NaN): {data!r}",
                 code=StorageError.INVALID_METADATA,
             )
 
