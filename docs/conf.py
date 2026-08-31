@@ -174,9 +174,10 @@ myst_substitutions = {
     "role": "[role](#syntax/roles)",
 }
 
-# Myst parser's strikethrough plugin seems to think that sphinx-immaterial doesn't use
-# HTML output (probably due to the custom translator mixin used).
-suppress_warnings = ["myst.strikethrough"]
+suppress_warnings = [
+    "myst.strikethrough",  # Myst parser's strikethrough plugin seems to think that sphinx-immaterial doesn't use HTML output (probably due to the custom translator mixin used)
+    "sphinx_immaterial.apidoc",  # sphinx-immaterial is a bit chatty when it can't figure out cross refs for parameters (e.g. due to subclassing and **kwargs)
+]
 
 # pydantic autodoc options
 autodoc_pydantic_model_show_config_summary = True
@@ -185,5 +186,43 @@ autodoc_pydantic_model_show_field_summary = False
 autodoc_pydantic_model_hide_paramlist = True
 
 
+def _monkeypatch_immaterial_apidoc_loggers():
+    """
+    Monkey-patches sphinx-immaterial apidoc loggers to add a type to warnings logged by parameter cross ref
+
+    The issue is that that can't handle kwargs used in sub classes, e.g. custom Tornado
+    RequestHandlers.
+
+    So we just patch the warning that's logged in such a case to actually have a type and subtype
+    defined and suppress that via sphinx's suppress_warning.
+
+    See https://github.com/jbms/sphinx-immaterial/issues/112 for the as of yet unsolved issue
+    in sphinx-material
+    """
+
+    from functools import partial
+
+    try:
+        from sphinx_immaterial.apidoc.python.parameter_objects import (
+            logger as python_logger,
+        )
+    except ImportError:
+        python_logger = None
+
+    try:
+        from sphinx_immaterial.apidoc.cpp.parameter_objects import logger as cpp_logger
+    except ImportError:
+        cpp_logger = None
+
+    for logger in (python_logger, cpp_logger):
+        if logger is None:
+            continue
+
+        orig_warning = logger.warning
+        logger.warning = partial(orig_warning, type="sphinx_immaterial", subtype="apidoc")
+
+
 def setup(app):
     app.add_css_file("theme_overrides.css")
+
+    _monkeypatch_immaterial_apidoc_loggers()

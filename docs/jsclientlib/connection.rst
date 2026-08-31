@@ -1,9 +1,11 @@
 .. _sec-jsclientlib-connection:
 
-:mod:`OctoPrintClient.connection`
----------------------------------
+.. js:module:: OctoPrintClient.connection
 
-.. js:function:: OctoPrintClient.connection.getSettings(opts)
+``OctoPrintClient.connection``
+------------------------------
+
+.. js:function:: getSettings(opts)
 
    Retrieves the available connection options for connection to a printer.
 
@@ -12,7 +14,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.connection.connect(data, opts)
+.. js:function:: connect(data, opts)
 
    Connects to the printer, optionally using the provided connection ``data`` as parameters.
 
@@ -22,7 +24,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.connection.disconnect(opts)
+.. js:function:: disconnect(opts)
 
    Disconnects from the printer.
 
@@ -31,7 +33,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.connection.fakeAck(opts)
+.. js:function:: fakeAck(opts)
 
    Triggers a fake acknowledgement (``ok``) on the printer.
 

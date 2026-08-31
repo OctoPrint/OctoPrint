@@ -1290,7 +1290,7 @@ class LargeResponseHandler(
     that allows delivery of the requested resource as attachment and access and request path validation through
     optional callbacks. Note that access validation takes place before path validation.
 
-    Arguments:
+    Keyword Arguments:
        path (str): The system path from which to serve files (this will be forwarded to the ``initialize`` method of
            :class:``~tornado.web.StaticFileHandler``)
        default_filename (str): The default filename to serve if none is explicitly specified and the request references
@@ -1665,7 +1665,7 @@ class UrlProxyHandler(
         guessed based on the MIME type from the ``Content-Type`` header of the response. If no extension can be guessed
         no ``filename`` attribute will be set.
 
-    Arguments:
+    Keyword Arguments:
        url (str): URL to forward any requests to. A 404 response will be returned if this is not set. Defaults to ``None``.
        as_attachment (bool): Whether to serve files with ``Content-Disposition: attachment`` header (``True``)
            or not. Defaults to ``False``.
@@ -1768,7 +1768,7 @@ class StaticDataHandler(
     `tornado.web.RequestHandler <http://tornado.readthedocs.org/en/branch4.0/web.html#request-handlers>`_ that returns
     static ``data`` of a configured ``content_type``.
 
-    Arguments:
+    Keyword Arguments:
        data (str): The data with which to respond
        content_type (str): The content type with which to respond. Defaults to ``text/plain``
     """
@@ -1791,7 +1791,7 @@ class GeneratingDataHandler(
     """
     A `RequestHandler` that generates data from a generator function and returns it to the client.
 
-    Arguments:
+    Keyword Arguments:
         generator (function): A generator function that returns the data to be written to the client. The function
             will be called without any parameters.
         content_type (str): The content type with which to respond. Defaults to `text/plain`
@@ -1843,7 +1843,7 @@ class WebcamSnapshotHandler(GeneratingDataHandler):
     """
     `GeneratingDataHandler` that returns a snapshot from the configured webcam.
 
-    Arguments:
+    Keyword Arguments:
         as_attachment (bool | str): Whether to serve files with `Content-Disposition: attachment` header (`True`)
             or not. Defaults to `False`. If a string is given it will be used as the filename of the attachment.
         access_validation (function): Callback to call in the `get` method to validate access to the resource. Will
@@ -1890,7 +1890,7 @@ class DeprecatedEndpointHandler(CorsSupportMixin, tornado.web.RequestHandler):
     `tornado.web.RequestHandler <http://tornado.readthedocs.org/en/branch4.0/web.html#request-handlers>`_ that redirects
     to another ``url`` and logs a deprecation warning.
 
-    Arguments:
+    Keyword Arguments:
        url (str): URL to which to redirect
     """
 

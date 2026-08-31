@@ -739,13 +739,17 @@ def uploadGcodeFile(target):
 
             # Store any additional user data the caller may have passed.
             userdata = None
-            if "userdata" in request.values:
+            if "userdata" in request.values and fileManager.capabilities(target).metadata:
                 import json
 
                 try:
                     userdata = json.loads(request.values["userdata"])
                 except Exception:
                     abort(400, description="userdata contains invalid JSON")
+
+                # make sure the target storage actually supports the provided userdata as additional metadata
+                if not fileManager.validate_additional_metadata(target, userdata):
+                    abort(400, description="userdata is invalid additional metadata")
 
             # evaluate select and print parameter and if set check permissions & preconditions
             # and adjust as necessary
@@ -855,9 +859,15 @@ def uploadGcodeFile(target):
 
             if userdata is not None:
                 # upload included userdata, add this now to the metadata
-                fileManager.set_additional_metadata(
-                    target, added_file, "userdata", userdata
-                )
+                try:
+                    fileManager.set_additional_metadata(
+                        target, added_file, "userdata", userdata
+                    )
+                except StorageError:
+                    # this should never happen as we already checked whether the storage
+                    # supports metadata and whether the provided userdata is valid, but
+                    # just in case...
+                    pass
 
             payload = {
                 "name": futureFilename,

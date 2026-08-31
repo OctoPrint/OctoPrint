@@ -1414,6 +1414,9 @@ class FileManager:
             path, key, data, overwrite=overwrite, merge=merge
         )
 
+    def validate_additional_metadata(self, location, data):
+        return self._storage(location).validate_additional_metadata(data)
+
     def remove_additional_metadata(self, location, path, key):
         self._storage(location).remove_additional_metadata(path, key)
 

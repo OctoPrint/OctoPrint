@@ -1,9 +1,11 @@
 .. _sec-jsclientlib-browser:
 
-:mod:`OctoPrintClient.browser`
-------------------------------
+.. js:module:: OctoPrintClient.browser
 
-.. js:function:: OctoPrintClient.browser.login(username, password, remember, opts)
+``OctoPrintClient.browser``
+---------------------------
+
+.. js:function:: login(username, password, remember, opts)
 
    Logs the browser into OctoPrint, using the provided ``username`` and
    ``password`` as credentials. If ``remember`` is set to ``true``, the session
@@ -24,7 +26,7 @@
    :param object opts: Additional request options
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.browser.passiveLogin(opts)
+.. js:function:: passiveLogin(opts)
 
    Tries to perform a passive login into OctoPrint, using existing session data
    stored in the browser's cookies.
@@ -51,7 +53,7 @@
    :param object opts: Additional request options
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.browser.logout(opts)
+.. js:function:: logout(opts)
 
    Logs the browser out of OctoPrint.
 

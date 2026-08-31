@@ -1,9 +1,11 @@
 .. _sec-jsclientlib-job:
 
-:mod:`OctoPrintClient.job`
---------------------------
+.. js:module:: OctoPrintClient.job
 
-.. js:function:: OctoPrintClient.job.get(opts)
+``OctoPrintClient.job``
+-----------------------
+
+.. js:function:: get(opts)
 
    Retrieves information about the current job.
 
@@ -12,7 +14,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.job.start(opts)
+.. js:function:: start(opts)
 
    Starts the current job.
 
@@ -21,7 +23,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.job.cancel(opts)
+.. js:function:: cancel(opts)
 
    Cancels the current job.
 
@@ -30,7 +32,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.job.restart(opts)
+.. js:function:: restart(opts)
 
    Restarts the current job. This is equivalent to cancelling and immediately restarting
    the job.
@@ -53,7 +55,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.job.pause(opts)
+.. js:function:: pause(opts)
 
    Pauses the current job if it's running, does nothing if it's already paused.
 
@@ -62,7 +64,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.job.resume(opts)
+.. js:function:: resume(opts)
 
    Resumes the current job if it's currently paused, does nothing if it's running.
 
@@ -71,7 +73,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.job.togglePause(opts)
+.. js:function:: togglePause(opts)
 
    Resumes a paused and pauses a running job.
 

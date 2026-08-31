@@ -1,28 +1,30 @@
 .. _sec-jsclientlib-languages:
 
-:mod:`OctoPrintClient.languages`
---------------------------------
+.. js:module:: OctoPrintClient.languages
+
+``OctoPrintClient.languages``
+-----------------------------
 
 .. note::
 
    All methods here require that the used API token or the existing browser session
    has admin rights.
 
-.. js:function:: OctoPrintClient.languages.list(opts)
+.. js:function:: list(opts)
 
    Retrieves a list of available language packs.
 
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.languages.upload(file)
+.. js:function:: upload(file)
 
    Uploads a language pack.
 
-   :param object or string file: The file to upload, see :js:func:`OctoPrint.upload` for more details
+   :param file: The file to upload, see :js:func:`OctoPrintClient.upload` for more details
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrintClient.languages.delete(locale, pack, opts)
+.. js:function:: delete(locale, pack, opts)
 
    Deletes the language pack ``pack`` for the specified locale ``locale``.
 

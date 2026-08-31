@@ -805,6 +805,24 @@ class LocalStorageTest(unittest.TestCase):
             json_metadata = json.load(f)
         self.assertDictEqual(metadata, json_metadata)
 
+    def test_validate_additional_metadata(self):
+        data = {"foo": "bar"}
+        self.assertTrue(self.storage.validate_additional_metadata(data))
+
+    @data(float("inf"), float("-inf"), float("nan"))
+    def test_validate_additional_metadata_invalid(self, data):
+        self.assertFalse(self.storage.validate_additional_metadata(data))
+
+    @data(float("inf"), float("-inf"), float("nan"))
+    def test_set_additional_metadata_invalid(self, data):
+        try:
+            self.storage.set_additional_metadata("bp_case.gcode", "unittest", data)
+            self.fail("Expected StorageError")
+        except StorageError as exc:
+            self.assertEqual(exc.code, StorageError.INVALID_METADATA)
+        except Exception:
+            self.fail("Expected StorageError")
+
     def _add_file(
         self, path, file_object, overwrite=False, display=None, progress_callback=None
     ):

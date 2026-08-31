@@ -666,7 +666,7 @@ JavaScript Client Library
    See :ref:`Decide on existing request <sec-bundledplugins-appkeys-api-decide>` for more details.
 
    :param string token: User token for which to make the decision, as pushed to the client via the socket.
-   :param boolean decision: Whether to grant access (``true``) or not (``false``).
+   :param bool decision: Whether to grant access (``true``) or not (``false``).
    :param object opts: Additional options for the request
    :returns: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 

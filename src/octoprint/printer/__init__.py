@@ -28,7 +28,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import datetime
 import re
-from typing import IO, TYPE_CHECKING, Optional, Union
+from typing import IO, TYPE_CHECKING, Any, Optional, Union
 
 from pydantic import computed_field
 
@@ -711,6 +711,11 @@ class PrinterFilesMixin:
         self, path: str, metadata: MetadataEntry, *args, **kwargs
     ) -> None:
         pass
+
+    def validate_printer_file_additional_metadata(
+        self, data: dict[str, Any], *args, **kwargs
+    ) -> bool:
+        return True
 
     def has_thumbnail(self, path: str, *args, **kwargs) -> bool:
         return False

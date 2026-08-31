@@ -540,16 +540,27 @@ class StorageInterface:
     ) -> bool:
         raise NotImplementedError()
 
-    def get_additional_metadata(self, path, key):
+    def get_additional_metadata(self, path: str, key: str) -> Optional[dict[str, Any]]:
         """
         Fetches additional metadata at ``key`` from the metadata of ``path``.
 
-        :param path: the virtual path to the file for which to fetch additional metadata
-        :param key: key of metadata to fetch
+        Args:
+            path(str): the virtual path to the file for which to fetch additional metadata
+            key(str): key of metadata to fetch
+
+        Raises:
+            StorageError: if the underlying storage doesn't support metadata
         """
         raise NotImplementedError()
 
-    def set_additional_metadata(self, path, key, data, overwrite=False, merge=False):
+    def set_additional_metadata(
+        self,
+        path: str,
+        key: str,
+        data: Any,
+        overwrite: bool = False,
+        merge: bool = False,
+    ):
         """
         Adds additional metadata to the metadata of ``path``. Metadata in ``data`` will be saved under ``key``.
 
@@ -558,21 +569,47 @@ class StorageInterface:
         If ``merge`` is set and ``key`` already exists and both ``data`` and the existing data under ``key`` are dictionaries,
         the two dictionaries will be merged recursively.
 
-        :param path: the virtual path to the file for which to add additional metadata
-        :param key: key of metadata to add
-        :param data: metadata to add
-        :param overwrite: if True and ``key`` already exists, it will be overwritten
-        :param merge: if True and ``key`` already exists and both ``data`` and the existing data are dictionaries, they
-                      will be merged
+        Args:
+            path (str): the virtual path to the file for which to add additional metadata
+            key (str): key of metadata to add
+            data: metadata to add
+            overwrite (bool): if True and ``key`` already exists, it will be overwritten
+            merge (bool): if True and ``key`` already exists and both ``data`` and the existing data are dictionaries, they
+                will be merged
+
+        Raises:
+            StorageError: if the underlying storage doesn't support metadata (code ``unsupported``), or if the provided ``data`` contains invalid values
+                (e.g. positive or negative infinity, NaN; code ``invalid_metadata``)
         """
         raise NotImplementedError()
 
-    def remove_additional_metadata(self, path, key):
+    def validate_additional_metadata(self, data: Any) -> bool:
+        """
+        Checks whether the provided ``data`` is considered valid as additional metadata.
+
+        The default implementation always returns ``True``.
+
+        Args:
+            data: metadata to check
+
+        Returns:
+            (bool) ``True`` if the data is considered valid, ``False`` otherwise
+
+        Raises:
+            StorageError: if the underlying storage doesn't support metadata (code ``unsupported``)
+        """
+        return True
+
+    def remove_additional_metadata(self, path: str, key: str):
         """
         Removes additional metadata under ``key`` for ``name`` on ``path``
 
-        :param path: the virtual path to the file for which to remove the metadata under ``key``
-        :param key: the key to remove
+        Args:
+            path(str): the virtual path to the file for which to remove the metadata under ``key``
+            key(str): the key to remove
+
+        Raises:
+            StorageError: if the underlying storage doesn't support metadata
         """
         raise NotImplementedError()
 
@@ -765,6 +802,7 @@ class StorageError(Exception):
     INVALID_FILE = "invalid_file"
     INVALID_SOURCE = "invalid_source"
     INVALID_DESTINATION = "invalid_destination"
+    INVALID_METADATA = "invalid_metadata"
     DOES_NOT_EXIST = "does_not_exist"
     ALREADY_EXISTS = "already_exists"
     SOURCE_EQUALS_DESTINATION = "source_equals_destination"
