@@ -569,6 +569,33 @@ class BackupPlugin(
             click.echo("Done.")
             click.echo(f"Backup located at {path}")
 
+        @click.command("list")
+        def list_command():
+            """
+            Lists existing backups that can be used to restore from.
+            """
+            settings = octoprint.plugin.plugin_settings_for_settings_plugin(
+                "backup", self, settings=cli_group.settings
+            )
+            plugin_manager = cli_group.plugin_manager
+
+            datafolder = BackupPlugin._backups_path(settings)
+
+            # register plugin manager plugin setting overlays
+            plugin_info = plugin_manager.get_plugin_info("pluginmanager")
+            if plugin_info and plugin_info.implementation:
+                default_settings_overlay = {"plugins": {}}
+                default_settings_overlay["plugins"]["pluginmanager"] = (
+                    plugin_info.implementation.get_settings_defaults()
+                )
+                settings.add_overlay(default_settings_overlay, at_end=True)
+
+            click.echo(f"Available backups in {datafolder}:")
+            for item in os.listdir(datafolder):
+                if not item.endswith(".zip"):
+                    continue
+                click.echo(f"\t{item}")
+
         @click.command("restore")
         @click.option(
             "--tmp",
@@ -697,7 +724,7 @@ class BackupPlugin(
             else:
                 click.echo(f"Restoring from {path} failed", err=True)
 
-        return [backup_command, restore_command]
+        return [backup_command, list_command, restore_command]
 
     ##~~ helpers
 
