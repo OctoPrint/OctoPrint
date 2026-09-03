@@ -1,8 +1,8 @@
 .. _sec-development:
 
-###########
-Development
-###########
+####################
+Developing OctoPrint
+####################
 
 .. toctree::
    :maxdepth: 3
