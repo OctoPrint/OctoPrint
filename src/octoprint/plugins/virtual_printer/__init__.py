@@ -191,7 +191,7 @@ class VirtualPrinterConfig(BaseModel):
     """
 
     klipperTemperatureReporting: bool = False
-    reprapfwM114: bool = False
+    """Whether to report the hotend temperatures as ``T0`` even with a single extruder (Klipper behaviour)"""
 
     sdFiles: VirtualPrinterSdFilesConfig = VirtualPrinterSdFilesConfig()
     """
