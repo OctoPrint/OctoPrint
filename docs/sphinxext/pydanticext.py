@@ -213,8 +213,6 @@ class PydanticModelInspector:
             if not description:
                 description = ""
 
-            description = _prefix_lines(description, prefix="       ").strip()
-
             if inspect.isclass(field.annotation) and issubclass(
                 field.annotation, BaseModel
             ):
@@ -289,7 +287,8 @@ class PydanticExampleExt(SphinxDirective):
 
             if recursive:
                 if key:
-                    example = {key: example}
+                    for k in reversed(key.split(".")):
+                        example = {k: example}
                 return yaml.dump(example)
 
             else:
@@ -329,7 +328,9 @@ class PydanticTableExt(SphinxDirective):
     option_spec = {}
     has_content = True
 
-    COLUMN_WIDTHS = "15 5 25 15"
+    TABLE_WIDTH = "100%"
+    COLUMN_WIDTHS = "15 5 60 20"
+    MAX_LEN_DEFAULT = 15
 
     def __init__(
         self,
@@ -364,7 +365,7 @@ class PydanticTableExt(SphinxDirective):
 
         fields = self.inspector.process_model(clz, subs=subs)
 
-        output = f".. list-table::\n   :width: 100%\n   :widths: {self.COLUMN_WIDTHS}\n   :header-rows: 1\n\n   * - Name\n     - Type\n     - Description\n     - Default\n"
+        output = f".. list-table::\n   :width: {self.TABLE_WIDTH}\n   :widths: {self.COLUMN_WIDTHS}\n   :header-rows: 1\n\n   * - Name\n     - Type\n     - Description\n     - Default\n"
         output += "\n".join([self._to_output(field) for field in fields])
         output += "\n\n"
         return self.parse_text_to_nodes(output, allow_section_headings=True)
@@ -396,8 +397,6 @@ class PydanticTableExt(SphinxDirective):
                 "\n\n" if description else ""
             ) + f"Valid values: {', '.join(f'``{choice}``' for choice in field.choices)}."
 
-        description = _prefix_lines(description, prefix="       ").strip()
-
         # type
         data_type = field.data_type
         if data_type:
@@ -411,7 +410,14 @@ class PydanticTableExt(SphinxDirective):
         else:
             default = f"``{field.default!r}``"
 
+            if len(default) > self.MAX_LEN_DEFAULT:
+                description += (
+                    "\n\n" if description else ""
+                ) + f"**Default**:\n\n{default}"
+                default = "*see left*"
+
         # finally create line
+        description = _prefix_lines(description, prefix="       ").strip()
         return (
             f"   * - {name}\n     - {data_type}\n     - {description}\n     - {default}"
         )
