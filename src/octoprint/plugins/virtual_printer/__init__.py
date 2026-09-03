@@ -226,8 +226,7 @@ class VirtualPrinterConfig(BaseModel):
     """Whether to simulate broken M29 behaviour (missing ok after response)"""
 
     brokenResend: bool = False
-    """If enabled, uses repetier style resends, sending multiple resends for the same line
-       # to make sure nothing gets lost on the line"""
+    """Whether to simulate broken resend behaviour (missing ok after response)"""
 
     supportF: bool = False
     """Whether F is supported as individual command"""
