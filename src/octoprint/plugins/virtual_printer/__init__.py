@@ -359,8 +359,8 @@ class VirtualPrinterConfig(BaseModel):
     support_M503: bool = True
     """Support M503"""
 
-    resend_ratio: float = 0
-    """Resend ratio to simulate noise on the line"""
+    resend_ratio: int = 0
+    """Resend ratio to simulate noise on the line (percentage)"""
 
     locked: bool = False
     """Whether the printer starts out as locked (active ``M510``)"""
