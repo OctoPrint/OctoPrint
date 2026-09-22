@@ -190,9 +190,15 @@ class BackupPlugin(
 
     @octoprint.plugin.BlueprintPlugin.route("/restore", methods=["POST"])
     def perform_restore(self):
-        if not (
-            Permissions.ADMIN.can() and credentials_checked_recently()
-        ) and not self._settings.global_get(["server", "firstRun"]):
+        first_run = (
+            self._settings.global_get(["server", "firstRun"])
+            and not self._user_manager.initialized
+        )
+
+        if (
+            not (Permissions.ADMIN.can() and credentials_checked_recently())
+            and not first_run
+        ):
             flask.abort(403)
 
         if not self._restore_supported(self._settings):
