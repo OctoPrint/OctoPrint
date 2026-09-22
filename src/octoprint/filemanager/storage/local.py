@@ -1037,7 +1037,7 @@ class LocalFileStorage(StorageInterface):
             else:
                 joined_path = os.path.join(joined_path, self.sanitize_name(path_element))
         path = os.path.realpath(joined_path)
-        if not path.startswith(self.basefolder):
+        if path != self.basefolder and not path.startswith(self.basefolder + os.path.sep):
             raise ValueError(f"path not contained in base folder: {path}")
         return path
 

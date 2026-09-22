@@ -711,7 +711,7 @@ class LocalStorageTest(unittest.TestCase):
     @unpack
     def test_sanitize_path(self, input, expected):
         actual = self.storage.sanitize_path(input)
-        self.assertTrue(actual.startswith(self.basefolder))
+        self.assertTrue(actual.startswith(self.basefolder + os.path.sep))
         self.assertEqual(
             expected, actual[len(self.basefolder) :].replace(os.path.sep, "/")
         )
@@ -720,6 +720,14 @@ class LocalStorageTest(unittest.TestCase):
     def test_sanitize_path_invalid(self, input):
         try:
             self.storage.sanitize_path(input)
+            self.fail("expected a ValueError")
+        except ValueError as e:
+            self.assertTrue(e.args[0].startswith("path not contained in base folder: "))
+
+    def test_sanitize_path_invalid_prefix(self):
+        try:
+            path = f"../{os.path.basename(self.basefolder)}2/secret"
+            self.storage.sanitize_path(path)
             self.fail("expected a ValueError")
         except ValueError as e:
             self.assertTrue(e.args[0].startswith("path not contained in base folder: "))
