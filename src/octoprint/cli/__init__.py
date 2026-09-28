@@ -32,6 +32,9 @@ pass_octoprint_ctx = click.make_pass_decorator(OctoPrintContext, ensure=True)
 def init_settings_for_cli(ctx):
     from octoprint import FatalStartupError, init_settings
 
+    if hasattr(ctx.obj, "settings"):
+        return
+
     try:
         ctx.obj.settings = init_settings(
             get_ctx_obj_option(ctx, "basedir", None),
@@ -51,6 +54,9 @@ def init_settings_for_cli(ctx):
 
 def init_pluginsystem_for_cli(ctx):
     from octoprint import FatalStartupError, init_pluginsystem
+
+    if hasattr(ctx.obj, "plugin_manager"):
+        return
 
     try:
         ctx.obj.plugin_manager = init_pluginsystem(
