@@ -184,7 +184,11 @@ def set_ctx_obj_option(ctx, param, value):
     """Helper for setting eager options on the context."""
     if ctx.obj is None:
         ctx.obj = OctoPrintContext()
-    if value is not None and value != param.default:
+    if (
+        value is not None
+        and not (param.multiple and value == ())  # multi params are empty tuples if unset
+        and value != param.default
+    ):
         setattr(ctx.obj, param.name, value)
 
 
