@@ -38,6 +38,7 @@ from os import scandir
 from packaging.specifiers import SpecifierSet
 
 from octoprint.util import deprecated, sv, time_this, to_unicode
+from octoprint.util.paths import is_sub_path_of
 from octoprint.util.version import get_python_version_string, is_python_compatible
 
 SUFFIXES = importlib.machinery.SOURCE_SUFFIXES + importlib.machinery.BYTECODE_SUFFIXES
@@ -2353,25 +2354,6 @@ class PluginManager:
                     hook
                 )
             )
-
-
-def is_sub_path_of(path, parent):
-    """
-    Tests if `path` is a sub path (or identical) to `path`.
-
-    >>> is_sub_path_of("/a/b/c", "/a/b")
-    True
-    >>> is_sub_path_of("/a/b/c", "/a/b2")
-    False
-    >>> is_sub_path_of("/a/b/c", "/b/c")
-    False
-    >>> is_sub_path_of("/foo/bar/../../a/b/c", "/a/b")
-    True
-    >>> is_sub_path_of("/a/b", "/a/b")
-    True
-    """
-    rel_path = os.path.relpath(os.path.realpath(path), os.path.realpath(parent))
-    return not (rel_path == os.pardir or rel_path.startswith(os.pardir + os.sep))
 
 
 def is_editable_install(install_dir, package, module, location):
