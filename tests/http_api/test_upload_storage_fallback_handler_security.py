@@ -12,6 +12,7 @@ PATH = "/path/to/secret.txt"
 CONTENT = "M117 USFH Sec Test"
 BOUNDARY = "RandomMultiPartBoundary1234567890"
 CRLF = "\r\n"
+MAX_PART_SIZE = 512
 
 
 def _percent_encode_fully(data):
@@ -237,6 +238,29 @@ def test_multipart_noop(baseURL, headers, setup, body, content_type):
     resp = urllib3.request("POST", baseURL + "/api/files/local", body=body, headers=hdrs)
 
     _verify_noop(baseURL, headers, resp)
+
+
+@pytest.mark.parametrize(
+    "body, content_type",
+    [
+        pytest.param(
+            (
+                f"--{BOUNDARY}{CRLF}"
+                f'content-disposition: form-data; name="foldername"{CRLF}{CRLF}'
+                f"{'x' * (MAX_PART_SIZE + 1)}{CRLF}"
+                f"--{BOUNDARY}--{CRLF}"
+            ),
+            f"multipart/form-data; boundary={BOUNDARY}",
+            id="folder name above max part size",
+        )
+    ],
+)
+def test_multipart_large_part(baseURL, headers, setup, body, content_type):
+    hdrs = dict(**headers, **{"Content-Type": content_type})
+
+    resp = urllib3.request("POST", baseURL + "/api/files/local", body=body, headers=hdrs)
+
+    _verify_rejected(baseURL, headers, resp)
 
 
 ##~~ helpers
