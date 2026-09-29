@@ -63,7 +63,6 @@ $(function () {
         $("#settings-backup-upload").fileupload(
             backupFileuploadOptionsFactory("settings")
         );
-        $("#wizard-backup-upload").fileupload(backupFileuploadOptionsFactory("wizard"));
 
         self.restoreInProgress = ko.observable(false);
         self.restoreTitle = ko.observable();
@@ -72,6 +71,8 @@ $(function () {
         self.unknownPlugins = ko.observableArray([]);
 
         self.loglines = ko.observableArray([]);
+
+        self.wizardRestoreEnabled = ko.observable(false);
 
         self.requestData = function () {
             OctoPrint.plugins.backup.get().done(self.fromResponse);
@@ -238,6 +239,29 @@ $(function () {
 
         self.onSettingsShown = function () {
             self.requestData();
+        };
+
+        self.onWizardDetails = function (response) {
+            self.wizardRestoreEnabled(
+                response &&
+                    response.backup &&
+                    response.backup.details &&
+                    response.backup.details.required
+            );
+            if (self.wizardRestoreEnabled()) {
+                $("#wizard-backup-upload").fileupload(
+                    backupFileuploadOptionsFactory("wizard")
+                );
+            }
+        };
+
+        self.onBeforeWizardTabChange = function (next, current) {
+            if (current && _.startsWith(current, "wizard_plugin_backup")) {
+                // we've navigated away from the restore wizard, let's disable it
+                self.wizardRestoreEnabled(false);
+            }
+
+            return true;
         };
 
         self.onDataUpdaterPluginMessage = function (plugin, data) {

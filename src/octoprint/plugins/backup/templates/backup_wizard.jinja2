@@ -1,8 +1,21 @@
 <h3>{{ _('Restore from a backup?') }}</h3>
 
+<!-- ko if: wizardRestoreEnabled -->
 {% trans %}<p>
     If you would like to restore OctoPrint configuration from a backup now is the time.
 </p>{% endtrans %}
 
 {% set plugin_backup_upload_form_id='wizard-backup-upload' %}
 {% include "snippets/backup_plugin_upload_form.jinja2" %}
+
+{% trans %}<p>
+    You can always restore from a backup at a later time, but you will first have to run
+    through the whole wizard in that case.
+</p>{% endtrans %}
+<!-- /ko -->
+<!-- ko ifnot: wizardRestoreEnabled -->
+{% trans %}<p>
+    You have already proceeded with the wizard beyond the initial restore point. Please finish the wizard first, then restore
+    afterwards.
+</p>{% endtrans %}
+<!-- /ko -->
