@@ -59,8 +59,18 @@ OctoPrint's SockJS socket also accepts three commands from the client to the ser
     * ``state``: Either a boolean value indicating whether to generally receive state updates (``current`` and ``history``)
       or not, or a dict with further options for received state updates. Currently the following options are recognized here:
 
-      * ``logs``: A boolean value whether to include all log lines (``True``, default) or not (``False``). Alternatively a string with
-        a regex pattern can be provided, in which case only log lines matching the pattern will be returned.
+      * ``logs``: A boolean value whether to include all log lines (``True``, default) or not (``False``). Alternatively a string
+        can be provided, in which case only log lines containing the string will be returned, e.g. a search string ``foo`` will
+        match all lines containing ``foo``. The string may also start or end with a wildcard ``*`` to check for prefixes or suffixes,
+        e.g. a search string ``*foo`` will match any lines ending with ``foo``, a search string ``foo*`` will match any lines starting
+        with ``foo``. Note that the wildcard ``*`` is only supported at the start or the end, so something like ``foo*bar`` will not
+        work and produce an error.
+
+        .. warning::
+
+           Up until OctoPrint 2.0.0, this supported a regular expression pattern to use for matching lines. This is no longer
+           supported for security reasons.
+
       * ``messages``: Like ``logs`` but for the returned message lines.
 
     * ``plugins``: Either a boolean value indicating whether to generally receive plugin messages, or a list of plugin
@@ -82,7 +92,7 @@ OctoPrint's SockJS socket also accepts three commands from the client to the ser
        }
 
     Example for a ``subscribe`` message subscribing to state, event and plugin updates,
-    but filtering logs in state updates to only contain lines matching ``^Recv: Cap`` and also
+    but filtering logs in state updates to only contain lines starting with ``Recv: Cap`` and also
     filtering out all messages:
 
     .. sourcecode:: javascript
@@ -90,7 +100,7 @@ OctoPrint's SockJS socket also accepts three commands from the client to the ser
        {
          "subscribe": {
            "state": {
-             "logs": "^Recv: Cap",
+             "logs": "Recv: Cap*",
              "messages": false
            },
            "events": true,
