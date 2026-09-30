@@ -280,7 +280,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
     """The request methods that may contain a request body."""
 
     MAX_PART_SIZE = 512
-    """Non-file multipart parts have a max size of 512B."""
+    """Non-file multipart parts have a max size of 512B. So do multipart headers."""
 
     def initialize(
         self,
@@ -428,6 +428,14 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
             # truncated by this processing round => save it to the buffer for next round
             endlen = len(self._multipart_boundary) + 4
             data, self._buffer = data[0:-endlen], data[-endlen:]
+
+        # check for part header size limit
+        if not self._current_part and len(self._buffer) > self.MAX_PART_SIZE:
+            # if we don't have a current part we are looking for the end of the part header... if the buffer
+            # has grown beyond our max size, that means the part header didn't end within this size and it's
+            # time to give up to avoid GHSA-5m55-48wq-2q7j
+            self.send_error(400)
+            return
 
         # stream data to part handler
         if data and self._current_part:
@@ -584,6 +592,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         else:
             part["size"] += len(data)
             if part["size"] > self._max_part_size:
+                # see GHSA-5m55-48wq-2q7j
                 raise tornado.web.HTTPError(400, "non-file part larger than limit")
             part["data"].append(data)
 
