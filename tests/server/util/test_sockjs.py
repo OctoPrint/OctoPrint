@@ -25,6 +25,7 @@ LINES = ["1 2 3", "foo bar fnord", "a b cdef ghi"]
         ),
         pytest.param("*foo", ".*foo", id="valid suffix pattern"),
         pytest.param("foo*", "foo.*", id="valid prefix pattern"),
+        pytest.param("*foo.+bar$", r".*foo\.\+bar\$", id="attempted regex injection"),
     ],
 )
 def test_fnmatch_or_boolean(value, expected):
@@ -71,6 +72,7 @@ def test_filter_lines(sub, expected):
         pytest.param("foo", False, True, "foo.*"),
         pytest.param("foo", True, False, ".*foo"),
         pytest.param("foo", True, True, ".*foo.*"),
+        pytest.param("^foo.*bar", False, False, r"\^foo\.\*bar"),
     ],
 )
 def test_to_pattern(value, before, after, expected):
