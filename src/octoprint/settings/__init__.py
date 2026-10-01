@@ -44,6 +44,7 @@ from octoprint.util import (
     time_this,
     yaml,
 )
+from octoprint.util.paths import is_sub_path_of
 
 _APPNAME = "OctoPrint"
 
@@ -2383,7 +2384,7 @@ class Settings:
     def saveScript(self, script_type, name, script):
         script_folder = self.getBaseFolder("scripts")
         filename = os.path.realpath(os.path.join(script_folder, script_type, name))
-        if not filename.startswith(os.path.realpath(script_folder)):
+        if not is_sub_path_of(filename, script_folder):
             # oops, jail break, that shouldn't happen
             raise ValueError(
                 f"Invalid script path to save to: {filename} (from {script_type}:{name})"

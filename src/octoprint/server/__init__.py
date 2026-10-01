@@ -51,6 +51,7 @@ from octoprint.server import util
 from octoprint.server.util.flask import server_side_logout
 from octoprint.systemcommands import system_command_manager
 from octoprint.util.json import JsonEncoding
+from octoprint.util.paths import is_sub_path_of
 from octoprint.vendor.flask_principal import (  # noqa: F401
     AnonymousIdentity,
     Identity,
@@ -2002,9 +2003,7 @@ class Server:
         timelapses_path_validator = {
             "path_validation": util.tornado.path_validation_factory(
                 lambda path: valid_timelapse(path)
-                and os.path.realpath(os.path.abspath(path)).startswith(
-                    settings().getBaseFolder("timelapse")
-                ),
+                and is_sub_path_of(path, settings().getBaseFolder("timelapse")),
                 status_code=400,
             )
         }
@@ -2021,9 +2020,7 @@ class Server:
         logs_path_validator = {
             "path_validation": util.tornado.path_validation_factory(
                 lambda path: valid_log(path)
-                and os.path.realpath(os.path.abspath(path)).startswith(
-                    settings().getBaseFolder("logs")
-                ),
+                and is_sub_path_of(path, settings().getBaseFolder("logs")),
                 status_code=400,
             )
         }

@@ -34,6 +34,7 @@ from octoprint.util import (
     yaml,
 )
 from octoprint.util.files import sanitize_filename
+from octoprint.util.paths import is_sub_path_of
 from octoprint.util.tz import LOCAL_TZ
 
 from .common import (
@@ -285,7 +286,7 @@ class LocalFileStorage(StorageInterface):
         filepath = self.sanitize_path(filepath)
         path = self.sanitize_path(path)
 
-        return filepath == path or filepath.startswith(path + os.sep)
+        return is_sub_path_of(filepath, path)
 
     def file_exists(self, path):
         path, name = self.sanitize(path)
@@ -991,7 +992,7 @@ class LocalFileStorage(StorageInterface):
         name = None
         if isinstance(path, str):
             path = to_unicode(path)
-            if path.startswith(self.basefolder):
+            if is_sub_path_of(path, self.basefolder):
                 path = path[len(self.basefolder) :]
             path = path.replace(os.path.sep, "/")
             path = path.split("/")
@@ -1037,9 +1038,7 @@ class LocalFileStorage(StorageInterface):
             else:
                 joined_path = os.path.join(joined_path, self.sanitize_name(path_element))
         path = os.path.realpath(joined_path)
-        if path != self.basefolder and not path.startswith(
-            os.path.join(self.basefolder, "")
-        ):
+        if not is_sub_path_of(path, self.basefolder):
             raise ValueError(f"path not contained in base folder: {path}")
         return path
 
@@ -1079,7 +1078,7 @@ class LocalFileStorage(StorageInterface):
             path = self.join_path(*path)
         if isinstance(path, str):
             path = to_unicode(path)
-            if path.startswith(self.basefolder):
+            if is_sub_path_of(path, self.basefolder):
                 path = path[len(self.basefolder) :]
             path = path.replace(os.path.sep, "/")
         while path.startswith("/"):

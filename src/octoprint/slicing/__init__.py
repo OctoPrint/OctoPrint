@@ -23,6 +23,7 @@ import octoprint.events
 import octoprint.plugin
 import octoprint.util
 from octoprint.settings import settings
+from octoprint.util.paths import is_sub_path_of
 
 from .exceptions import (
     CouldNotDeleteProfile,
@@ -723,7 +724,7 @@ class SlicingManager:
         name = self._sanitize(name)
 
         path = os.path.join(self.get_slicer_profile_path(slicer), f"{name}.profile")
-        if not os.path.realpath(path).startswith(os.path.realpath(self._profile_path)):
+        if not is_sub_path_of(path, self._profile_path):
             raise OSError(
                 f"Path to profile {name} tried to break out of allowed sub path"
             )
