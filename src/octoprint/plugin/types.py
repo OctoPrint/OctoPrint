@@ -1266,7 +1266,7 @@ class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
             except ValueError as e:
                 import logging
 
-                logging.getLogger(__name__).log(
+                logging.getLogger(__name__).warning(
                     "WizardPlugin {} returned invalid value {} for wizard version: {}".format(
                         name, wizard_version, str(e)
                     )
