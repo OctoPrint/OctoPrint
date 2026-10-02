@@ -26,7 +26,7 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
     except Exception:
         import inspect
 
-        args, _, _, _ = inspect.getargspec(check["python_updater"].perform_update)
+        args = inspect.getfullargspec(check["python_updater"].perform_update).args
         if not all(k in args for k in kwargs):
             # old python_updater footprint, leave out what it doesn't understand
             old_kwargs = {k: v for k, v in kwargs.items() if k in args}
