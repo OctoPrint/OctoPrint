@@ -6070,7 +6070,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 
         return super().getProgress()
 
-    def getRemainingPrintTime(self) -> float:
+    def getRemainingPrintTime(self) -> Optional[float]:
         return self._print_time_left_m73
 
     def fromM73(
