@@ -112,7 +112,7 @@ class PrinterFileStorage(StorageInterface):
 
         dates = [f.date.timestamp() for f in files if f.date is not None]
         if len(dates):
-            return max(dates)
+            return int(max(dates))
 
         return None
 
@@ -450,7 +450,7 @@ class PrinterFileStorage(StorageInterface):
         metadata = self.get_metadata(path)
         return metadata and "analysis" in metadata
 
-    def get_metadata(self, path: str, default=None) -> dict:
+    def get_metadata(self, path: str, default=None) -> Optional[dict]:
         if not self.capabilities.metadata:
             return None
 
@@ -601,7 +601,8 @@ class PrinterFileStorage(StorageInterface):
         if "/" not in path:
             return "", path
 
-        return path.rsplit("/", 1)
+        base, name = path.rsplit("/", 1)
+        return base, name
 
     def join_path(self, *path: str) -> str:
         return self._strip_leading_slash("/".join(path))

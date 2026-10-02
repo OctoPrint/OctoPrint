@@ -735,7 +735,7 @@ class FileManager:
     @deprecated(
         "get_file has been deprecated in favor of get_storage_entry", since="2.0.0"
     )
-    def get_file(self, location: str, path: str) -> dict:
+    def get_file(self, location: str, path: str) -> Optional[dict]:
         return self._storage(location).get_file(path)
 
     def list_storage_entries(
@@ -769,7 +769,7 @@ class FileManager:
                 self._logger.exception(f"Error while fetching storage entries for {loc}")
         return result
 
-    def get_storage_entry(self, storage: str, path: str) -> StorageEntry:
+    def get_storage_entry(self, storage: str, path: str) -> Optional[StorageEntry]:
         path = self.path_in_storage(storage, path)
 
         return self._storage(storage).get_storage_entry(path)
@@ -1291,7 +1291,7 @@ class FileManager:
     def has_analysis(self, location, path):
         return self._storage(location).has_analysis(path)
 
-    def get_metadata(self, location: str, path: str) -> dict:
+    def get_metadata(self, location: str, path: str) -> Optional[dict]:
         return self._storage(location).get_metadata(path)
 
     @deprecated(
@@ -1402,7 +1402,7 @@ class FileManager:
         path,
         platehint: Optional[int] = None,
         sizehint: Optional[str] = None,
-    ) -> tuple[StorageThumbnail, IO]:
+    ) -> Optional[tuple[StorageThumbnail, IO]]:
         return self._storage(location).read_thumbnail(
             path, platehint=platehint, sizehint=sizehint
         )

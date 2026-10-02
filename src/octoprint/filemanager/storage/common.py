@@ -245,7 +245,7 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def get_storage_entry(self, path: str) -> StorageEntry:
+    def get_storage_entry(self, path: str) -> Optional[StorageEntry]:
         if "/" in path:
             folder, name = path.rsplit("/", 1)
         else:
@@ -269,7 +269,7 @@ class StorageInterface:
     @deprecated(
         "get_file has been deprecated in favor of get_storage_entry", since="2.0.0"
     )
-    def get_file(self, path: str) -> dict:
+    def get_file(self, path: str) -> Optional[dict]:
         entry = self.get_storage_entry(path)
         if entry is None:
             return None
@@ -491,7 +491,7 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def get_metadata(self, path: str, default=None) -> dict:
+    def get_metadata(self, path: str, default=None) -> Optional[dict]:
         """
         Retrieves the metadata for the file ``path``.
 
@@ -534,7 +534,7 @@ class StorageInterface:
 
     def read_thumbnail(
         self, path: str, platehint: Optional[int] = None, sizehint: Optional[str] = None
-    ) -> Optional[IO]:
+    ) -> Optional[tuple[StorageThumbnail, IO]]:
         raise NotImplementedError()
 
     def refresh_thumbnails(
