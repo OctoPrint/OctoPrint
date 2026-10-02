@@ -899,7 +899,7 @@ class VirtualPrinter:
         self.buffered.join()
 
     # noinspection PyUnusedLocal
-    def _gcode_M600(self, data: str) -> None:
+    def _gcode_M600(self, data: str) -> bool:
         self._send("//action:paused")
         self._showPrompt(
             "Heater Timeout",
