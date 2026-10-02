@@ -5847,7 +5847,7 @@ class MachineComPrintCallback:
     def on_comm_error(self, error, reason, consequence=None, faq=None, logs=None):
         pass
 
-    def on_comm_progress(self, progress: float, remaining: Optional[float] = None):
+    def on_comm_progress(self):
         pass
 
     def on_comm_print_job_started(self, suppress_script=False, user=None):
