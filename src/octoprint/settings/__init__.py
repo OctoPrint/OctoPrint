@@ -28,7 +28,7 @@ import sys
 import threading
 import time
 from collections import ChainMap, defaultdict
-from collections.abc import KeysView
+from collections.abc import KeysView, MutableMapping
 from typing import Any, Optional
 
 from yaml import YAMLError
@@ -623,11 +623,11 @@ class HierarchicalChainMap:
         del self._chainmap.maps[pos]
 
     @property
-    def all_layers(self) -> list[dict[str, Any]]:
+    def all_layers(self) -> list[MutableMapping[str, Any]]:
         """A list of all layers in this map, flattened."""
         return self._chainmap.maps
 
-    def _middle_layers(self) -> list[dict]:
+    def _middle_layers(self) -> list[MutableMapping[str, Any]]:
         """Returns all layers between the top and bottom layer, flattened."""
         if len(self._chainmap.maps) > 2:
             return self._chainmap.maps[1:-1]
