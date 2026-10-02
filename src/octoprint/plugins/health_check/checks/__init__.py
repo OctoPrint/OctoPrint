@@ -47,5 +47,5 @@ class HealthCheck:
             settings = {}
         self._settings = settings
 
-    def perform_check(self, force: bool = False) -> CheckResult:
+    def perform_check(self, force: bool = False) -> Optional[CheckResult]:
         return CheckResult()
