@@ -1318,8 +1318,7 @@ class LocalFileStorage(StorageInterface):
                         origin=self.storage,
                         path=path,
                     )
-                    if stat:
-                        storage_entry.date = int(stat.st_mtime)
+                    storage_entry.date = int(stat.st_mtime)
 
                     storage_entry = self._enrich_folder(
                         storage_entry, force_refresh=force_refresh
@@ -1489,12 +1488,11 @@ class LocalFileStorage(StorageInterface):
                                 if k in additional_metadata_keys
                             }
 
-                    if stat:
-                        storage_entry.size = stat.st_size
-                        storage_entry.date = datetime.datetime.fromtimestamp(
-                            stat.st_mtime,
-                            tz=LOCAL_TZ,
-                        )
+                    storage_entry.size = stat.st_size
+                    storage_entry.date = datetime.datetime.fromtimestamp(
+                        stat.st_mtime,
+                        tz=LOCAL_TZ,
+                    )
 
                     thumbnails = self._get_thumbnails(os.path.dirname(path_on_disk), name)
                     if thumbnails:
