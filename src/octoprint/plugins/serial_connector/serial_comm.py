@@ -6046,7 +6046,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
         if self._handle:
             self._start_pos = self._pos = self._handle.tell()
 
-            self._handle.seek(0, whence=os.SEEK_END)
+            self._handle.seek(0, os.SEEK_END)
             self._size = self._handle.tell()
             self._handle.seek(self._pos)
         else:
