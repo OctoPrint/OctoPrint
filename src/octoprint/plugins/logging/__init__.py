@@ -9,6 +9,7 @@ from werkzeug.exceptions import BadRequest
 from werkzeug.utils import secure_filename
 
 import octoprint.plugin
+import octoprint.util
 from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.server import NO_CONTENT
