@@ -33,7 +33,9 @@ def get_package_version(package: str) -> str:
     return meta.version(package)
 
 
-def safe_get_package_version(package: str, default: Optional[str] = None) -> str:
+def safe_get_package_version(
+    package: str, default: Optional[str] = None
+) -> Optional[str]:
     """Returns the version of the provided package, returns the configured ``default`` if it cannot be found"""
     try:
         return get_package_version(package)
