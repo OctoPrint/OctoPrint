@@ -13,10 +13,10 @@ from octoprint.schema import BaseModel
 
 
 class Result(Enum):
-    OK: str = "ok"
-    INFO: str = "info"
-    WARNING: str = "warning"
-    ISSUE: str = "issue"
+    OK = "ok"
+    INFO = "info"
+    WARNING = "warning"
+    ISSUE = "issue"
 
 
 class CheckResult(BaseModel):
