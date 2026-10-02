@@ -12,7 +12,7 @@ import time
 import typing
 from contextlib import contextmanager
 from os import listdir, scandir, walk
-from typing import Optional
+from typing import Callable, Optional
 
 try:
     import gcode_thumbnail_tool as gtt
@@ -319,7 +319,7 @@ class LocalFileStorage(StorageInterface):
     def list_storage_entries(
         self,
         path: Optional[str] = None,
-        filter: callable = None,
+        filter: Optional[Callable] = None,
         recursive: bool = True,
         level: int = 0,
         force_refresh: bool = False,
@@ -354,7 +354,7 @@ class LocalFileStorage(StorageInterface):
             return result
 
         def apply_filter(
-            nodes: dict[str, StorageEntry], filter_func: callable
+            nodes: dict[str, StorageEntry], filter_func: Callable
         ) -> dict[str, StorageEntry]:
             result = {}
             for key, node in nodes.items():
@@ -595,7 +595,7 @@ class LocalFileStorage(StorageInterface):
         allow_overwrite: bool = False,
         display: Optional[str] = None,
         user: Optional[str] = None,
-        progress_callback: callable = None,
+        progress_callback: Optional[Callable] = None,
         *args,
         **kwargs,
     ):

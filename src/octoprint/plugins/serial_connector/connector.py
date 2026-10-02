@@ -2,7 +2,7 @@ import copy
 import logging
 import os
 from gettext import gettext
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 import octoprint.util as util
 from octoprint.events import Events, eventManager
@@ -550,7 +550,12 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
             return None
 
     def upload_printer_file(
-        self, source, target, progress_callback: callable = None, *args, **kwargs
+        self,
+        source,
+        target,
+        progress_callback: Optional[Callable] = None,
+        *args,
+        **kwargs,
     ) -> str:
         if progress_callback is not None:
             self._progress_callback = progress_callback

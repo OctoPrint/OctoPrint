@@ -6,7 +6,7 @@ import tarfile
 import tempfile
 import zipfile
 from collections.abc import Generator
-from typing import Optional, Union
+from typing import Callable, Optional, Union
 
 import filetype
 
@@ -113,7 +113,7 @@ class InstallPreparationResult:
 
 @contextlib.contextmanager
 def prepare_install(
-    install_arg: str, log: callable = None
+    install_arg: str, log: Optional[Callable] = None
 ) -> Generator[InstallPreparationResult, None, None]:
     from octoprint.util.net import download_file
 

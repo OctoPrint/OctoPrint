@@ -2,7 +2,7 @@ import logging
 import os
 import tempfile
 import time
-from typing import IO, Optional
+from typing import IO, Callable, Optional
 
 import octoprint.filemanager
 from octoprint.filemanager.util import AbstractFileWrapper
@@ -148,7 +148,7 @@ class PrinterFileStorage(StorageInterface):
     def list_storage_entries(
         self,
         path: Optional[str] = None,
-        filter: callable = None,
+        filter: Optional[Callable] = None,
         recursive: bool = True,
         level: int = 0,
         force_refresh: bool = False,
@@ -345,7 +345,7 @@ class PrinterFileStorage(StorageInterface):
         path: str,
         file_object: AbstractFileWrapper,
         allow_overwrite: bool = False,
-        progress_callback: callable = None,
+        progress_callback: Optional[Callable] = None,
         *args,
         **kwargs,
     ):

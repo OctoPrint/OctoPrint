@@ -742,7 +742,7 @@ class FileManager:
         self,
         locations: Optional[list[str]] = None,
         path: Optional[str] = None,
-        filter: callable = None,
+        filter: Optional[Callable] = None,
         recursive: bool = True,
         level: int = 0,
         force_refresh: bool = False,
@@ -784,7 +784,7 @@ class FileManager:
         analysis=None,
         display: Optional[str] = None,
         user: Optional[str] = None,
-        progress_callback: callable = None,
+        progress_callback: Optional[Callable] = None,
         *args,
         **kwargs,
     ):

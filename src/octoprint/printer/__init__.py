@@ -28,7 +28,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import datetime
 import re
-from typing import IO, TYPE_CHECKING, Any, Optional, Union
+from typing import IO, TYPE_CHECKING, Any, Callable, Optional, Union
 
 from pydantic import computed_field
 
@@ -682,7 +682,7 @@ class PrinterFilesMixin:
         self,
         path_or_file: Union[str, IO],
         path: str,
-        progress_callback: callable,
+        progress_callback: Callable,
         *args,
         **kwargs,
     ) -> str:

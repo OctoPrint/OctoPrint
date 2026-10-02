@@ -4,7 +4,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 
 import datetime
-from typing import IO, TYPE_CHECKING, Any, Optional
+from typing import IO, TYPE_CHECKING, Any, Callable, Optional
 
 from octoprint.filemanager.util import AbstractFileWrapper
 from octoprint.schema import BaseModel
@@ -258,7 +258,7 @@ class StorageInterface:
     def list_storage_entries(
         self,
         path: Optional[str] = None,
-        filter: callable = None,
+        filter: Optional[Callable] = None,
         recursive: bool = True,
         level: int = 0,
         force_refresh: bool = False,
@@ -282,7 +282,7 @@ class StorageInterface:
     def list_files(
         self,
         path: Optional[str] = None,
-        filter: callable = None,
+        filter: Optional[Callable] = None,
         recursive: bool = True,
         level: int = 0,
         force_refresh: bool = False,
@@ -418,7 +418,7 @@ class StorageInterface:
         allow_overwrite: bool = False,
         display: Optional[str] = None,
         user: Optional[str] = None,
-        progress_callback: callable = None,
+        progress_callback: Optional[Callable] = None,
         *args,
         **kwargs,
     ) -> str:
