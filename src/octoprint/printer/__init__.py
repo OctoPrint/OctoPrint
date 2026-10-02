@@ -684,7 +684,7 @@ class PrinterFilesMixin:
         self,
         path_or_file: Union[str, IO],
         path: str,
-        progress_callback: Callable,
+        progress_callback: Optional[Callable] = None,
         *args,
         **kwargs,
     ) -> str:
