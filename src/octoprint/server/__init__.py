@@ -45,6 +45,7 @@ from werkzeug.exceptions import HTTPException
 
 import octoprint.events
 import octoprint.filemanager
+import octoprint.settings
 import octoprint.util
 import octoprint.util.net
 from octoprint.server import util
@@ -307,7 +308,7 @@ class Server:
             self._check_for_root()
 
         if self._settings is None:
-            self._settings = settings()
+            self._settings = octoprint.settings.settings()
 
         if self._plugin_manager is None:
             self._plugin_manager = octoprint.plugin.plugin_manager()
