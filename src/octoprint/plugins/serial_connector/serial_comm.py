@@ -5768,8 +5768,8 @@ class MachineCom:
                 return self._emergency_force_send(
                     cmd,
                     f"Force-sending {gcode} to the printer",
+                    gcode,
                     *args,
-                    gcode=gcode,
                     **kwargs,
                 )
 
