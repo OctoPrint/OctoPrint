@@ -194,15 +194,15 @@ class CommonPrinterMixin:
         """
 
     @property
-    def communication_health(self) -> CommunicationHealth:
+    def communication_health(self) -> Optional[CommunicationHealth]:
         return None
 
     @property
-    def firmware_info(self) -> FirmwareInformation:
+    def firmware_info(self) -> Optional[FirmwareInformation]:
         return None
 
     @property
-    def error_info(self) -> ErrorInformation:
+    def error_info(self) -> Optional[ErrorInformation]:
         return None
 
     def commands(self, *commands, tags=None, force=False, **kwargs):
@@ -324,7 +324,7 @@ class CommonPrinterMixin:
 
     @property
     def temperature_offsets(self) -> dict:
-        return None
+        return {}
 
     def feed_rate(self, factor, tags=None, *args, **kwargs):
         """
@@ -580,15 +580,15 @@ class ConnectedPrinterMixin(CommonPrinterMixin):
         return self.printer_capabilities
 
     @property
-    def job_progress(self) -> JobProgress:
+    def job_progress(self) -> Optional[JobProgress]:
         return None
 
     @property
-    def cancel_position(self) -> dict:
+    def cancel_position(self) -> Optional[dict]:
         return None
 
     @property
-    def pause_position(self) -> dict:
+    def pause_position(self) -> Optional[dict]:
         return None
 
     def connect(self, *args, **kwargs):
@@ -652,7 +652,9 @@ class PrinterFilesMixin:
     def refresh_printer_files(self, blocking=False, timeout=10, *args, **kwargs) -> None:
         pass
 
-    def get_printer_file(self, path: str, refresh=False, *args, **kwargs) -> PrinterFile:
+    def get_printer_file(
+        self, path: str, refresh=False, *args, **kwargs
+    ) -> Optional[PrinterFile]:
         files = self.get_printer_files(refresh=refresh)
         for f in files:
             if f.path == path:
@@ -665,7 +667,7 @@ class PrinterFilesMixin:
         return []
 
     def create_printer_folder(self, target: str, *args, **kwargs) -> str:
-        pass
+        raise NotImplementedError()
 
     def delete_printer_folder(
         self, target: str, recursive: bool = False, *args, **kwargs
@@ -673,10 +675,10 @@ class PrinterFilesMixin:
         pass
 
     def copy_printer_folder(self, source: str, target: str, *args, **kwargs) -> str:
-        pass
+        raise NotImplementedError()
 
     def move_printer_folder(self, source: str, target: str, *args, **kwargs) -> str:
-        pass
+        raise NotImplementedError()
 
     def upload_printer_file(
         self,
@@ -686,7 +688,7 @@ class PrinterFilesMixin:
         *args,
         **kwargs,
     ) -> str:
-        pass
+        raise NotImplementedError()
 
     def download_printer_file(
         self,
@@ -694,16 +696,16 @@ class PrinterFilesMixin:
         *args,
         **kwargs,
     ) -> IO:
-        return None
+        raise NotImplementedError()
 
     def delete_printer_file(self, path: str, *args, **kwargs) -> None:
         pass
 
     def copy_printer_file(self, source: str, target: str, *args, **kwargs) -> str:
-        pass
+        raise NotImplementedError()
 
     def move_printer_file(self, source: str, target: str, *args, **kwargs) -> str:
-        pass
+        raise NotImplementedError()
 
     def sanitize_file_name(self, name: str, *args, **kwargs) -> str:
         return name
@@ -779,7 +781,7 @@ class PrinterFilesMixin:
 
     def create_job(
         self, path: str, owner: Optional[str] = None, params: Optional[dict] = None
-    ) -> PrintJob:
+    ) -> Optional[PrintJob]:
         printer_file = self.get_printer_file(path)
         if not printer_file:
             return None
@@ -892,7 +894,7 @@ class PrinterMixin(CommonPrinterMixin):
 
     @property
     def connection_state(self) -> dict:
-        return None
+        return {}
 
     @classmethod
     @deprecated(

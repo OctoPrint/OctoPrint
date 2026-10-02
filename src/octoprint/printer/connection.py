@@ -273,7 +273,7 @@ class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterRegistra
         self._logger = logging.getLogger(__name__)
 
     @property
-    def current_job(self) -> PrintJob:
+    def current_job(self) -> Optional[PrintJob]:
         return self._job
 
     def set_job(self, job: Optional[PrintJob], *args, **kwargs) -> None:
