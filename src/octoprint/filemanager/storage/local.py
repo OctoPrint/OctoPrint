@@ -12,6 +12,7 @@ import time
 import typing
 from contextlib import contextmanager
 from os import listdir, scandir, walk
+from typing import Optional
 
 try:
     import gcode_thumbnail_tool as gtt
@@ -240,7 +241,9 @@ class LocalFileStorage(StorageInterface):
 
         return size
 
-    def get_lastmodified(self, path: str = None, recursive: bool = False) -> int:
+    def get_lastmodified(
+        self, path: Optional[str] = None, recursive: bool = False
+    ) -> int:
         if path is None:
             path = self.basefolder
 
@@ -270,7 +273,7 @@ class LocalFileStorage(StorageInterface):
 
         return int(last_modified)
 
-    def get_hash(self, path: str = None, recursive: bool = False) -> str:
+    def get_hash(self, path: Optional[str] = None, recursive: bool = False) -> str:
         import hashlib
 
         hash = hashlib.sha1()
@@ -315,7 +318,7 @@ class LocalFileStorage(StorageInterface):
 
     def list_storage_entries(
         self,
-        path: str = None,
+        path: Optional[str] = None,
         filter: callable = None,
         recursive: bool = True,
         level: int = 0,
@@ -590,8 +593,8 @@ class LocalFileStorage(StorageInterface):
         path: str,
         file_obj: AbstractFileWrapper,
         allow_overwrite: bool = False,
-        display: str = None,
-        user: str = None,
+        display: Optional[str] = None,
+        user: Optional[str] = None,
         progress_callback: callable = None,
         *args,
         **kwargs,
@@ -878,7 +881,7 @@ class LocalFileStorage(StorageInterface):
         )
 
     def _thumbnail_from_sizehint(
-        self, path: str, sizehint: str = None
+        self, path: str, sizehint: Optional[str] = None
     ) -> tuple[str, str]:
         path, name = self.sanitize(path)
         thumbnails = self._get_thumbnails(path, name)
@@ -1090,7 +1093,7 @@ class LocalFileStorage(StorageInterface):
         path, name = self.sanitize(path)
         return os.path.join(path, name)
 
-    def get_usage(self) -> typing.Optional[StorageUsage]:
+    def get_usage(self) -> Optional[StorageUsage]:
         usage = psutil.disk_usage(self.basefolder)
         return StorageUsage(used=usage.used, total=usage.total)
 

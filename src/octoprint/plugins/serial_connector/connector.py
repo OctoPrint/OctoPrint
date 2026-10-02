@@ -2,7 +2,7 @@ import copy
 import logging
 import os
 from gettext import gettext
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 import octoprint.util as util
 from octoprint.events import Events, eventManager
@@ -333,7 +333,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
 
     def set_job(
         self,
-        job: PrintJob,
+        job: Optional[PrintJob],
         tags=None,
         user=None,
         *args,
@@ -455,7 +455,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
             util.to_unicode("\n".join(lines), "utf-8", errors="replace")
         )
 
-    def get_state_string(self, state: ConnectedPrinterState = None):
+    def get_state_string(self, state: Optional[ConnectedPrinterState] = None):
         if state is None:
             state = self.state
 

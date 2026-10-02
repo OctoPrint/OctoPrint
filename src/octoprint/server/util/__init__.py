@@ -182,7 +182,7 @@ def optionsAllowOrigin(request):
 
 
 def get_user_for_apikey(
-    apikey: str, remote_address: str = None
+    apikey: str, remote_address: Optional[str] = None
 ) -> "Optional[octoprint.access.users.User]":
     """
     Tries to find a user based on the given API key.

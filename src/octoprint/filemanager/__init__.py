@@ -740,8 +740,8 @@ class FileManager:
 
     def list_storage_entries(
         self,
-        locations: list[str] = None,
-        path: str = None,
+        locations: Optional[list[str]] = None,
+        path: Optional[str] = None,
         filter: callable = None,
         recursive: bool = True,
         level: int = 0,
@@ -782,8 +782,8 @@ class FileManager:
         allow_overwrite: bool = False,
         printer_profile=None,
         analysis=None,
-        display: str = None,
-        user: str = None,
+        display: Optional[str] = None,
+        user: Optional[str] = None,
         progress_callback: callable = None,
         *args,
         **kwargs,
@@ -1093,7 +1093,7 @@ class FileManager:
         destination_storage: str,
         destination_path: str,
         allow_overwrite: bool = False,
-        progress_callback: Callable = None,
+        progress_callback: Optional[Callable] = None,
     ) -> None:
         self._action_across_storage(
             "copy_file",
@@ -1112,7 +1112,7 @@ class FileManager:
         destination_storage: str,
         destination_path: str,
         allow_overwrite: bool = False,
-        progress_callback: Callable = None,
+        progress_callback: Optional[Callable] = None,
     ) -> None:
         self._action_across_storage(
             "move_file",
@@ -1132,7 +1132,7 @@ class FileManager:
         destination_storage: str,
         destination_path: str,
         allow_overwrite: bool = False,
-        progress_callback: Callable = None,
+        progress_callback: Optional[Callable] = None,
     ) -> None:
         storage_src = self._storage(source_storage)
         storage_dst = self._storage(destination_storage)
@@ -1309,7 +1309,7 @@ class FileManager:
         self._storage(location).remove_link(path, rel, data)
 
     def create_job(
-        self, location, path, owner: str = None, params: dict = None
+        self, location, path, owner: Optional[str] = None, params: Optional[dict] = None
     ) -> "PrintJob":
         return self._storage(location).create_job(path, owner=owner, params=params)
 
@@ -1386,14 +1386,22 @@ class FileManager:
         return self._storage(location).has_thumbnail(path)
 
     def get_thumbnail(
-        self, location, path, platehint: int = None, sizehint: str = None
+        self,
+        location,
+        path,
+        platehint: Optional[int] = None,
+        sizehint: Optional[str] = None,
     ) -> Optional[StorageThumbnail]:
         return self._storage(location).get_thumbnail(
             path, platehint=platehint, sizehint=sizehint
         )
 
     def read_thumbnail(
-        self, location, path, platehint: int = None, sizehint: str = None
+        self,
+        location,
+        path,
+        platehint: Optional[int] = None,
+        sizehint: Optional[str] = None,
     ) -> tuple[StorageThumbnail, IO]:
         return self._storage(location).read_thumbnail(
             path, platehint=platehint, sizehint=sizehint

@@ -1,10 +1,12 @@
+from typing import Optional
+
 import pytest
 import urllib3
 
 pytestmark = pytest.mark.http_api
 
 
-def _verify_tree_restricted(tree: dict, expected: dict = None):
+def _verify_tree_restricted(tree: dict, expected: Optional[dict] = None):
     if expected is None:
         expected = {}
 

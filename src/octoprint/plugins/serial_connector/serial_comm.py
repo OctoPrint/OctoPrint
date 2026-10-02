@@ -20,7 +20,7 @@ import threading
 import time
 from collections import deque, namedtuple
 from functools import partial
-from typing import IO, Union
+from typing import IO, Optional, Union
 
 import serial
 import wrapt
@@ -5847,7 +5847,7 @@ class MachineComPrintCallback:
     def on_comm_error(self, error, reason, consequence=None, faq=None, logs=None):
         pass
 
-    def on_comm_progress(self, progress: float, remaining: float = None):
+    def on_comm_progress(self, progress: float, remaining: Optional[float] = None):
         pass
 
     def on_comm_print_job_started(self, suppress_script=False, user=None):
@@ -6073,7 +6073,9 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
     def getRemainingPrintTime(self) -> float:
         return self._print_time_left_m73
 
-    def fromM73(self, progress: float = None, time_left: float = None):
+    def fromM73(
+        self, progress: Optional[float] = None, time_left: Optional[float] = None
+    ):
         if progress is not None:
             self._progress_m73 = progress
         if time_left is not None:
@@ -6188,7 +6190,9 @@ class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
         self._local_name = local_name
         self._remote_name = remote_name
 
-    def fromM73(self, progress: float = None, time_left: float = None):
+    def fromM73(
+        self, progress: Optional[float] = None, time_left: Optional[float] = None
+    ):
         pass  # disabled
 
     def start(self):

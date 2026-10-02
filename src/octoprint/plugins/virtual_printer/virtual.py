@@ -1309,7 +1309,10 @@ class VirtualPrinter:
         self._send("echo:EMERGENCY SHUTDOWN DETECTED. KILLED.")
 
     def _triggerResend(
-        self, expected: int = None, actual: int = None, checksum: int = None
+        self,
+        expected: Optional[int] = None,
+        actual: Optional[int] = None,
+        checksum: Optional[int] = None,
     ) -> None:
         with self._incoming_lock:
             if expected is None:

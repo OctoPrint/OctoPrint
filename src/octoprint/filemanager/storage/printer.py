@@ -116,7 +116,7 @@ class PrinterFileStorage(StorageInterface):
 
         return None
 
-    def get_hash(self, path: str = None, recursive: bool = False) -> str:
+    def get_hash(self, path: Optional[str] = None, recursive: bool = False) -> str:
         import hashlib
 
         files = sorted(
@@ -147,7 +147,7 @@ class PrinterFileStorage(StorageInterface):
 
     def list_storage_entries(
         self,
-        path: str = None,
+        path: Optional[str] = None,
         filter: callable = None,
         recursive: bool = True,
         level: int = 0,
@@ -564,7 +564,9 @@ class PrinterFileStorage(StorageInterface):
         except KeyError:
             pass
 
-    def create_job(self, path, owner: str = None, params: dict = None):
+    def create_job(
+        self, path, owner: Optional[str] = None, params: Optional[dict] = None
+    ):
         job = self._connection.create_job(path, owner=owner, params=params)
         if job is None:
             job = super().create_job(path, owner=owner, params=params)

@@ -64,7 +64,7 @@ def get_octoprint_version_string() -> str:
     return __version__
 
 
-def get_octoprint_version(cut: int = None, **kwargs) -> Version:
+def get_octoprint_version(cut: Optional[int] = None, **kwargs) -> Version:
     """Returns the current OctoPrint version in a comparable format"""
     octoprint_version_string = normalize_version(get_octoprint_version_string())
     return get_comparable_version(octoprint_version_string, cut=cut, **kwargs)

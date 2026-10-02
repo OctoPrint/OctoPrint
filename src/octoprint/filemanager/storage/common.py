@@ -188,7 +188,9 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def get_lastmodified(self, path: str = None, recursive: bool = False) -> int:
+    def get_lastmodified(
+        self, path: Optional[str] = None, recursive: bool = False
+    ) -> int:
         """
         Get the modification date of the specified ``path`` or ``path``'s subtree.
 
@@ -200,7 +202,7 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def get_hash(self, path: str = None, recursive: bool = False) -> str:
+    def get_hash(self, path: Optional[str] = None, recursive: bool = False) -> str:
         """
         Get a hash corresponding to the current state of the specified ``path`` or ``path``'s subtree.
 
@@ -255,7 +257,7 @@ class StorageInterface:
 
     def list_storage_entries(
         self,
-        path: str = None,
+        path: Optional[str] = None,
         filter: callable = None,
         recursive: bool = True,
         level: int = 0,
@@ -279,7 +281,7 @@ class StorageInterface:
     )
     def list_files(
         self,
-        path: str = None,
+        path: Optional[str] = None,
         filter: callable = None,
         recursive: bool = True,
         level: int = 0,
@@ -414,8 +416,8 @@ class StorageInterface:
         path: str,
         data: AbstractFileWrapper,
         allow_overwrite: bool = False,
-        display: str = None,
-        user: str = None,
+        display: Optional[str] = None,
+        user: Optional[str] = None,
         progress_callback: callable = None,
         *args,
         **kwargs,
@@ -526,12 +528,12 @@ class StorageInterface:
         raise NotImplementedError()
 
     def get_thumbnail(
-        self, path: str, platehint: int = None, sizehint: str = None
+        self, path: str, platehint: Optional[int] = None, sizehint: Optional[str] = None
     ) -> Optional[StorageThumbnail]:
         raise NotImplementedError()
 
     def read_thumbnail(
-        self, path: str, platehint: int = None, sizehint: str = None
+        self, path: str, platehint: Optional[int] = None, sizehint: Optional[str] = None
     ) -> Optional[IO]:
         raise NotImplementedError()
 
@@ -613,7 +615,9 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def create_job(self, path, owner: str = None, params: dict = None) -> "PrintJob":
+    def create_job(
+        self, path, owner: Optional[str] = None, params: Optional[dict] = None
+    ) -> "PrintJob":
         from octoprint.printer.job import DurationEstimate, FilamentEstimate, PrintJob
 
         entry = self.get_storage_entry(path)
