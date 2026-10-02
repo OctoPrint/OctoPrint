@@ -7153,8 +7153,6 @@ def upload_cli():
 
     import sys
 
-    from octoprint.util import Object
-
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
@@ -7227,17 +7225,15 @@ def upload_cli():
 
     callback = MyMachineComCallback(path, target)
 
-    # mock printer profile manager
+    # mock printer profile
     profile = {"heatedBed": False, "extruder": {"count": 1, "sharedNozzle": False}}
-    printer_profile_manager = Object()
-    printer_profile_manager.get_current_or_default = lambda: profile
 
     # initialize serial
     comm = MachineCom(
+        profile,
         port=port,
         baudrate=baudrate,
         callback=callback,
-        printerProfileManager=printer_profile_manager,
     )
     callback.comm = comm
 
