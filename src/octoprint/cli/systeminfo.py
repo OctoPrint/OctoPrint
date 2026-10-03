@@ -32,8 +32,8 @@ def get_systeminfo(
             with open(safe_mode_file) as f:
                 last_safe_mode["reason"] = f.readline().strip()
             last_safe_mode["date"] = (
-                datetime.datetime.utcfromtimestamp(
-                    os.path.getmtime(safe_mode_file)
+                datetime.datetime.fromtimestamp(
+                    os.path.getmtime(safe_mode_file), tz=datetime.timezone.utc
                 ).isoformat()[:19]
                 + "Z"
             )

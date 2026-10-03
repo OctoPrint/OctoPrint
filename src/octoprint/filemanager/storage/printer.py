@@ -2,7 +2,7 @@ import logging
 import os
 import tempfile
 import time
-from typing import IO, Optional
+from typing import IO, Callable, Optional
 
 import octoprint.filemanager
 from octoprint.filemanager.util import AbstractFileWrapper
@@ -112,11 +112,11 @@ class PrinterFileStorage(StorageInterface):
 
         dates = [f.date.timestamp() for f in files if f.date is not None]
         if len(dates):
-            return max(dates)
+            return int(max(dates))
 
         return None
 
-    def get_hash(self, path: str = None, recursive: bool = False) -> str:
+    def get_hash(self, path: Optional[str] = None, recursive: bool = False) -> str:
         import hashlib
 
         files = sorted(
@@ -147,8 +147,8 @@ class PrinterFileStorage(StorageInterface):
 
     def list_storage_entries(
         self,
-        path: str = None,
-        filter: callable = None,
+        path: Optional[str] = None,
+        filter: Optional[Callable] = None,
         recursive: bool = True,
         level: int = 0,
         force_refresh: bool = False,
@@ -345,7 +345,7 @@ class PrinterFileStorage(StorageInterface):
         path: str,
         file_object: AbstractFileWrapper,
         allow_overwrite: bool = False,
-        progress_callback: callable = None,
+        progress_callback: Optional[Callable] = None,
         *args,
         **kwargs,
     ):
@@ -450,7 +450,7 @@ class PrinterFileStorage(StorageInterface):
         metadata = self.get_metadata(path)
         return metadata and "analysis" in metadata
 
-    def get_metadata(self, path: str, default=None) -> dict:
+    def get_metadata(self, path: str, default=None) -> Optional[dict]:
         if not self.capabilities.metadata:
             return None
 
@@ -564,7 +564,9 @@ class PrinterFileStorage(StorageInterface):
         except KeyError:
             pass
 
-    def create_job(self, path, owner: str = None, params: dict = None):
+    def create_job(
+        self, path, owner: Optional[str] = None, params: Optional[dict] = None
+    ):
         job = self._connection.create_job(path, owner=owner, params=params)
         if job is None:
             job = super().create_job(path, owner=owner, params=params)
@@ -599,7 +601,8 @@ class PrinterFileStorage(StorageInterface):
         if "/" not in path:
             return "", path
 
-        return path.rsplit("/", 1)
+        base, name = path.rsplit("/", 1)
+        return base, name
 
     def join_path(self, *path: str) -> str:
         return self._strip_leading_slash("/".join(path))

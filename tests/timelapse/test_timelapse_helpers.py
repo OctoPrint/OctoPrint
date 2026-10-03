@@ -13,8 +13,8 @@ import octoprint.plugin
 import octoprint.settings
 import octoprint.timelapse
 
-_stat = namedtuple("StatResult", "st_size, st_ctime, st_mtime")
-_entry = namedtuple("DirEntry", "name, path, is_file, is_dir, stat")
+_stat = namedtuple("_stat", "st_size, st_ctime, st_mtime")
+_entry = namedtuple("_entry", "name, path, is_file, is_dir, stat")
 
 
 @ddt.ddt

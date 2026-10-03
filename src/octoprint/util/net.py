@@ -54,7 +54,7 @@ else:
         HAS_V6 = False
 
 
-def get_netmask(address) -> int:
+def get_netmask(address) -> str:
     if isinstance(address, ifaddr.IP):
         addr = address.ip[0] if address.is_IPv6 else address.ip
         prefix = address.network_prefix

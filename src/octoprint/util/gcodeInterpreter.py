@@ -313,7 +313,7 @@ class gcode:
             self.filename = filename
             self._fileSize = os.stat(filename).st_size
 
-            with codecs.open(filename, encoding="utf-8", errors="replace") as f:
+            with open(filename, encoding="utf-8", errors="replace", newline="") as f:
                 self._load(
                     f,
                     throttle=throttle,

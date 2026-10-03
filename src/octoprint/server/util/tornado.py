@@ -38,7 +38,7 @@ import octoprint.util.net
 
 # Tornado 6.5.x needs _chars_are_bytes hack to work around regression, see tornadoweb/tornado#3502
 # TODO this will possibly require changes on upgrade to Tornado 6.6!
-def header_line_to_dict(header: str) -> dict:
+def header_line_to_dict(header: str) -> tornado.httputil.HTTPHeaders:
     return tornado.httputil.HTTPHeaders.parse(header, _chars_are_bytes=False)
 
 

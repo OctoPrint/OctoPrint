@@ -13,6 +13,7 @@ The `packaging library <https://packaging.pypa.io>`_ is heavily used.
 
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 
+import importlib.metadata as meta
 import logging
 from typing import Optional, Union
 
@@ -22,18 +23,15 @@ from packaging.version import parse as parse_version
 
 from octoprint import __version__
 
-try:
-    import importlib.metadata as meta
-except ImportError:  # Python 3.7
-    import importlib_metadata as meta
-
 
 def get_package_version(package: str) -> str:
     """Returns the version of the provided package, throws an error if it cannot be found"""
     return meta.version(package)
 
 
-def safe_get_package_version(package: str, default: Optional[str] = None) -> str:
+def safe_get_package_version(
+    package: str, default: Optional[str] = None
+) -> Optional[str]:
     """Returns the version of the provided package, returns the configured ``default`` if it cannot be found"""
     try:
         return get_package_version(package)
@@ -64,7 +62,7 @@ def get_octoprint_version_string() -> str:
     return __version__
 
 
-def get_octoprint_version(cut: int = None, **kwargs) -> Version:
+def get_octoprint_version(cut: Optional[int] = None, **kwargs) -> Version:
     """Returns the current OctoPrint version in a comparable format"""
     octoprint_version_string = normalize_version(get_octoprint_version_string())
     return get_comparable_version(octoprint_version_string, cut=cut, **kwargs)
