@@ -1374,35 +1374,39 @@ class LocalFileStorage(StorageInterface):
                             if "printingArea" in meta_analysis:
                                 x = meta_analysis["printingArea"]
                                 analysis.printingArea = AnalysisVolume(
-                                    minX=x["minX"],
-                                    minY=x["minY"],
-                                    minZ=x["minZ"],
-                                    maxX=x["maxX"],
-                                    maxY=x["maxY"],
-                                    maxZ=x["maxZ"],
+                                    minX=x.get("minX", 0.0),
+                                    minY=x.get("minY", 0.0),
+                                    minZ=x.get("minZ", 0.0),
+                                    maxX=x.get("maxX", 0.0),
+                                    maxY=x.get("maxY", 0.0),
+                                    maxZ=x.get("maxZ", 0.0),
                                 )
 
                             if "travelArea" in meta_analysis:
                                 x = meta_analysis["travelArea"]
                                 analysis.travelArea = AnalysisVolume(
-                                    minX=x["minX"],
-                                    minY=x["minY"],
-                                    minZ=x["minZ"],
-                                    maxX=x["maxX"],
-                                    maxY=x["maxY"],
-                                    maxZ=x["maxZ"],
+                                    minX=x.get("minX", 0.0),
+                                    minY=x.get("minY", 0.0),
+                                    minZ=x.get("minZ", 0.0),
+                                    maxX=x.get("maxX", 0.0),
+                                    maxY=x.get("maxY", 0.0),
+                                    maxZ=x.get("maxZ", 0.0),
                                 )
 
                             if "dimensions" in meta_analysis:
                                 x = meta_analysis["dimensions"]
                                 analysis.dimensions = AnalysisDimensions(
-                                    width=x["width"], height=x["height"], depth=x["depth"]
+                                    width=x.get("width", 0.0),
+                                    height=x.get("height", 0.0),
+                                    depth=x.get("depth", 0.0),
                                 )
 
                             if "travelDimensions" in meta_analysis:
                                 x = meta_analysis["travelDimensions"]
                                 analysis.travelDimensions = AnalysisDimensions(
-                                    width=x["width"], height=x["height"], depth=x["depth"]
+                                    width=x.get("width", 0.0),
+                                    height=x.get("height", 0.0),
+                                    depth=x.get("depth", 0.0),
                                 )
 
                             if "filament" in meta_analysis:
@@ -1410,7 +1414,8 @@ class LocalFileStorage(StorageInterface):
                                 result = {}
                                 for tool, data in x.items():
                                     result[tool] = AnalysisFilamentUse(
-                                        length=data["length"], volume=data["volume"]
+                                        length=data.get("length", 0.0),
+                                        volume=data.get("volume", 0.0),
                                     )
                                 analysis.filament = result
 
