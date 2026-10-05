@@ -935,6 +935,9 @@ class LocalFileStorage(StorageInterface):
             )
             metadata_dirty = True
 
+        if key == "analysis":
+            metadata_dirty = _sanitize_analysis(metadata[name][key]) or metadata_dirty
+
         if metadata_dirty:
             self._save_metadata(path, metadata)
 
@@ -1361,113 +1364,142 @@ class LocalFileStorage(StorageInterface):
                         if "user" in entry_metadata:
                             storage_entry.user = entry_metadata["user"]
 
-                        if "analysis" in entry_metadata:
-                            meta_analysis = entry_metadata["analysis"]
+                        try:
+                            if "analysis" in entry_metadata:
+                                meta_analysis = entry_metadata["analysis"]
 
-                            analysis = AnalysisResult()
+                                metadata_dirty = (
+                                    _sanitize_analysis(meta_analysis) or metadata_dirty
+                                )
 
-                            if "estimatedPrintTime" in meta_analysis:
-                                analysis.estimatedPrintTime = meta_analysis[
-                                    "estimatedPrintTime"
+                                analysis = AnalysisResult()
+
+                                if "estimatedPrintTime" in meta_analysis:
+                                    analysis.estimatedPrintTime = meta_analysis[
+                                        "estimatedPrintTime"
+                                    ]
+
+                                if "printingArea" in meta_analysis:
+                                    x = meta_analysis["printingArea"]
+                                    analysis.printingArea = AnalysisVolume(
+                                        minX=x.get("minX", 0.0),
+                                        minY=x.get("minY", 0.0),
+                                        minZ=x.get("minZ", 0.0),
+                                        maxX=x.get("maxX", 0.0),
+                                        maxY=x.get("maxY", 0.0),
+                                        maxZ=x.get("maxZ", 0.0),
+                                    )
+
+                                if "travelArea" in meta_analysis:
+                                    x = meta_analysis["travelArea"]
+                                    analysis.travelArea = AnalysisVolume(
+                                        minX=x.get("minX", 0.0),
+                                        minY=x.get("minY", 0.0),
+                                        minZ=x.get("minZ", 0.0),
+                                        maxX=x.get("maxX", 0.0),
+                                        maxY=x.get("maxY", 0.0),
+                                        maxZ=x.get("maxZ", 0.0),
+                                    )
+
+                                if "dimensions" in meta_analysis:
+                                    x = meta_analysis["dimensions"]
+                                    analysis.dimensions = AnalysisDimensions(
+                                        width=x.get("width", 0.0),
+                                        height=x.get("height", 0.0),
+                                        depth=x.get("depth", 0.0),
+                                    )
+
+                                if "travelDimensions" in meta_analysis:
+                                    x = meta_analysis["travelDimensions"]
+                                    analysis.travelDimensions = AnalysisDimensions(
+                                        width=x.get("width", 0.0),
+                                        height=x.get("height", 0.0),
+                                        depth=x.get("depth", 0.0),
+                                    )
+
+                                if "filament" in meta_analysis:
+                                    x = meta_analysis["filament"]
+                                    result = {}
+                                    for tool, data in x.items():
+                                        result[tool] = AnalysisFilamentUse(
+                                            length=data.get("length", 0.0),
+                                            volume=data.get("volume", 0.0),
+                                        )
+                                    analysis.filament = result
+
+                                additional_analysis_keys = [
+                                    x
+                                    for x in meta_analysis
+                                    if x
+                                    not in (
+                                        "estimatedPrintTime",
+                                        "printingArea",
+                                        "travelArea",
+                                        "dimensions",
+                                        "travelDimensions",
+                                        "filament",
+                                    )
                                 ]
+                                if additional_analysis_keys:
+                                    # there are more things stored in this analysis
+                                    analysis.additional = {
+                                        k: v
+                                        for k, v in meta_analysis.items()
+                                        if k in additional_analysis_keys
+                                    }
 
-                            if "printingArea" in meta_analysis:
-                                x = meta_analysis["printingArea"]
-                                analysis.printingArea = AnalysisVolume(
-                                    minX=x.get("minX", 0.0),
-                                    minY=x.get("minY", 0.0),
-                                    minZ=x.get("minZ", 0.0),
-                                    maxX=x.get("maxX", 0.0),
-                                    maxY=x.get("maxY", 0.0),
-                                    maxZ=x.get("maxZ", 0.0),
-                                )
-
-                            if "travelArea" in meta_analysis:
-                                x = meta_analysis["travelArea"]
-                                analysis.travelArea = AnalysisVolume(
-                                    minX=x.get("minX", 0.0),
-                                    minY=x.get("minY", 0.0),
-                                    minZ=x.get("minZ", 0.0),
-                                    maxX=x.get("maxX", 0.0),
-                                    maxY=x.get("maxY", 0.0),
-                                    maxZ=x.get("maxZ", 0.0),
-                                )
-
-                            if "dimensions" in meta_analysis:
-                                x = meta_analysis["dimensions"]
-                                analysis.dimensions = AnalysisDimensions(
-                                    width=x.get("width", 0.0),
-                                    height=x.get("height", 0.0),
-                                    depth=x.get("depth", 0.0),
-                                )
-
-                            if "travelDimensions" in meta_analysis:
-                                x = meta_analysis["travelDimensions"]
-                                analysis.travelDimensions = AnalysisDimensions(
-                                    width=x.get("width", 0.0),
-                                    height=x.get("height", 0.0),
-                                    depth=x.get("depth", 0.0),
-                                )
-
-                            if "filament" in meta_analysis:
-                                x = meta_analysis["filament"]
-                                result = {}
-                                for tool, data in x.items():
-                                    result[tool] = AnalysisFilamentUse(
-                                        length=data.get("length", 0.0),
-                                        volume=data.get("volume", 0.0),
-                                    )
-                                analysis.filament = result
-
-                            additional_analysis_keys = [
-                                x
-                                for x in meta_analysis
-                                if x
-                                not in (
-                                    "estimatedPrintTime",
-                                    "printingArea",
-                                    "travelArea",
-                                    "dimensions",
-                                    "travelDimensions",
-                                    "filament",
-                                )
-                            ]
-                            if additional_analysis_keys:
-                                # there are more things stored in this analysis
-                                analysis.additional = {
-                                    k: v
-                                    for k, v in meta_analysis.items()
-                                    if k in additional_analysis_keys
-                                }
-
-                            storage_entry.metadata.analysis = analysis
-
-                        if "history" in entry_metadata:
-                            history = []
-                            for h in entry_metadata["history"]:
-                                if any(
-                                    x not in h
-                                    for x in ("timestamp", "success", "printerProfile")
-                                ):
-                                    continue
-                                history.append(
-                                    HistoryEntry(
-                                        timestamp=datetime.datetime.fromtimestamp(
-                                            h["timestamp"], tz=LOCAL_TZ
-                                        ),
-                                        success=h["success"],
-                                        printerProfile=h["printerProfile"],
-                                        printTime=h.get("printTime"),
-                                    )
-                                )
-                            storage_entry.metadata.history = history
-
-                        if "statistics" in entry_metadata:
-                            stats = entry_metadata["statistics"]
-                            storage_entry.metadata.statistics = Statistics(
-                                averagePrintTime=stats.get("averagePrintTime", {}),
-                                lastPrintTime=stats.get("lastPrintTime", {}),
+                                storage_entry.metadata.analysis = analysis
+                        except Exception:
+                            self._logger.exception(
+                                f"Invalid analysis metadata found for entry {path}, cleaning up..."
                             )
+                            del entry_metadata["analysis"]
+                            metadata_dirty = True
+
+                        try:
+                            if "history" in entry_metadata:
+                                history = []
+                                for h in entry_metadata["history"]:
+                                    if any(
+                                        x not in h
+                                        for x in (
+                                            "timestamp",
+                                            "success",
+                                            "printerProfile",
+                                        )
+                                    ):
+                                        continue
+                                    history.append(
+                                        HistoryEntry(
+                                            timestamp=datetime.datetime.fromtimestamp(
+                                                h["timestamp"], tz=LOCAL_TZ
+                                            ),
+                                            success=h["success"],
+                                            printerProfile=h["printerProfile"],
+                                            printTime=h.get("printTime"),
+                                        )
+                                    )
+                                storage_entry.metadata.history = history
+                        except Exception:
+                            self._logger.exception(
+                                f"Invalid history metadata found for entry {path}, cleaning up..."
+                            )
+                            del entry_metadata["history"]
+                            metadata_dirty = True
+
+                        try:
+                            if "statistics" in entry_metadata:
+                                stats = entry_metadata["statistics"]
+                                storage_entry.metadata.statistics = Statistics(
+                                    averagePrintTime=stats.get("averagePrintTime", {}),
+                                    lastPrintTime=stats.get("lastPrintTime", {}),
+                                )
+                        except Exception:
+                            self._logger.exception(
+                                f"Invalid statistics metadata found for entry {path}, cleaning up..."
+                            )
+                            del entry_metadata["statistics"]
+                            metadata_dirty = True
 
                         additional_metadata_keys = [
                             x
@@ -1945,3 +1977,75 @@ class LocalFileStorage(StorageInterface):
                 del self._persisted_metadata_locks[path]
             else:
                 self._persisted_metadata_locks[path] = (counter, lock)
+
+
+def _sanitize_analysis(analysis: dict) -> bool:
+    AREA_KEYS = ("minX", "minY", "minZ", "maxX", "maxY", "maxZ")
+    DIMENSION_KEYS = ("width", "height", "depth")
+    FILAMENT_KEYS = ("length", "volume")
+
+    dirty = False
+
+    def _sanitize_float(value, fallback: float = 0.0) -> float:
+        nonlocal dirty
+
+        try:
+            new_value = float(value)
+        except ValueError:
+            new_value = fallback
+
+        if new_value != value:
+            dirty = True
+
+        return new_value
+
+    def _sanitize_props(v: dict, keys, fallback: float = 0.0) -> dict:
+        nonlocal dirty
+
+        if not isinstance(v, dict):
+            raise ValueError("analysis field must be a dict")
+
+        for k in keys:
+            if k in v:
+                v[k] = _sanitize_float(v[k], fallback=fallback)
+            else:
+                v[k] = fallback
+                dirty = True
+
+        return v
+
+    def _sanitize_filament(f: dict, fallback: float = 0.0) -> dict:
+        if not isinstance(f, dict):
+            raise ValueError("filament usage must be a dict")
+
+        for k, v in f.items():
+            if not isinstance(v, dict):
+                raise ValueError("filament entry must be a dict")
+            f[k] = _sanitize_props(f[k], FILAMENT_KEYS)
+
+        return f
+
+    if "estimatedPrintTime" in analysis:
+        analysis["estimatedPrintTime"] = _sanitize_float(analysis["estimatedPrintTime"])
+
+    for field, keys in {
+        "printingArea": AREA_KEYS,
+        "travelArea": AREA_KEYS,
+        "dimensions": DIMENSION_KEYS,
+        "travelDimensions": DIMENSION_KEYS,
+    }.items():
+        if field in analysis:
+            try:
+                analysis[field] = _sanitize_props(analysis[field], keys)
+            except ValueError:
+                del analysis[field]
+                dirty = True
+
+    if "filament" in analysis:
+        try:
+            analysis["filament"] = _sanitize_filament(analysis["filament"])
+        except ValueError:
+            del analysis["filament"]
+            dirty = True
+
+    return dirty
