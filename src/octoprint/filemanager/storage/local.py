@@ -1882,17 +1882,12 @@ class LocalFileStorage(StorageInterface):
         if not isinstance(metadata, dict):
             return {}
 
-        if isinstance(metadata, dict):
-            metadata = {k: v for k, v in metadata.items() if clz._valid_json(v)}
-            if must_exist:
-                metadata = {
-                    k: v
-                    for k, v in metadata.items()
-                    if os.path.exists(os.path.join(path, k))
-                }
-            return metadata
-        else:
-            return {}
+        metadata = {k: v for k, v in metadata.items() if clz._valid_json(v)}
+        if must_exist:
+            metadata = {
+                k: v for k, v in metadata.items() if os.path.exists(os.path.join(path, k))
+            }
+        return metadata
 
     def _migrate_metadata(self, path):
         # we switched to json in 1.3.9 - if we still have yaml here, migrate it now
