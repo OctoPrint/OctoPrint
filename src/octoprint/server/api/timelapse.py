@@ -21,6 +21,7 @@ from octoprint.server.util.flask import (
     with_revalidation_checking,
 )
 from octoprint.settings import settings, valid_boolean_trues
+from octoprint.util.paths import is_sub_path_of
 
 _DATA_FORMAT_VERSION = "v2"
 
@@ -191,7 +192,7 @@ def deleteTimelapse(filename):
     thumb_path = octoprint.timelapse.create_thumbnail_path(full_path)
     if (
         octoprint.timelapse.valid_timelapse(full_path)
-        and full_path.startswith(os.path.realpath(timelapse_folder))
+        and is_sub_path_of(full_path, timelapse_folder)
         and os.path.exists(full_path)
         and not util.is_hidden_path(full_path)
     ):
@@ -205,7 +206,7 @@ def deleteTimelapse(filename):
 
     if (
         octoprint.timelapse.valid_timelapse_thumbnail(thumb_path)
-        and thumb_path.startswith(os.path.realpath(timelapse_folder))
+        and is_sub_path_of(thumb_path, timelapse_folder)
         and os.path.exists(thumb_path)
         and not util.is_hidden_path(thumb_path)
     ):

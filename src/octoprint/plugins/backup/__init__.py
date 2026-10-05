@@ -9,6 +9,7 @@ from octoprint.server import NO_CONTENT
 from octoprint.server.util.flask import no_firstrun_access
 from octoprint.settings import default_settings
 from octoprint.util import is_hidden_path, to_bytes, yaml
+from octoprint.util.paths import is_sub_path_of
 from octoprint.util.pip import (
     create_pip_caller,
 )
@@ -263,7 +264,7 @@ class BackupPlugin(
                 os.path.join(backup_folder, flask.request.json["path"])
             )
             if (
-                not path.startswith(backup_folder)
+                not is_sub_path_of(path, backup_folder)
                 or not os.path.exists(path)
                 or is_hidden_path(path)
             ):
@@ -786,7 +787,7 @@ class BackupPlugin(
         backup_folder = self.backups_path
         full_path = os.path.realpath(os.path.join(backup_folder, filename))
         if (
-            full_path.startswith(backup_folder)
+            is_sub_path_of(full_path, backup_folder)
             and os.path.exists(full_path)
             and not is_hidden_path(full_path)
         ):
@@ -1364,7 +1365,7 @@ class BackupPlugin(
                                     abspath = os.path.abspath(
                                         os.path.join(temp, member.filename)
                                     )
-                                    if abspath.startswith(abstemp):
+                                    if is_sub_path_of(abspath, abstemp):
                                         date_time = time.mktime(
                                             member.date_time + (0, 0, -1)
                                         )

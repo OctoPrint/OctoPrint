@@ -14,6 +14,8 @@ import requests
 import werkzeug.http
 from werkzeug.utils import secure_filename
 
+from octoprint.util.paths import is_sub_path_of
+
 _cached_check_v6 = None
 
 
@@ -342,7 +344,7 @@ def download_file(url, folder, max_length=None, connect_timeout=3.05, read_timeo
         # FIXME check content-length against safety limit
 
         path = os.path.abspath(os.path.join(folder, filename))
-        assert path.startswith(folder)
+        assert is_sub_path_of(path, folder)
 
         with open(path, "wb") as f:
             for chunk in r.iter_content(chunk_size=8192):
