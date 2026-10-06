@@ -831,6 +831,168 @@ class LocalStorageTest(unittest.TestCase):
         except Exception:
             self.fail("Expected StorageError")
 
+    @data(
+        (
+            {
+                "estimatedPrintTime": 123.0,
+                "printingArea": {
+                    "minX": 0.0,
+                    "minY": 0.0,
+                    "minZ": 0.0,
+                    "maxX": 1.0,
+                    "maxY": 2.0,
+                    "maxZ": 3.0,
+                },
+                "travelArea": {
+                    "minX": 0.0,
+                    "minY": 0.0,
+                    "minZ": 0.0,
+                    "maxX": 1.0,
+                    "maxY": 2.0,
+                    "maxZ": 3.0,
+                },
+                "dimensions": {"width": 123, "height": 456, "depth": 789},
+                "travelDimensions": {"width": 123, "height": 456, "depth": 789},
+                "filament": {"tool0": {"length": 10, "volume": 20}},
+            },
+            False,
+            {
+                "estimatedPrintTime": 123.0,
+                "printingArea": {
+                    "minX": 0.0,
+                    "minY": 0.0,
+                    "minZ": 0.0,
+                    "maxX": 1.0,
+                    "maxY": 2.0,
+                    "maxZ": 3.0,
+                },
+                "travelArea": {
+                    "minX": 0.0,
+                    "minY": 0.0,
+                    "minZ": 0.0,
+                    "maxX": 1.0,
+                    "maxY": 2.0,
+                    "maxZ": 3.0,
+                },
+                "dimensions": {"width": 123.0, "height": 456.0, "depth": 789.0},
+                "travelDimensions": {"width": 123.0, "height": 456.0, "depth": 789.0},
+                "filament": {"tool0": {"length": 10.0, "volume": 20.0}},
+            },
+        ),
+        (
+            {
+                "estimatedPrintTime": "None",
+                "printingArea": {
+                    "minX": "None",
+                    "minY": "None",
+                    "minZ": "None",
+                    "maxX": "None",
+                    "maxY": "None",
+                    "maxZ": "None",
+                },
+                "travelArea": {
+                    "minX": "None",
+                    "minY": "None",
+                    "minZ": "None",
+                    "maxX": "None",
+                    "maxY": "None",
+                    "maxZ": "None",
+                },
+                "dimensions": {"width": "None", "height": "None", "depth": "None"},
+                "travelDimensions": {"width": "None", "height": "None", "depth": "None"},
+                "filament": {"tool0": {"length": "None", "volume": "None"}},
+            },
+            True,
+            {
+                "estimatedPrintTime": 0.0,
+                "printingArea": {
+                    "minX": 0.0,
+                    "minY": 0.0,
+                    "minZ": 0.0,
+                    "maxX": 0.0,
+                    "maxY": 0.0,
+                    "maxZ": 0.0,
+                },
+                "travelArea": {
+                    "minX": 0.0,
+                    "minY": 0.0,
+                    "minZ": 0.0,
+                    "maxX": 0.0,
+                    "maxY": 0.0,
+                    "maxZ": 0.0,
+                },
+                "dimensions": {"width": 0.0, "height": 0.0, "depth": 0.0},
+                "travelDimensions": {"width": 0.0, "height": 0.0, "depth": 0.0},
+                "filament": {"tool0": {"length": 0.0, "volume": 0.0}},
+            },
+        ),
+        (
+            {
+                "estimatedPrintTime": "123.0",
+                "printingArea": {
+                    "minX": "0.0",
+                    "minY": "0.0",
+                    "minZ": "0.0",
+                    "maxX": "1.0",
+                    "maxY": "2.0",
+                    "maxZ": "3.0",
+                },
+                "travelArea": {
+                    "minX": "0.0",
+                    "minY": "0.0",
+                    "minZ": "0.0",
+                    "maxX": "1.0",
+                    "maxY": "2.0",
+                    "maxZ": "3.0",
+                },
+                "dimensions": {"width": "123", "height": "456", "depth": "789"},
+                "travelDimensions": {"width": "123", "height": "456", "depth": "789"},
+                "filament": {"tool0": {"length": "10", "volume": "20"}},
+            },
+            True,
+            {
+                "estimatedPrintTime": 123.0,
+                "printingArea": {
+                    "minX": 0.0,
+                    "minY": 0.0,
+                    "minZ": 0.0,
+                    "maxX": 1.0,
+                    "maxY": 2.0,
+                    "maxZ": 3.0,
+                },
+                "travelArea": {
+                    "minX": 0.0,
+                    "minY": 0.0,
+                    "minZ": 0.0,
+                    "maxX": 1.0,
+                    "maxY": 2.0,
+                    "maxZ": 3.0,
+                },
+                "dimensions": {"width": 123.0, "height": 456.0, "depth": 789.0},
+                "travelDimensions": {"width": 123.0, "height": 456.0, "depth": 789.0},
+                "filament": {"tool0": {"length": 10.0, "volume": 20.0}},
+            },
+        ),
+        (
+            {
+                "printingArea": "Hello",
+                "travelArea": "World",
+                "dimensions": "Goodbye",
+                "travelDimensions": "World",
+            },
+            True,
+            {},
+        ),
+    )
+    @unpack
+    def test_sanitize_analysis(self, data, expected_dirty, expected_data):
+        from octoprint.filemanager.storage.local import _sanitize_analysis
+
+        dirty = _sanitize_analysis(data)
+
+        self.assertEqual(dirty, expected_dirty)
+        self.assertEqual(data, expected_data)
+
     def _add_file(
         self, path, file_object, overwrite=False, display=None, progress_callback=None
     ):

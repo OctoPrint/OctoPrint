@@ -440,7 +440,7 @@ class TrackingPlugin(
             return
 
         sha = hashlib.sha1()
-        sha.update(payload.get("path").encode("utf-8"))
+        sha.update(payload.get("path", "n/a").encode("utf-8"))
         sha.update(unique_id.encode("utf-8"))
 
         track_event = None
