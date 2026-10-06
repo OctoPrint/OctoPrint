@@ -831,6 +831,260 @@ class LocalStorageTest(unittest.TestCase):
         except Exception:
             self.fail("Expected StorageError")
 
+    @data(
+        (
+            {
+                "estimatedPrintTime": 123.0,
+                "printingArea": {
+                    "minX": 0.0,
+                    "minY": 0.0,
+                    "minZ": 0.0,
+                    "maxX": 1.0,
+                    "maxY": 2.0,
+                    "maxZ": 3.0,
+                },
+                "travelArea": {
+                    "minX": 0.0,
+                    "minY": 0.0,
+                    "minZ": 0.0,
+                    "maxX": 1.0,
+                    "maxY": 2.0,
+                    "maxZ": 3.0,
+                },
+                "dimensions": {"width": 123, "height": 456, "depth": 789},
+                "travelDimensions": {"width": 123, "height": 456, "depth": 789},
+                "filament": {"tool0": {"length": 10, "volume": 20}},
+            },
+            False,
+            {
+                "estimatedPrintTime": 123.0,
+                "printingArea": {
+                    "minX": 0.0,
+                    "minY": 0.0,
+                    "minZ": 0.0,
+                    "maxX": 1.0,
+                    "maxY": 2.0,
+                    "maxZ": 3.0,
+                },
+                "travelArea": {
+                    "minX": 0.0,
+                    "minY": 0.0,
+                    "minZ": 0.0,
+                    "maxX": 1.0,
+                    "maxY": 2.0,
+                    "maxZ": 3.0,
+                },
+                "dimensions": {"width": 123.0, "height": 456.0, "depth": 789.0},
+                "travelDimensions": {"width": 123.0, "height": 456.0, "depth": 789.0},
+                "filament": {"tool0": {"length": 10.0, "volume": 20.0}},
+            },
+        ),  # valid
+        (
+            {
+                "estimatedPrintTime": "None",
+                "printingArea": {
+                    "minX": "None",
+                    "minY": "None",
+                    "minZ": "None",
+                    "maxX": "None",
+                    "maxY": "None",
+                    "maxZ": "None",
+                },
+                "travelArea": {
+                    "minX": "None",
+                    "minY": "None",
+                    "minZ": "None",
+                    "maxX": "None",
+                    "maxY": "None",
+                    "maxZ": "None",
+                },
+                "dimensions": {"width": "None", "height": "None", "depth": "None"},
+                "travelDimensions": {"width": "None", "height": "None", "depth": "None"},
+                "filament": {"tool0": {"length": "None", "volume": "None"}},
+            },
+            True,
+            {
+                "estimatedPrintTime": 0.0,
+                "printingArea": {
+                    "minX": 0.0,
+                    "minY": 0.0,
+                    "minZ": 0.0,
+                    "maxX": 0.0,
+                    "maxY": 0.0,
+                    "maxZ": 0.0,
+                },
+                "travelArea": {
+                    "minX": 0.0,
+                    "minY": 0.0,
+                    "minZ": 0.0,
+                    "maxX": 0.0,
+                    "maxY": 0.0,
+                    "maxZ": 0.0,
+                },
+                "dimensions": {"width": 0.0, "height": 0.0, "depth": 0.0},
+                "travelDimensions": {"width": 0.0, "height": 0.0, "depth": 0.0},
+                "filament": {"tool0": {"length": 0.0, "volume": 0.0}},
+            },
+        ),  # "None" -> fallback
+        (
+            {
+                "estimatedPrintTime": "123.0",
+                "printingArea": {
+                    "minX": "0.0",
+                    "minY": "0.0",
+                    "minZ": "0.0",
+                    "maxX": "1.0",
+                    "maxY": "2.0",
+                    "maxZ": "3.0",
+                },
+                "travelArea": {
+                    "minX": "0.0",
+                    "minY": "0.0",
+                    "minZ": "0.0",
+                    "maxX": "1.0",
+                    "maxY": "2.0",
+                    "maxZ": "3.0",
+                },
+                "dimensions": {"width": "123", "height": "456", "depth": "789"},
+                "travelDimensions": {"width": "123", "height": "456", "depth": "789"},
+                "filament": {"tool0": {"length": "10", "volume": "20"}},
+            },
+            True,
+            {
+                "estimatedPrintTime": 123.0,
+                "printingArea": {
+                    "minX": 0.0,
+                    "minY": 0.0,
+                    "minZ": 0.0,
+                    "maxX": 1.0,
+                    "maxY": 2.0,
+                    "maxZ": 3.0,
+                },
+                "travelArea": {
+                    "minX": 0.0,
+                    "minY": 0.0,
+                    "minZ": 0.0,
+                    "maxX": 1.0,
+                    "maxY": 2.0,
+                    "maxZ": 3.0,
+                },
+                "dimensions": {"width": 123.0, "height": 456.0, "depth": 789.0},
+                "travelDimensions": {"width": 123.0, "height": 456.0, "depth": 789.0},
+                "filament": {"tool0": {"length": 10.0, "volume": 20.0}},
+            },
+        ),  # floats in string -> converted
+        (
+            {
+                "printingArea": "Hello",
+                "travelArea": "World",
+                "dimensions": "Goodbye",
+                "travelDimensions": "World",
+            },
+            True,
+            {},
+        ),  # unconvertible strings -> deleted
+        (
+            {"estimatedPrintTime": "nan"},
+            True,
+            {"estimatedPrintTime": 0.0},
+        ),  # non-finite float in string -> fallback
+        (
+            {"estimatedPrintTime": None},
+            True,
+            {"estimatedPrintTime": 0.0},
+        ),  # None instead of number or string -> fallback
+    )
+    @unpack
+    def test_sanitize_analysis(self, data, expected_dirty, expected_data):
+        from octoprint.filemanager.storage.local import _sanitize_analysis
+
+        dirty = _sanitize_analysis(data)
+
+        self.assertEqual(dirty, expected_dirty)
+        self.assertEqual(data, expected_data)
+
+    @data(
+        (
+            {
+                "averagePrintTime": {"profile1": 123.0, "profile2": 456.0},
+                "lastPrintTime": {"profile1": 234.0, "profile2": 567.0},
+            },
+            False,
+            {
+                "averagePrintTime": {"profile1": 123.0, "profile2": 456.0},
+                "lastPrintTime": {"profile1": 234.0, "profile2": 567.0},
+            },
+        ),  # valid
+        (
+            {
+                "averagePrintTime": {"profile1": "None", "profile2": "None"},
+                "lastPrintTime": {"profile1": "None", "profile2": "None"},
+            },
+            True,
+            {
+                "averagePrintTime": {"profile1": 0.0, "profile2": 0.0},
+                "lastPrintTime": {"profile1": 0.0, "profile2": 0.0},
+            },
+        ),  # "None" -> fallback
+        (
+            {
+                "averagePrintTime": {"profile1": "123.0", "profile2": "456.0"},
+                "lastPrintTime": {"profile1": "234.0", "profile2": "567.0"},
+            },
+            True,
+            {
+                "averagePrintTime": {"profile1": 123.0, "profile2": 456.0},
+                "lastPrintTime": {"profile1": 234.0, "profile2": 567.0},
+            },
+        ),  # floats in string -> converted
+        (
+            {
+                "averagePrintTime": {1: 123.0, 2: 456.0},
+                "lastPrintTime": {1: 234.0, 2: 567.0},
+            },
+            True,
+            {
+                "averagePrintTime": {"1": 123.0, "2": 456.0},
+                "lastPrintTime": {"1": 234.0, "2": 567.0},
+            },
+        ),  # non string keys -> stringified
+        (
+            {"averagePrintTime": "Hello", "lastPrintTime": "World"},
+            True,
+            {},
+        ),  # entries not dicts -> removed
+        (
+            {
+                "averagePrintTime": {"profile1": "nan", "profile2": "inf"},
+                "lastPrintTime": {"profile1": "nan", "profile2": "-inf"},
+            },
+            True,
+            {
+                "averagePrintTime": {"profile1": 0.0, "profile2": 0.0},
+                "lastPrintTime": {"profile1": 0.0, "profile2": 0.0},
+            },
+        ),  # "nan" -> fallback
+        (
+            {
+                "averagePrintTime": {"profile1": None, "profile2": None},
+                "lastPrintTime": {"profile1": None, "profile2": None},
+            },
+            True,
+            {
+                "averagePrintTime": {"profile1": 0.0, "profile2": 0.0},
+                "lastPrintTime": {"profile1": 0.0, "profile2": 0.0},
+            },
+        ),  # None -> fallback
+    )
+    @unpack
+    def test_sanitize_statistics(self, data, expected_dirty, expected_data):
+        from octoprint.filemanager.storage.local import _sanitize_statistics
+
+        dirty = _sanitize_statistics(data)
+
+        self.assertEqual(dirty, expected_dirty)
+        self.assertEqual(data, expected_data)
+
     def _add_file(
         self, path, file_object, overwrite=False, display=None, progress_callback=None
     ):

@@ -1265,20 +1265,20 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                                 job_progress.progress if job_progress else 0
                             )
 
-                            def finalize():
+                            def finalize(pl):
                                 self._file_manager.log_print(
-                                    payload["origin"],
-                                    payload["path"],
+                                    pl["origin"],
+                                    pl["path"],
                                     time.time(),
-                                    payload["time"],
+                                    pl["time"],
                                     False,
                                     self._printer_profile_manager.get_current_or_default()[
                                         "id"
                                     ],
                                 )
-                                eventManager().fire(Events.PRINT_FAILED, payload)
+                                eventManager().fire(Events.PRINT_FAILED, pl)
 
-                            thread = threading.Thread(target=finalize)
+                            thread = threading.Thread(target=finalize, args=(payload,))
                             thread.daemon = True
                             thread.start()
 
@@ -1290,7 +1290,10 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                 except Exception:
                     self._logger.exception("Error while pausing the analysis queue")
 
+        ### other checks
+
         if state == ConnectedPrinterState.PRINTING and state != old_state:
+            # we are printing now but weren't before
             eventManager().fire(
                 Events.CHART_MARKED,
                 {"type": "printing", "label": "Printing"},
@@ -1300,6 +1303,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             state == ConnectedPrinterState.CLOSED
             or state == ConnectedPrinterState.CLOSED_WITH_ERROR
         ):
+            # we closed the connection
             connector = None
             if self._connection is not None:
                 connector = self._connection.connector
@@ -1571,18 +1575,18 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
             payload["reason"] = "cancelled"
 
-            def finalize():
+            def finalize(pl):
                 self._file_manager.log_print(
-                    payload["origin"],
-                    payload["path"],
+                    pl["origin"],
+                    pl["path"],
                     time.time(),
-                    payload["time"],
+                    pl["time"],
                     False,
                     self._printer_profile_manager.get_current_or_default()["id"],
                 )
-                eventManager().fire(Events.PRINT_FAILED, payload)
+                eventManager().fire(Events.PRINT_FAILED, pl)
 
-            thread = threading.Thread(target=finalize)
+            thread = threading.Thread(target=finalize, args=(payload,))
             thread.daemon = True
             thread.start()
 
