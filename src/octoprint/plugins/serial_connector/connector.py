@@ -717,7 +717,11 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         else:
             storage = FileDestinations.PRINTER if sd else FileDestinations.LOCAL
             path = self._file_manager.path_in_storage(storage, full_path)
-            job = self._file_manager.create_job(storage, path, owner=user)
+            try:
+                job = self._file_manager.create_job(storage, path, owner=user)
+            except ValueError:
+                # file selected by the printer couldn't be found for proper job creation, so let's fall back to this
+                job = PrintJob(storage=storage, path="???", display="???", owner=user)
 
         super().set_job(job)
         self._listener.on_printer_job_changed(job, user=user, data=data)
