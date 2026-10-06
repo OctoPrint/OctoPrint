@@ -1003,6 +1003,88 @@ class LocalStorageTest(unittest.TestCase):
         self.assertEqual(dirty, expected_dirty)
         self.assertEqual(data, expected_data)
 
+    @data(
+        (
+            {
+                "averagePrintTime": {"profile1": 123.0, "profile2": 456.0},
+                "lastPrintTime": {"profile1": 234.0, "profile2": 567.0},
+            },
+            False,
+            {
+                "averagePrintTime": {"profile1": 123.0, "profile2": 456.0},
+                "lastPrintTime": {"profile1": 234.0, "profile2": 567.0},
+            },
+        ),  # valid
+        (
+            {
+                "averagePrintTime": {"profile1": "None", "profile2": "None"},
+                "lastPrintTime": {"profile1": "None", "profile2": "None"},
+            },
+            True,
+            {
+                "averagePrintTime": {"profile1": 0.0, "profile2": 0.0},
+                "lastPrintTime": {"profile1": 0.0, "profile2": 0.0},
+            },
+        ),  # "None" -> fallback
+        (
+            {
+                "averagePrintTime": {"profile1": "123.0", "profile2": "456.0"},
+                "lastPrintTime": {"profile1": "234.0", "profile2": "567.0"},
+            },
+            True,
+            {
+                "averagePrintTime": {"profile1": 123.0, "profile2": 456.0},
+                "lastPrintTime": {"profile1": 234.0, "profile2": 567.0},
+            },
+        ),  # floats in string -> converted
+        (
+            {
+                "averagePrintTime": {1: 123.0, 2: 456.0},
+                "lastPrintTime": {1: 234.0, 2: 567.0},
+            },
+            True,
+            {
+                "averagePrintTime": {"1": 123.0, "2": 456.0},
+                "lastPrintTime": {"1": 234.0, "2": 567.0},
+            },
+        ),  # non string keys -> stringified
+        (
+            {"averagePrintTime": "Hello", "lastPrintTime": "World"},
+            True,
+            {},
+        ),  # entries not dicts -> removed
+        (
+            {
+                "averagePrintTime": {"profile1": "nan", "profile2": "inf"},
+                "lastPrintTime": {"profile1": "nan", "profile2": "-inf"},
+            },
+            True,
+            {
+                "averagePrintTime": {"profile1": 0.0, "profile2": 0.0},
+                "lastPrintTime": {"profile1": 0.0, "profile2": 0.0},
+            },
+        ),  # "nan" -> fallback
+        (
+            {
+                "averagePrintTime": {"profile1": None, "profile2": None},
+                "lastPrintTime": {"profile1": None, "profile2": None},
+            },
+            True,
+            {
+                "averagePrintTime": {"profile1": 0.0, "profile2": 0.0},
+                "lastPrintTime": {"profile1": 0.0, "profile2": 0.0},
+            },
+        ),  # None -> fallback
+    )
+    @unpack
+    def test_sanitize_statistics(self, data, expected_dirty, expected_data):
+        from octoprint.filemanager.storage.local import _sanitize_statistics
+
+        dirty = _sanitize_statistics(data)
+
+        self.assertEqual(dirty, expected_dirty)
+        self.assertEqual(data, expected_data)
+
     def _add_file(
         self, path, file_object, overwrite=False, display=None, progress_callback=None
     ):
