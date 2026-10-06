@@ -681,9 +681,11 @@ $(function () {
             Object.keys(response).forEach((storage) => {
                 nonrecursive =
                     nonrecursive ||
-                    response[storage].files.some(
-                        (entry) => entry.type === "folder" && entry.children === undefined
-                    );
+                    (response[storage].files &&
+                        response[storage].files.some(
+                            (entry) =>
+                                entry.type === "folder" && entry.children === undefined
+                        ));
             });
             if (nonrecursive) {
                 log.error(
