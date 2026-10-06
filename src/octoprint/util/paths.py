@@ -45,3 +45,17 @@ def is_sub_path_of(path: str, prefix: str) -> bool:
     path = os.path.realpath(path)
     prefix = os.path.realpath(prefix)
     return path == prefix or path.startswith(os.path.join(prefix, ""))
+
+
+def touch_all_until(path: str, until: str) -> None:
+    import os
+    import pathlib
+
+    if not is_sub_path_of(path, until):
+        raise ValueError(f"{path} is not a subpath of {until}")
+
+    p = pathlib.Path(path)
+    while str(p) != until:
+        os.utime(str(p), None)
+        p = p.parent
+    os.utime(str(p), None)

@@ -35,7 +35,7 @@ from octoprint.util import (
     yaml,
 )
 from octoprint.util.files import sanitize_filename
-from octoprint.util.paths import is_sub_path_of
+from octoprint.util.paths import is_sub_path_of, touch_all_until
 from octoprint.util.tz import LOCAL_TZ
 
 from .common import (
@@ -649,7 +649,7 @@ class LocalFileStorage(StorageInterface):
         self._extract_thumbnails(file_path)
 
         # touch the file to set last access and modification time to now
-        os.utime(file_path, None)
+        touch_all_until(file_path, self.basefolder)
         self._update_last_activity()
 
         if progress_callback:
