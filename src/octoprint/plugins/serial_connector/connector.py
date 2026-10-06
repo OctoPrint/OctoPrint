@@ -2,7 +2,7 @@ import copy
 import logging
 import os
 from gettext import gettext
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 import octoprint.util as util
 from octoprint.events import Events, eventManager
@@ -376,17 +376,28 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         return True
 
     @property
-    def job_progress(self) -> JobProgress:
-        if self._comm is None:
+    def job_progress(self) -> Optional[JobProgress]:
+        try:
+            progress = self._comm.getPrintProgress()
+            pos = self._comm.getPrintFilepos()
+            elapsed = self._comm.getPrintTime()
+            cleaned_elapsed = self._comm.getCleanedPrintTime()
+            left_estimate = self._comm.getPrintTimeLeft()
+        except AttributeError:
+            # self._comm is None
+            return None
+
+        job = self.current_job
+        if job is None:
             return None
 
         return JobProgress(
-            job=self.current_job,
-            progress=self._comm.getPrintProgress(),
-            pos=self._comm.getPrintFilepos(),
-            elapsed=self._comm.getPrintTime(),
-            cleaned_elapsed=self._comm.getCleanedPrintTime(),
-            left_estimate=self._comm.getPrintTimeLeft(),
+            job=job,
+            progress=progress,
+            pos=pos,
+            elapsed=elapsed,
+            cleaned_elapsed=cleaned_elapsed,
+            left_estimate=left_estimate,
         )
 
     def get_file_position(self):
