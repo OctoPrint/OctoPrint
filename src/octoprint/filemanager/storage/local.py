@@ -11,6 +11,7 @@ import shutil
 import time
 import typing
 from contextlib import contextmanager
+from math import isfinite
 from os import listdir, scandir, walk
 
 try:
@@ -1986,7 +1987,10 @@ def _sanitize_analysis(analysis: dict) -> bool:
 
         try:
             new_value = float(value)
-        except ValueError:
+        except Exception:
+            new_value = fallback
+
+        if not isfinite(new_value):
             new_value = fallback
 
         if new_value != value:
@@ -2016,7 +2020,7 @@ def _sanitize_analysis(analysis: dict) -> bool:
         for k, v in f.items():
             if not isinstance(v, dict):
                 raise ValueError("filament entry must be a dict")
-            f[k] = _sanitize_props(f[k], FILAMENT_KEYS)
+            f[k] = _sanitize_props(f[k], FILAMENT_KEYS, fallback=fallback)
 
         return f
 

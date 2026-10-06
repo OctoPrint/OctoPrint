@@ -878,7 +878,7 @@ class LocalStorageTest(unittest.TestCase):
                 "travelDimensions": {"width": 123.0, "height": 456.0, "depth": 789.0},
                 "filament": {"tool0": {"length": 10.0, "volume": 20.0}},
             },
-        ),
+        ),  # valid
         (
             {
                 "estimatedPrintTime": "None",
@@ -925,7 +925,7 @@ class LocalStorageTest(unittest.TestCase):
                 "travelDimensions": {"width": 0.0, "height": 0.0, "depth": 0.0},
                 "filament": {"tool0": {"length": 0.0, "volume": 0.0}},
             },
-        ),
+        ),  # "None" -> fallback
         (
             {
                 "estimatedPrintTime": "123.0",
@@ -972,7 +972,7 @@ class LocalStorageTest(unittest.TestCase):
                 "travelDimensions": {"width": 123.0, "height": 456.0, "depth": 789.0},
                 "filament": {"tool0": {"length": 10.0, "volume": 20.0}},
             },
-        ),
+        ),  # floats in string -> converted
         (
             {
                 "printingArea": "Hello",
@@ -982,7 +982,17 @@ class LocalStorageTest(unittest.TestCase):
             },
             True,
             {},
-        ),
+        ),  # unconvertible strings -> deleted
+        (
+            {"estimatedPrintTime": "nan"},
+            True,
+            {"estimatedPrintTime": 0.0},
+        ),  # non-finite float in string -> fallback
+        (
+            {"estimatedPrintTime": None},
+            True,
+            {"estimatedPrintTime": 0.0},
+        ),  # None instead of number or string -> fallback
     )
     @unpack
     def test_sanitize_analysis(self, data, expected_dirty, expected_data):
