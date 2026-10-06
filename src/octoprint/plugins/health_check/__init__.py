@@ -206,7 +206,7 @@ class HealthCheckPlugin(
         return {
             Permissions.SETTINGS: [["ignore_info_results"], ["ignore_warning_results"]],
             "never": [
-                ["checks"],
+                ["checks", "python_eol"],
                 ["disabled"],
                 ["check_interval"],
             ],
