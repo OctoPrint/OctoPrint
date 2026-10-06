@@ -1493,6 +1493,7 @@ class LocalFileStorage(StorageInterface):
                                 if to_delete:
                                     for idx in reversed(to_delete):
                                         del entry_metadata["history"][idx]
+                                    metadata_dirty = True
 
                                 storage_entry.metadata.history = history
                         except Exception:
