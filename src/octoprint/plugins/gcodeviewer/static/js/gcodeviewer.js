@@ -510,6 +510,16 @@ $(function () {
         };
 
         self.loadFile = function (storage, path, date, size, force) {
+            if (typeof path !== "string") {
+                // old signature (path, date, ...) used, probably called by a 3rd party plugin like UICustomizer
+                // -> set storage to "local" and move args as needed
+                force = size;
+                size = date;
+                date = path;
+                path = storage;
+                storage = "local";
+            }
+
             self.enableReload(false);
             self.needsLoad = false;
             if (

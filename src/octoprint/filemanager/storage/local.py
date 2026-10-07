@@ -11,6 +11,7 @@ import shutil
 import time
 import typing
 from contextlib import contextmanager
+from math import isfinite
 from os import listdir, scandir, walk
 
 try:
@@ -33,7 +34,7 @@ from octoprint.util import (
     yaml,
 )
 from octoprint.util.files import sanitize_filename
-from octoprint.util.paths import is_sub_path_of
+from octoprint.util.paths import is_sub_path_of, touch_all_until
 from octoprint.util.tz import LOCAL_TZ
 
 from .common import (
@@ -647,7 +648,7 @@ class LocalFileStorage(StorageInterface):
         self._extract_thumbnails(file_path)
 
         # touch the file to set last access and modification time to now
-        os.utime(file_path, None)
+        touch_all_until(file_path, self.basefolder)
         self._update_last_activity()
 
         if progress_callback:
@@ -1458,7 +1459,8 @@ class LocalFileStorage(StorageInterface):
                         try:
                             if "history" in entry_metadata:
                                 history = []
-                                for h in entry_metadata["history"]:
+                                to_delete = []
+                                for idx, h in enumerate(entry_metadata["history"]):
                                     if any(
                                         x not in h
                                         for x in (
@@ -1468,16 +1470,30 @@ class LocalFileStorage(StorageInterface):
                                         )
                                     ):
                                         continue
-                                    history.append(
-                                        HistoryEntry(
-                                            timestamp=datetime.datetime.fromtimestamp(
-                                                h["timestamp"], tz=LOCAL_TZ
-                                            ),
-                                            success=h["success"],
-                                            printerProfile=h["printerProfile"],
-                                            printTime=h.get("printTime"),
+
+                                    try:
+                                        history.append(
+                                            HistoryEntry(
+                                                timestamp=datetime.datetime.fromtimestamp(
+                                                    h["timestamp"], tz=LOCAL_TZ
+                                                ),
+                                                success=h["success"],
+                                                printerProfile=h["printerProfile"],
+                                                printTime=h.get("printTime"),
+                                            )
                                         )
-                                    )
+                                    except Exception:
+                                        self._logger.exception(
+                                            f"Invalid history metadata found for entry {path} at index {idx}, cleaning up..."
+                                        )
+                                        to_delete.append(idx)
+                                        continue
+
+                                if to_delete:
+                                    for idx in reversed(to_delete):
+                                        del entry_metadata["history"][idx]
+                                    metadata_dirty = True
+
                                 storage_entry.metadata.history = history
                         except Exception:
                             self._logger.exception(
@@ -1489,6 +1505,11 @@ class LocalFileStorage(StorageInterface):
                         try:
                             if "statistics" in entry_metadata:
                                 stats = entry_metadata["statistics"]
+
+                                metadata_dirty = (
+                                    _sanitize_statistics(stats) or metadata_dirty
+                                )
+
                                 storage_entry.metadata.statistics = Statistics(
                                     averagePrintTime=stats.get("averagePrintTime", {}),
                                     lastPrintTime=stats.get("lastPrintTime", {}),
@@ -1985,7 +2006,10 @@ def _sanitize_analysis(analysis: dict) -> bool:
 
         try:
             new_value = float(value)
-        except ValueError:
+        except Exception:
+            new_value = fallback
+
+        if not isfinite(new_value):
             new_value = fallback
 
         if new_value != value:
@@ -2015,7 +2039,7 @@ def _sanitize_analysis(analysis: dict) -> bool:
         for k, v in f.items():
             if not isinstance(v, dict):
                 raise ValueError("filament entry must be a dict")
-            f[k] = _sanitize_props(f[k], FILAMENT_KEYS)
+            f[k] = _sanitize_props(f[k], FILAMENT_KEYS, fallback=fallback)
 
         return f
 
@@ -2040,6 +2064,58 @@ def _sanitize_analysis(analysis: dict) -> bool:
             analysis["filament"] = _sanitize_filament(analysis["filament"])
         except ValueError:
             del analysis["filament"]
+            dirty = True
+
+    return dirty
+
+
+def _sanitize_statistics(stats: dict) -> bool:
+    KEYS = ("averagePrintTime", "lastPrintTime")
+
+    dirty = False
+
+    def _sanitize_float(value, fallback: float = 0.0) -> float:
+        nonlocal dirty
+
+        try:
+            new_value = float(value)
+        except Exception:
+            new_value = fallback
+
+        if not isfinite(new_value):
+            new_value = fallback
+
+        if new_value != value:
+            dirty = True
+
+        return new_value
+
+    def _sanitize_entry(entry: dict, fallback: float = 0.0) -> dict:
+        nonlocal dirty
+
+        if not isinstance(entry, dict):
+            raise ValueError("statistics entry must be a dict")
+
+        result = {}
+        for k, v in entry.items():
+            str_k = str(k)
+            if str_k != k:
+                dirty = True
+
+            result[str_k] = _sanitize_float(v)
+        return result
+
+    if not isinstance(stats, dict):
+        raise ValueError("statistics must be a dict")
+
+    for key in KEYS:
+        if key not in stats:
+            continue
+
+        try:
+            stats[key] = _sanitize_entry(stats[key])
+        except ValueError:
+            del stats[key]
             dirty = True
 
     return dirty

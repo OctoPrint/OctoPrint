@@ -548,7 +548,7 @@ class ConnectedPrinterMixin(CommonPrinterMixin):
         return self.printer_capabilities
 
     @property
-    def job_progress(self) -> JobProgress:
+    def job_progress(self) -> Optional[JobProgress]:
         return None
 
     @property
