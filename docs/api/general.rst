@@ -121,6 +121,27 @@ Content Type
 
 If not otherwise stated, OctoPrint's API expects request bodies and issues response bodies as ``Content-Type: application/json``.
 
+.. _sec-api-general-contenttype-multipart:
+
+Special handling of ``multipart/form-data``
+-------------------------------------------
+
+In order to support the upload of files that exceed the available system memory, OctoPrint preprocesses all requests with
+``Content-Type: multipart/form-data`` (as used for upload endpoints like :ref:`Upload file <sec-api-fileops-uploadfile>`).
+
+OctoPrint will rewrite the body before forwarding it to the internal API endpoint: included files will be extracted and written 
+to disk in a temporary folder, their part will then be replaced by parts containing the name, path, size and -- if available --
+the content type of the uploaded file. The names of those parts depend on the original name of the part containing the
+upload, with a suffix:
+
+* ``<part name>.name``: the file name
+* ``<part name>.path``: the path of the temporary file on disk
+* ``<part name>.size``: the file size
+* ``<part name>.content_type``: the content type according to the original part header
+
+Example: An upload request containing a part named ``file`` with an attached file will get replaced by parts ``file.name``,
+``file.path``, ``file.size`` and -- if a content type has been provided -- ``file.content_type``.
+
 .. _sec-api-general-encoding:
 
 Encoding
