@@ -840,6 +840,6 @@ def filter_lines(lines, sub):
     elif isinstance(sub, str):
         return [line for line in lines if sub in line]
     elif isinstance(sub, re.Pattern):
-        return [line for line in lines if sub.match(line)]
+        return [line for line in lines if sub.fullmatch(line)]
     else:
         return []

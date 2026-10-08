@@ -58,6 +58,8 @@ def test_fnmatch_or_boolean_error(value):
         pytest.param("foo", LINES[1:2], id="longer substring match"),
         pytest.param(to_pattern("foo", after=True), LINES[1:2], id="suffix match"),
         pytest.param(to_pattern("fnord", before=True), LINES[1:2], id="prefix match"),
+        pytest.param(to_pattern("bar", after=True), [], id="unsuccessful suffix match"),
+        pytest.param(to_pattern("bar", before=True), [], id="unsuccessful prefix match"),
     ],
 )
 def test_filter_lines(sub, expected):
