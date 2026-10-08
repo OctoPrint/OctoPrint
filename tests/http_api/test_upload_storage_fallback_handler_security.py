@@ -4,6 +4,8 @@ from urllib.parse import urlencode, urlsplit
 import pytest
 import urllib3
 
+from octoprint.server.util.tornado import UploadStorageFallbackHandler
+
 pytestmark = pytest.mark.http_api
 
 FILENAME = "usfhsec.gcode"
@@ -12,8 +14,6 @@ PATH = "/path/to/secret.txt"
 CONTENT = "M117 USFH Sec Test"
 BOUNDARY = "RandomMultiPartBoundary1234567890"
 CRLF = "\r\n"
-MAX_PART_SIZE = 512
-MAX_HEADER_SIZE = 512
 
 
 def _percent_encode_fully(data):
@@ -152,6 +152,16 @@ def test_form_rejection(baseURL, headers, setup):
             f"multipart/form-data; boundary={BOUNDARY}",
             id="body injection in RFC 5987 filename",
         ),
+        pytest.param(
+            (
+                f"--{BOUNDARY}{CRLF}"
+                f'content-disposition: form-data; name="file"; filename="{FILENAME}"{CRLF}'
+                f"content-type: text/plain{CRLF}{CRLF}"
+                f"{CONTENT}{CRLF}"
+            ),
+            f"multipart/form-data; boundary={BOUNDARY}",
+            id="missing final boundary",
+        ),
     ],
 )
 def test_multipart_rejection(baseURL, headers, setup, body, content_type):
@@ -242,21 +252,28 @@ def test_multipart_noop(baseURL, headers, setup, body, content_type):
 
 
 @pytest.mark.parametrize(
-    "body, content_type",
+    "body",
     [
         pytest.param(
             (
                 f"--{BOUNDARY}{CRLF}"
-                f'content-disposition: form-data; name="foldername"; x="{"x" * (MAX_HEADER_SIZE)}"{CRLF}{CRLF}'
+                f'content-disposition: form-data; name="foldername"; x="{"x" * (UploadStorageFallbackHandler.MAX_PART_HEADER_SIZE)}"{CRLF}{CRLF}'
                 f"{FOLDERNAME}{CRLF}"
                 f"--{BOUNDARY}--{CRLF}"
             ),
-            f"multipart/form-data; boundary={BOUNDARY}",
-            id="folder name above max part size",
-        )
+            id="part header above max part size",
+        ),
+        pytest.param(
+            (
+                f"--{BOUNDARY}{CRLF}"
+                f'content-disposition: form-data; name="foldername"; x="{"x" * (UploadStorageFallbackHandler.MAX_PART_HEADER_SIZE)}"'
+            ),
+            id="unclosed part header",
+        ),
     ],
 )
-def test_multipart_large_header(baseURL, headers, setup, body, content_type):
+def test_multipart_large_header(baseURL, headers, setup, body):
+    content_type = f"multipart/form-data; boundary={BOUNDARY}"
     hdrs = dict(**headers, **{"Content-Type": content_type})
 
     resp = urllib3.request("POST", baseURL + "/api/files/local", body=body, headers=hdrs)
@@ -265,21 +282,21 @@ def test_multipart_large_header(baseURL, headers, setup, body, content_type):
 
 
 @pytest.mark.parametrize(
-    "body, content_type",
+    "body",
     [
         pytest.param(
             (
                 f"--{BOUNDARY}{CRLF}"
                 f'content-disposition: form-data; name="foldername"{CRLF}{CRLF}'
-                f"{'x' * (MAX_PART_SIZE + 1)}{CRLF}"
+                f"{'x' * (UploadStorageFallbackHandler.MAX_PART_SIZE + 1)}{CRLF}"
                 f"--{BOUNDARY}--{CRLF}"
             ),
-            f"multipart/form-data; boundary={BOUNDARY}",
             id="folder name above max part size",
         )
     ],
 )
-def test_multipart_large_part(baseURL, headers, setup, body, content_type):
+def test_multipart_large_part(baseURL, headers, setup, body):
+    content_type = f"multipart/form-data; boundary={BOUNDARY}"
     hdrs = dict(**headers, **{"Content-Type": content_type})
 
     resp = urllib3.request("POST", baseURL + "/api/files/local", body=body, headers=hdrs)

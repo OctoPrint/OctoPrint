@@ -279,8 +279,11 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
     BODY_METHODS = ("POST", "PATCH", "PUT")
     """The request methods that may contain a request body."""
 
-    MAX_PART_SIZE = 512
-    """Non-file multipart parts have a max size of 512B. So do multipart headers."""
+    MAX_PART_HEADER_SIZE = 1024  # 1KB
+    """Max size for a part header"""
+
+    MAX_PART_SIZE = 10 * 1024 * 1024  # 10MB
+    """Max size for non-file multipart parts"""
 
     def initialize(
         self,
@@ -289,6 +292,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         file_suffix="",
         path=None,
         suffixes=None,
+        max_part_header_size=None,
         max_part_size=None,
     ):
         if not suffixes:
@@ -298,6 +302,10 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         self._file_prefix = file_prefix
         self._file_suffix = file_suffix
         self._path = path
+
+        self._max_part_header_size = self.MAX_PART_HEADER_SIZE
+        if max_part_header_size:
+            self._max_part_header_size = max_part_header_size
 
         self._max_part_size = self.MAX_PART_SIZE
         if max_part_size:
@@ -398,9 +406,16 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         :param chunk: chunk of data received from Tornado
         """
 
-        self._buffer += chunk
-        if self.is_multipart():
-            self._process_multipart_data()
+        try:
+            self._buffer += chunk
+            if self.is_multipart():
+                self._process_multipart_data()
+        except tornado.web.HTTPError as exc:
+            self.log_exception(*sys.exc_info())
+            self.send_error(exc.status_code, reason=exc.reason)
+        except Exception:
+            self.log_exception(*sys.exc_info())
+            self.send_error(500)
 
     def is_multipart(self):
         """Checks whether this request is a ``multipart`` request"""
@@ -430,12 +445,24 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
             data, self._buffer = data[0:-endlen], data[-endlen:]
 
         # check for part header size limit
-        if not self._current_part and len(self._buffer) > self.MAX_PART_SIZE:
-            # if we don't have a current part we are looking for the end of the part header... if the buffer
-            # has grown beyond our max size, that means the part header didn't end within this size and it's
-            # time to give up to avoid GHSA-5m55-48wq-2q7j
-            self.send_error(400)
-            return
+        if (
+            delimiter_loc != -1  # part header start found
+            and (
+                (
+                    end_of_header == -1 and len(self._buffer) > self._max_part_header_size
+                )  # no part header end & buffer too big
+                or (
+                    end_of_header >= 0
+                    and end_of_header - delimiter_loc > self._max_part_header_size
+                )  # part header size too big
+            )
+        ):
+            # if the buffer has grown beyond our max size, that means the part header didn't
+            # end within this size and it's time to give up to avoid GHSA-5m55-48wq-2q7j
+            raise tornado.web.HTTPError(
+                400,
+                log_message="invalid multipart/form-data: part header larger than limit",
+            )
 
         # stream data to part handler
         if data and self._current_part:
@@ -481,11 +508,10 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
                 header_str = header.decode("iso-8859-1")
             except Exception:
                 # looks like we couldn't decode something here neither as UTF-8 nor ISO-8859-1
-                self._logger.warning(
-                    "Could not decode multipart headers in request, should be either UTF-8 or ISO-8859-1"
+                raise tornado.web.HTTPError(  # noqa: B904
+                    400,
+                    log_message="invalid multipart/form-data: could not decode multipart headers in request, neither UTF-8 nor ISO-8859-1",
                 )
-                self.send_error(400)
-                return
 
         header = header_line_to_dict(header_str)
         disp_header = header.get("Content-Disposition", "")
@@ -506,17 +532,18 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
                 filename = _extended_header_value(filename)
                 if "\r" in filename or "\n" in filename:
                     raise tornado.web.HTTPError(
-                        400, "line feeds detected in RFC 5987 header"
+                        400,
+                        log_message="invalid multipart/form-data: extended filename* value contains newlines",
                     )
+            except tornado.web.HTTPError:
+                # contains newlines
+                raise
             except Exception:
-                # parse error, this is not RFC 5987 compliant after all or contains newlines
-                self._logger.warning(
-                    "extended filename* value {!r} is not RFC 5987 compliant or contains newlines".format(
-                        filename
-                    )
+                # parse error, this is not RFC 5987 compliant
+                raise tornado.web.HTTPError(  # noqa: B904
+                    400,
+                    log_message="invalid multipart/form-data: extended filename* value is not RFC 5987 compliant",
                 )
-                self.send_error(400)
-                return
         else:
             # no filename* header, just strip quotes from filename header then and be done
             filename = _strip_value_quotes(disp_params.get("filename", None))
@@ -690,7 +717,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
                     # no change between iterations, something fishy is going on, abort, abort!
                     raise tornado.web.HTTPError(
                         400,
-                        log_message="Invalid multipart/form-data: no final boundary found",
+                        log_message="invalid multipart/form-data: no final boundary found",
                     )
                 buffer_len = len(self._buffer)
 
@@ -737,7 +764,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
             body = bytes(self._buffer)
         if self._has_reserved_field(body):
             raise tornado.web.HTTPError(
-                400, log_message="Request contains a reserved field name"
+                400, log_message="request contains a reserved field name"
             )
 
     def _has_reserved_field(self, body: bytes):
