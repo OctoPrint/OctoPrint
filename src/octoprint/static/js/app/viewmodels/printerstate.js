@@ -372,6 +372,8 @@ $(function () {
         };
 
         self._fromData = function (data) {
+            if (!data) return;
+
             self._processStateData(data.state);
             self._processJobData(data.job);
             self._processProgressData(data.progress);
@@ -384,6 +386,8 @@ $(function () {
         };
 
         self._processStateData = function (data) {
+            if (!data) return;
+
             var prevPaused = self.isPaused();
 
             self.stateString(gettext(data.text));
@@ -411,7 +415,13 @@ $(function () {
 
         self._cachedFileKey = undefined;
         self._syncMetadata = (data) => {
-            if (data.file && data.file.origin && data.file.path && !data.file.upload) {
+            if (
+                data &&
+                data.file &&
+                data.file.origin &&
+                data.file.path &&
+                !data.file.upload
+            ) {
                 const futureFileKey = self.calcFileKey(data.file);
                 if (futureFileKey !== self._cachedFileKey) {
                     const currentFileKey = self.calcFileKey();
@@ -434,6 +444,8 @@ $(function () {
         };
 
         self._processJobData = (data) => {
+            if (!data) return;
+
             self._syncMetadata(data);
 
             self.estimatedPrintTime(data.estimatedPrintTime);
@@ -471,6 +483,8 @@ $(function () {
         };
 
         self._processProgressData = function (data) {
+            if (!data) return;
+
             if (data.completion) {
                 self.progress(data.completion);
             } else {
@@ -491,6 +505,8 @@ $(function () {
         };
 
         self._processBusyFiles = function (data) {
+            if (!data) return;
+
             var busyFiles = [];
             _.each(data, function (entry) {
                 if (entry.hasOwnProperty("path") && entry.hasOwnProperty("origin")) {
@@ -501,6 +517,8 @@ $(function () {
         };
 
         self._processHealth = function (data) {
+            if (!data) return;
+
             self.healthErrorCount(data.count);
             self.healthTotalCount(data.transmitted);
             self.healthRatio(data.ratio);

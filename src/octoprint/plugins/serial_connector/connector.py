@@ -377,16 +377,27 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
 
     @property
     def job_progress(self) -> Optional[JobProgress]:
-        if self._comm is None:
+        try:
+            progress = self._comm.getPrintProgress()
+            pos = self._comm.getPrintFilepos()
+            elapsed = self._comm.getPrintTime()
+            cleaned_elapsed = self._comm.getCleanedPrintTime()
+            left_estimate = self._comm.getPrintTimeLeft()
+        except AttributeError:
+            # self._comm is None
+            return None
+
+        job = self.current_job
+        if job is None:
             return None
 
         return JobProgress(
-            job=self.current_job,
-            progress=self._comm.getPrintProgress(),
-            pos=self._comm.getPrintFilepos(),
-            elapsed=self._comm.getPrintTime(),
-            cleaned_elapsed=self._comm.getCleanedPrintTime(),
-            left_estimate=self._comm.getPrintTimeLeft(),
+            job=job,
+            progress=progress,
+            pos=pos,
+            elapsed=elapsed,
+            cleaned_elapsed=cleaned_elapsed,
+            left_estimate=left_estimate,
         )
 
     def get_file_position(self):
@@ -711,7 +722,11 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         else:
             storage = FileDestinations.PRINTER if sd else FileDestinations.LOCAL
             path = self._file_manager.path_in_storage(storage, full_path)
-            job = self._file_manager.create_job(storage, path, owner=user)
+            try:
+                job = self._file_manager.create_job(storage, path, owner=user)
+            except ValueError:
+                # file selected by the printer couldn't be found for proper job creation, so let's fall back to this
+                job = PrintJob(storage=storage, path="???", display="???", owner=user)
 
         super().set_job(job)
         self._listener.on_printer_job_changed(job, user=user, data=data)
