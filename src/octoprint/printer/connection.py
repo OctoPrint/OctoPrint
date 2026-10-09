@@ -103,11 +103,11 @@ class ConnectedPrinterListenerMixin:
         pass
 
     def on_printer_state_changed(
-        self, state: ConnectedPrinterState, error_str: str = None
+        self, state: ConnectedPrinterState, error_str: Optional[str] = None
     ):
         pass
 
-    def on_printer_position_changed(self, position: dict, reason: str = None):
+    def on_printer_position_changed(self, position: dict, reason: Optional[str] = None):
         """
         ``position`` will be a dict that might contain any of
 
@@ -148,10 +148,14 @@ class ConnectedPrinterListenerMixin:
     def on_printer_record_recovery_position(self, job: PrintJob, pos: int):
         pass
 
-    def on_printer_job_changed(self, job: PrintJob, user: str = None, data: dict = None):
+    def on_printer_job_changed(
+        self, job: PrintJob, user: Optional[str] = None, data: Optional[dict] = None
+    ):
         pass
 
-    def on_printer_job_started(self, suppress_script: bool = False, user: str = None):
+    def on_printer_job_started(
+        self, suppress_script: bool = False, user: Optional[str] = None
+    ):
         pass
 
     def on_printer_job_progress(self):
@@ -247,7 +251,7 @@ class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterRegistra
     def __init__(
         self,
         owner: PrinterMixin,
-        listener: ConnectedPrinterListenerMixin = None,
+        listener: Optional[ConnectedPrinterListenerMixin] = None,
         profile=None,
         *args,
         **kwargs,
@@ -269,10 +273,10 @@ class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterRegistra
         self._logger = logging.getLogger(__name__)
 
     @property
-    def current_job(self) -> PrintJob:
+    def current_job(self) -> Optional[PrintJob]:
         return self._job
 
-    def set_job(self, job: PrintJob, *args, **kwargs) -> None:
+    def set_job(self, job: Optional[PrintJob], *args, **kwargs) -> None:
         self._job = job
         self._listener.on_printer_job_changed(job, user=kwargs.get("user"))
 
@@ -318,11 +322,11 @@ class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterRegistra
     def state(self, value: ConnectedPrinterState) -> None:
         self.set_state(value)
 
-    def set_state(self, state: ConnectedPrinterState, error: str = None):
+    def set_state(self, state: ConnectedPrinterState, error: Optional[str] = None):
         self._state = state
         self._listener.on_printer_state_changed(state, error_str=error)
 
-    def get_state_string(self, state: ConnectedPrinterState = None):
+    def get_state_string(self, state: Optional[ConnectedPrinterState] = None):
         if state is None:
             state = self.state
         return state.value

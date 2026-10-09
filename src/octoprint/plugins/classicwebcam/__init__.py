@@ -4,6 +4,7 @@ __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms
 import threading
 
 import requests
+import requests.auth
 from flask_babel import gettext
 
 import octoprint.access

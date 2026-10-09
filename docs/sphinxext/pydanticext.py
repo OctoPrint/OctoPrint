@@ -92,7 +92,7 @@ class PydanticModelInspector:
             ]
         )
 
-    def _convert_name(self, name: str, subs: dict[str, str] = None) -> str:
+    def _convert_name(self, name: str, subs: Optional[dict[str, str]] = None) -> str:
         if subs is None:
             subs = {}
 
@@ -120,7 +120,7 @@ class PydanticModelInspector:
 
         return type_
 
-    def _type_name(self, type_: type, subs: dict[str, str] = None) -> str:
+    def _type_name(self, type_: type, subs: Optional[dict[str, str]] = None) -> str:
         if inspect.isclass(type_) and hasattr(type_, "__name__"):
             name = type_.__name__
         else:
@@ -136,7 +136,7 @@ class PydanticModelInspector:
 
         return "".join(token[1] for token in processed)
 
-    def _type_doc(self, type_: type, subs: dict[str, str] = None) -> str:
+    def _type_doc(self, type_: type, subs: Optional[dict[str, str]] = None) -> str:
         type_ = self._strip_container_types(type_)
 
         if inspect.isclass(type_) and issubclass(type_, Enum):
@@ -147,7 +147,7 @@ class PydanticModelInspector:
         return name
 
     def _field_doc(
-        self, name: str, field: FieldInfo, t: type, subs: dict[str, str] = None
+        self, name: str, field: FieldInfo, t: type, subs: Optional[dict[str, str]] = None
     ) -> PydanticFieldDoc:
         type_ = self._type_doc(t, subs=subs)
 
@@ -196,7 +196,7 @@ class PydanticModelInspector:
         )
 
     def _model_doc(
-        self, model: BaseModel, prefix: str = "", subs: dict[str, str] = None
+        self, model: BaseModel, prefix: str = "", subs: Optional[dict[str, str]] = None
     ) -> list[PydanticFieldDoc]:
         result = []
 

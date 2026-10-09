@@ -20,7 +20,7 @@ import threading
 import time
 from collections import deque, namedtuple
 from functools import partial
-from typing import IO, Union
+from typing import IO, Optional, Union
 
 import serial
 import wrapt
@@ -5768,8 +5768,8 @@ class MachineCom:
                 return self._emergency_force_send(
                     cmd,
                     f"Force-sending {gcode} to the printer",
+                    gcode,
                     *args,
-                    gcode=gcode,
                     **kwargs,
                 )
 
@@ -5847,7 +5847,7 @@ class MachineComPrintCallback:
     def on_comm_error(self, error, reason, consequence=None, faq=None, logs=None):
         pass
 
-    def on_comm_progress(self, progress: float, remaining: float = None):
+    def on_comm_progress(self):
         pass
 
     def on_comm_print_job_started(self, suppress_script=False, user=None):
@@ -6070,10 +6070,12 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 
         return super().getProgress()
 
-    def getRemainingPrintTime(self) -> float:
+    def getRemainingPrintTime(self) -> Optional[float]:
         return self._print_time_left_m73
 
-    def fromM73(self, progress: float = None, time_left: float = None):
+    def fromM73(
+        self, progress: Optional[float] = None, time_left: Optional[float] = None
+    ):
         if progress is not None:
             self._progress_m73 = progress
         if time_left is not None:
@@ -6188,7 +6190,9 @@ class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
         self._local_name = local_name
         self._remote_name = remote_name
 
-    def fromM73(self, progress: float = None, time_left: float = None):
+    def fromM73(
+        self, progress: Optional[float] = None, time_left: Optional[float] = None
+    ):
         pass  # disabled
 
     def start(self):
@@ -7149,8 +7153,6 @@ def upload_cli():
 
     import sys
 
-    from octoprint.util import Object
-
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
@@ -7223,17 +7225,15 @@ def upload_cli():
 
     callback = MyMachineComCallback(path, target)
 
-    # mock printer profile manager
+    # mock printer profile
     profile = {"heatedBed": False, "extruder": {"count": 1, "sharedNozzle": False}}
-    printer_profile_manager = Object()
-    printer_profile_manager.get_current_or_default = lambda: profile
 
     # initialize serial
     comm = MachineCom(
+        profile,
         port=port,
         baudrate=baudrate,
         callback=callback,
-        printerProfileManager=printer_profile_manager,
     )
     callback.comm = comm
 

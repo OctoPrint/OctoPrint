@@ -6,7 +6,7 @@ import tarfile
 import tempfile
 import zipfile
 from collections.abc import Generator
-from typing import Optional, Union
+from typing import Callable, Optional, Union
 
 import filetype
 
@@ -84,7 +84,11 @@ def is_pre_pep517_plugin_package(path: str) -> bool:
                 if not setup_py:
                     return False
 
-                with archive.extractfile(setup_py.name) as f:
+                setup_py_file = archive.extractfile(setup_py.name)
+                if setup_py_file is None:
+                    return False
+
+                with setup_py_file as f:
                     setup_py_bytes = f.readlines()
                 return has_legacy_octoprint_setuptools_dependency(
                     b"\n".join(setup_py_bytes)
@@ -113,7 +117,7 @@ class InstallPreparationResult:
 
 @contextlib.contextmanager
 def prepare_install(
-    install_arg: str, log: callable = None
+    install_arg: str, log: Optional[Callable] = None
 ) -> Generator[InstallPreparationResult, None, None]:
     from octoprint.util.net import download_file
 

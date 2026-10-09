@@ -254,7 +254,7 @@ class ControlProperties:
 
 
 _EntryPointOrigin = namedtuple(
-    "EntryPointOrigin", "type, entry_point, module_name, package_name, package_version"
+    "_EntryPointOrigin", "type, entry_point, module_name, package_name, package_version"
 )
 
 
@@ -284,7 +284,7 @@ class EntryPointOrigin(_EntryPointOrigin):
     """
 
 
-_FolderOrigin = namedtuple("FolderOrigin", "type, folder")
+_FolderOrigin = namedtuple("_FolderOrigin", "type, folder")
 
 
 class FolderOrigin(_FolderOrigin):
@@ -301,7 +301,7 @@ class FolderOrigin(_FolderOrigin):
     """
 
 
-_ModuleOrigin = namedtuple("ModuleOrigin", "type, module_name, folder")
+_ModuleOrigin = namedtuple("_ModuleOrigin", "type, module_name, folder")
 
 
 class ModuleOrigin(_ModuleOrigin):

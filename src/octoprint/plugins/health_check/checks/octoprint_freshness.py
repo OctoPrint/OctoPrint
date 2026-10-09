@@ -1,3 +1,5 @@
+from typing import Optional
+
 from packaging.version import Version, parse
 
 if __name__ == "__main__":
@@ -9,7 +11,7 @@ from . import CheckResult, HealthCheck, Result
 class OctoPrintFreshnessCheck(HealthCheck):
     key = "octoprint_freshness"
 
-    def __init__(self, settings: dict = None):
+    def __init__(self, settings: Optional[dict] = None):
         super().__init__(settings)
 
         self._versions = None
@@ -21,7 +23,7 @@ class OctoPrintFreshnessCheck(HealthCheck):
 
         return self._versions
 
-    def perform_check(self, force: bool = False) -> CheckResult:
+    def perform_check(self, force: bool = False) -> Optional[CheckResult]:
         from octoprint.util.version import get_octoprint_version
 
         if force:

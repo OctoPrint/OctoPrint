@@ -6,9 +6,11 @@ from packaging.version import parse as parse_version
 from tqdm import tqdm
 
 try:
+    # ty: ignore[unresolved-import] - tomllib is only available on Python 3.11+
     import tomllib
 except ImportError:
-    import tomli as tomllib  # Python < 3.11
+    # ty: ignore[unresolved-import] - tomli is only installed on Python < 3.11
+    import tomli as tomllib
 
 
 PYPI_SIMPLE = "https://pypi.org/simple/{package}/"
