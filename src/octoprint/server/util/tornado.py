@@ -279,11 +279,14 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
     BODY_METHODS = ("POST", "PATCH", "PUT")
     """The request methods that may contain a request body."""
 
-    MAX_PART_HEADER_SIZE = 1024  # 1KB
-    """Max size for a part header"""
+    MAX_PARTS = 100  # Flask's MAX_FORM_PARTS is larger to allow for one file part being turned into 3-4 new parts
+    """Max number of parts supported in a multipart request"""
 
-    MAX_PART_SIZE = 10 * 1024 * 1024  # 10MB
-    """Max size for non-file multipart parts"""
+    MAX_PART_HEADER_SIZE = 5 * 1024  # 5KB
+    """Max size for a part header in a multipart request"""
+
+    MAX_PART_SIZE = 500 * 1024  # 500KB, aligned with Flask's MAX_FORM_MEMORY_SIZE
+    """Max size for non-file multipart parts in multipart requests"""
 
     def initialize(
         self,
@@ -492,6 +495,13 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         if self._current_part:
             self._on_part_finish(self._current_part)
             self._current_part = None
+
+        # check for max part count
+        if len(self._parts) >= self.MAX_PARTS:
+            raise tornado.web.HTTPError(  # noqa: B904
+                400,
+                log_message="invalid multipart/form-data: too many parts",
+            )
 
         header_check = header.find(self._multipart_boundary)
         if header_check != -1:

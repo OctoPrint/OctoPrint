@@ -187,8 +187,9 @@ To protect the resources of the underlying system, OctoPrint applies some limita
      * Backup restore upload (``/plugin/backup/restore``): 1GB
      * Plugin archive upload (``/plugin/pluginmanager/upload_file``): 50MB
    Plugins may define additional exceptions with higher limits for their own endpoints via :ref:`hook <sec-plugins-hook-server-http-bodysize>`.
-2. *Multipart headers* must not be larger than 1KB.
-3. *Multipart bodies* other than file uploads must not be larger than 1MB.
+2. *Multipart headers* must not be larger than 5KB.
+3. *Multipart bodies* other than file uploads must not be larger than 500KB.
+4. *Multipart part count* must not be larger than 100 parts.
 
 .. _sec-api-general-login:
 

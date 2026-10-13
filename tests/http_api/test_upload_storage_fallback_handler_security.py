@@ -70,6 +70,25 @@ SEMICOL_ENCODED = _percent_encode_fully(";")
             FOLDERNAME,
             id="create folder",
         ),
+        pytest.param(
+            (
+                f"--{BOUNDARY}{CRLF}"
+                f'content-disposition: form-data; name="foldername"{CRLF}{CRLF}'
+                f"{FOLDERNAME}{CRLF}"
+            )
+            + "".join(
+                (
+                    f"--{BOUNDARY}{CRLF}"
+                    f'content-disposition: form-data; name="a{x}"{CRLF}{CRLF}'
+                    f"{x}{CRLF}"
+                )
+                for x in range(UploadStorageFallbackHandler.MAX_PARTS - 1)
+            )
+            + f"--{BOUNDARY}--{CRLF}",
+            f"multipart/form-data; boundary={BOUNDARY}",
+            FOLDERNAME,
+            id="create folder with MAX_PARTS-1 additional parts",
+        ),
     ],
 )
 def test_regular_uploads_working(baseURL, headers, setup, body, content_type, path):
@@ -296,6 +315,37 @@ def test_multipart_large_header(baseURL, headers, setup, body):
     ],
 )
 def test_multipart_large_part(baseURL, headers, setup, body):
+    content_type = f"multipart/form-data; boundary={BOUNDARY}"
+    hdrs = dict(**headers, **{"Content-Type": content_type})
+
+    resp = urllib3.request("POST", baseURL + "/api/files/local", body=body, headers=hdrs)
+
+    _verify_rejected(baseURL, headers, resp)
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        pytest.param(
+            (
+                f"--{BOUNDARY}{CRLF}"
+                f'content-disposition: form-data; name="foldername"{CRLF}{CRLF}'
+                f"{FOLDERNAME}{CRLF}"
+            )
+            + "".join(
+                (
+                    f"--{BOUNDARY}{CRLF}"
+                    f'content-disposition: form-data; name="a{x}"{CRLF}{CRLF}'
+                    f"{x}{CRLF}"
+                )
+                for x in range(UploadStorageFallbackHandler.MAX_PARTS)
+            )
+            + f"--{BOUNDARY}--{CRLF}",
+            id="create folder request with MAX_PARTS additional parts",
+        ),
+    ],
+)
+def test_multipart_too_many_parts(baseURL, headers, setup, body):
     content_type = f"multipart/form-data; boundary={BOUNDARY}"
     hdrs = dict(**headers, **{"Content-Type": content_type})
 
