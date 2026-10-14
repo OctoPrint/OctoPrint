@@ -1,5 +1,3 @@
-from typing import Union
-
 import pytest
 
 import octoprint.util
@@ -51,9 +49,7 @@ def test_parse_mime_typ(
         ("text/html", "image/*", False),
     ),
 )
-def test_mime_type_matches(
-    mime: Union[str, tuple], other: Union[str, tuple], expected: bool
-) -> None:
+def test_mime_type_matches(mime: str | tuple, other: str | tuple, expected: bool) -> None:
     actual1 = octoprint.util.mime_type_matches(mime, other)
     actual2 = octoprint.util.mime_type_matches(other, mime)
     assert actual1 == expected

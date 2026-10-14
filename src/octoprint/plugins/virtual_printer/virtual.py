@@ -10,7 +10,7 @@ import queue
 import re
 import threading
 import time
-from typing import Any, Optional
+from typing import Any
 
 from serial import SerialTimeoutException
 
@@ -1589,7 +1589,7 @@ class VirtualPrinter:
                 result[dosname.lower()] = entry.name.lower()
         return result
 
-    def _getSdFileData(self, filename: str) -> Optional[dict[str, Any]]:
+    def _getSdFileData(self, filename: str) -> dict[str, Any] | None:
         files = self._mappedSdList()
         data = files.get(filename.lower())
         if isinstance(data, str):

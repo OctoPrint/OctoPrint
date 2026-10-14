@@ -90,7 +90,7 @@ class AchievementsPlugin(
         return super().initialize()
 
     def _server_timezone(self):
-        return datetime.datetime.now(datetime.timezone.utc).astimezone()
+        return datetime.datetime.now(datetime.UTC).astimezone()
 
     def _now(self):
         if self._tz is None:

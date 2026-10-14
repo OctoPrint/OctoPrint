@@ -1,10 +1,10 @@
 from collections.abc import Hashable
-from typing import Any, TextIO, Union
+from typing import Any, TextIO
 
 
 def load_from_file(
     file: TextIO = None, path: str = None
-) -> Union[dict[Hashable, Any], list, None]:
+) -> dict[Hashable, Any] | list | None:
     """
     Safely and performantly loads yaml data from the given source. Either a
     path or a file must be passed in.

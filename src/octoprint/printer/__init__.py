@@ -28,7 +28,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import datetime
 import re
-from typing import IO, TYPE_CHECKING, Any, Optional, Union
+from typing import IO, TYPE_CHECKING, Any, Optional
 
 from pydantic import computed_field
 
@@ -83,9 +83,9 @@ ERROR_FAQS = {
 class ErrorInformation(BaseModel):
     error: str
     reason: str
-    consequence: Optional[str] = None
-    faq: Optional[str] = None
-    logs: Optional[list[str]] = None
+    consequence: str | None = None
+    faq: str | None = None
+    logs: list[str] | None = None
 
 
 class FirmwareInformation(BaseModel):
@@ -244,7 +244,7 @@ class CommonPrinterMixin:
 
     def get_additional_controls(
         self,
-    ) -> list[Union[CustomControl, CustomControlContainer]]:
+    ) -> list[CustomControl | CustomControlContainer]:
         return []
 
     def jog(self, axes, relative=True, speed=None, tags=None, *args, **kwargs):
@@ -548,7 +548,7 @@ class ConnectedPrinterMixin(CommonPrinterMixin):
         return self.printer_capabilities
 
     @property
-    def job_progress(self) -> Optional[JobProgress]:
+    def job_progress(self) -> JobProgress | None:
         return None
 
     @property
@@ -577,9 +577,9 @@ class ConnectedPrinterMixin(CommonPrinterMixin):
 class PrinterFile(BaseModel):
     path: str
     display: str
-    size: Optional[int] = None
-    date: Optional[datetime.datetime] = None
-    metadata: Optional[MetadataEntry] = None
+    size: int | None = None
+    date: datetime.datetime | None = None
+    metadata: MetadataEntry | None = None
     thumbnails: list[str] = []
 
 
@@ -648,7 +648,7 @@ class PrinterFilesMixin:
 
     def upload_printer_file(
         self,
-        path_or_file: Union[str, IO],
+        path_or_file: str | IO,
         path: str,
         progress_callback: callable,
         *args,
@@ -700,7 +700,7 @@ class PrinterFilesMixin:
 
     def get_printer_file_metadata(
         self, path: str, printer_file: PrinterFile = None, *args, **kwargs
-    ) -> Optional[MetadataEntry]:
+    ) -> MetadataEntry | None:
         if printer_file is None:
             printer_file = self.get_printer_file(path)
         if not printer_file:
@@ -722,12 +722,12 @@ class PrinterFilesMixin:
 
     def get_thumbnail(
         self, path: str, platehint: int = None, sizehint: str = None, *args, **kwargs
-    ) -> Optional[StorageThumbnail]:
+    ) -> StorageThumbnail | None:
         return None
 
     def download_thumbnail(
         self, path: str, platehint: int = None, sizehint: str = None, *args, **kwargs
-    ) -> Optional[tuple[StorageThumbnail, IO]]:
+    ) -> tuple[StorageThumbnail, IO] | None:
         return None
 
     def refresh_thumbnails(
@@ -769,7 +769,7 @@ class PrinterFilesMixin:
             params=params,
         )
 
-    def get_usage_information(self) -> Optional[PrinterFilesUsage]:
+    def get_usage_information(self) -> PrinterFilesUsage | None:
         return None
 
 

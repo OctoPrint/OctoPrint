@@ -481,7 +481,7 @@ class DiscoveryPlugin(
 
                         try:
                             data = sock.recv(1024)
-                        except socket.timeout:
+                        except TimeoutError:
                             pass
                         else:
                             response = Response(data)
@@ -769,7 +769,7 @@ class DiscoveryPlugin(
                                 address=address,
                             )
                         )
-                except socket.timeout:
+                except TimeoutError:
                     pass
                 finally:
                     self._ssdp_notify(alive=True)

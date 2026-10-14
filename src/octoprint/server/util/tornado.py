@@ -11,7 +11,7 @@ import os
 import re
 import secrets
 import sys
-from typing import Any, Optional
+from typing import Any
 from urllib.parse import urlparse
 
 import tornado
@@ -793,7 +793,7 @@ def _validate_multipart_body(
     boundary: bytes,
     parts: dict[bytes, dict[str, Any]],
     suffixes: dict[str, str],
-    path: Optional[str] = None,
+    path: str | None = None,
 ) -> None:
     if path:
         path = octoprint.util.to_bytes(os.path.abspath(path) + "/")

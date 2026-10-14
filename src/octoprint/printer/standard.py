@@ -11,7 +11,7 @@ import inspect
 import logging
 import threading
 import time
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 from frozendict import frozendict
 
@@ -516,7 +516,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             eventManager().fire(Events.DISCONNECTED)
 
     @property
-    def current_connection(self) -> Optional[ConnectedPrinter]:
+    def current_connection(self) -> ConnectedPrinter | None:
         return self._connection
 
     def emergency_stop(self, *args, **kwargs):
@@ -589,7 +589,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
     def get_additional_controls(
         self,
-    ) -> list[Union[PrinterCustomControl, PrinterCustomControlContainer]]:
+    ) -> list[PrinterCustomControl | PrinterCustomControlContainer]:
         controls = []
 
         if self._connection is not None:

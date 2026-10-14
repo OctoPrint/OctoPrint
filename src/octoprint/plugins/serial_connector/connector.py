@@ -2,7 +2,7 @@ import copy
 import logging
 import os
 from gettext import gettext
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import octoprint.util as util
 from octoprint.events import Events, eventManager
@@ -376,7 +376,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         return True
 
     @property
-    def job_progress(self) -> Optional[JobProgress]:
+    def job_progress(self) -> JobProgress | None:
         try:
             progress = self._comm.getPrintProgress()
             pos = self._comm.getPrintFilepos()

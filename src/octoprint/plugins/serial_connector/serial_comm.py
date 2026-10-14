@@ -20,7 +20,7 @@ import threading
 import time
 from collections import deque, namedtuple
 from functools import partial
-from typing import IO, Union
+from typing import IO
 
 import serial
 import wrapt
@@ -6017,7 +6017,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 
     def __init__(
         self,
-        path_or_file: Union[str, IO],
+        path_or_file: str | IO,
         offsets_callback=None,
         current_tool_callback=None,
         user=None,

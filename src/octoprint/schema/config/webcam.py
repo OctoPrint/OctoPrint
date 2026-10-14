@@ -2,7 +2,6 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from enum import Enum
-from typing import Optional
 
 from octoprint.schema import BaseModel
 
@@ -21,13 +20,13 @@ class RenderAfterPrintEnum(str, Enum):
 
 
 class TimelapseOptions(BaseModel):
-    interval: Optional[int] = None
+    interval: int | None = None
     """``timed`` timelapses only: The interval which to leave between images in seconds."""
 
-    capturePostRoll: Optional[bool] = None
+    capturePostRoll: bool | None = None
     """``timed`` timelapses only: Whether to capture the snapshots for the post roll (``true``) or just copy the last captured snapshot from the print over and over again (``false``)."""
 
-    retractionZHop: Optional[float] = None
+    retractionZHop: float | None = None
     """``zchange`` timelapses only: z-hop height during retractions to ignore for capturing snapshots."""
 
 
@@ -62,7 +61,7 @@ class WebcamConfig(BaseModel):
     timelapseEnabled: bool = True
     """Use this option to enable timelapse support via snapshot, e.g. via MJPG-Streamer. Timelapse support will be disabled if not set."""
 
-    ffmpeg: Optional[str] = None
+    ffmpeg: str | None = None
     """Path to ffmpeg binary to use for creating timelapse recordings. Timelapse support will be disabled if not set."""
 
     ffmpegThreads: int = 1

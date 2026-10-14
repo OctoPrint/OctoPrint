@@ -1,51 +1,49 @@
-from typing import Optional
-
 from octoprint.schema import BaseModel
 
 
 class ApiJobFile(BaseModel):
-    name: Optional[str] = None
+    name: str | None = None
     """Internal name of the file being printed"""
-    path: Optional[str] = None
+    path: str | None = None
     """Path of the file being printed"""
-    display: Optional[str] = None
+    display: str | None = None
     """Display name of the file being printed"""
-    origin: Optional[str] = None
+    origin: str | None = None
     """Storage of the file being printed"""
-    size: Optional[int] = None
+    size: int | None = None
     """Size of the file being printed in bytes"""
-    date: Optional[int] = None
+    date: int | None = None
     """Last modification date of the file being printed as timestamp"""
-    upload: Optional[bool] = None
+    upload: bool | None = None
     """Whether this file is currently being uploaded (true) or already available on the storage (false)"""
 
 
 class ApiJobInfo(BaseModel):
     file: ApiJobFile
     """File being printed"""
-    estimatedPrintTime: Optional[float] = None
+    estimatedPrintTime: float | None = None
     """Estimated print time in seconds, if known"""
-    filament: Optional[dict[str, Optional[dict[str, Optional[float]]]]] = None
+    filament: dict[str, dict[str, float | None] | None] | None = None
     """Filament usage information as mapping from printer profile to mappings from tool to used length, if known"""
-    user: Optional[str] = None
+    user: str | None = None
     """The user who started the job, if known"""
 
 
 class ApiJobInfo_pre_2_0_0(ApiJobInfo):
-    lastPrintTime: Optional[float] = None
+    lastPrintTime: float | None = None
     """The last print time in seconds"""
 
 
 class ApiProgressInfo(BaseModel):
-    completion: Optional[float] = None
+    completion: float | None = None
     """Completion in percentage, if known"""
-    filepos: Optional[int] = None
+    filepos: int | None = None
     """Current file position, if known"""
-    printTime: Optional[int] = None
+    printTime: int | None = None
     """Print time so far"""
-    printTimeLeft: Optional[int] = None
+    printTimeLeft: int | None = None
     """Estimated print time left"""
-    printTimeLeftOrigin: Optional[str] = None
+    printTimeLeftOrigin: str | None = None
     """
     Origin of estimate.
 
@@ -68,7 +66,7 @@ class ApiJobResponse(BaseModel):
     """Information about the current job's progress"""
     state: str
     """Current state"""
-    error: Optional[str] = None
+    error: str | None = None
     """Error, if any"""
 
 

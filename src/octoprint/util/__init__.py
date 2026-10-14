@@ -27,7 +27,7 @@ from collections.abc import Iterable, MutableMapping, Set
 from functools import wraps
 from glob import escape as glob_escape  # noqa: F401
 from time import monotonic as monotonic_time  # noqa: F401
-from typing import IO, Optional, Union
+from typing import IO
 
 from frozendict import frozendict
 
@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 
 
 def to_bytes(
-    s_or_u: Union[str, bytes], encoding: str = "utf-8", errors: str = "strict"
+    s_or_u: str | bytes, encoding: str = "utf-8", errors: str = "strict"
 ) -> bytes:
     """
     Make sure ``s_or_u`` is a byte string.
@@ -73,7 +73,7 @@ def to_bytes(
 
 
 def to_unicode(
-    s_or_u: Union[str, bytes], encoding: str = "utf-8", errors: str = "strict"
+    s_or_u: str | bytes, encoding: str = "utf-8", errors: str = "strict"
 ) -> str:
     """
     Make sure ``s_or_u`` is a string (str).
@@ -1077,7 +1077,7 @@ BOMS = {
 }
 
 
-def get_bom(file_obj: Union[str, IO], encoding: str) -> Optional[bytes]:
+def get_bom(file_obj: str | IO, encoding: str) -> bytes | None:
     """
     Check if the file has a BOM and if so return it.
 

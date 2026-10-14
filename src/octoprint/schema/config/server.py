@@ -2,7 +2,6 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from enum import Enum
-from typing import Optional
 
 from octoprint.schema import BaseModel
 
@@ -15,22 +14,22 @@ CONST_100KB = 100 * 1024
 
 
 class ReverseProxyConfig(BaseModel):
-    prefixHeader: Optional[str] = "X-Script-Name"
+    prefixHeader: str | None = "X-Script-Name"
     """The request header from which to determine the URL prefix under which OctoPrint is served by the reverse proxy."""
 
-    schemeHeader: Optional[str] = "X-Scheme"
+    schemeHeader: str | None = "X-Scheme"
     """The request header from which to determine the scheme (http or https) under which a specific request to OctoPrint was made to the reverse proxy."""
 
-    hostHeader: Optional[str] = "X-Forwarded-Host"
+    hostHeader: str | None = "X-Forwarded-Host"
     """The request header from which to determine the host under which OctoPrint is served by the reverse proxy."""
 
-    serverHeader: Optional[str] = None
+    serverHeader: str | None = None
     """The request header from which to determine the server name under which OctoPrint is served by the reverse proxy. Can also be read from the ``hostHeader``."""
 
-    portHeader: Optional[str] = None
+    portHeader: str | None = None
     """The request header from which to determine the port number under which OctoPrint is served by the reverse proxy. Can also be read from the ``hostHeader``."""
 
-    prefixFallback: Optional[str] = None
+    prefixFallback: str | None = None
     """
     Use this option to define an optional URL prefix (with a leading ``/``, so absolute to your server's root)
     under which to run OctoPrint. This should only be needed if you want to run OctoPrint behind a reverse proxy
@@ -38,7 +37,7 @@ class ReverseProxyConfig(BaseModel):
     (``X-Script-Name`` by default, see above) with forwarded requests.
     """
 
-    schemeFallback: Optional[str] = None
+    schemeFallback: str | None = None
     """
     Use this option to define an optional forced scheme (http or https) under which to run OctoPrint. This should
     only be needed if you want to run OctoPrint behind a reverse proxy that also does HTTPS termination but can't
@@ -46,7 +45,7 @@ class ReverseProxyConfig(BaseModel):
     requests.
     """
 
-    hostFallback: Optional[str] = None
+    hostFallback: str | None = None
     """
     Use this option to define an optional forced host under which to run OctoPrint. This should only be needed if
     you want to run OctoPrint behind a reverse proxy with a different hostname than OctoPrint itself but can't
@@ -54,7 +53,7 @@ class ReverseProxyConfig(BaseModel):
     requests.
     """
 
-    serverFallback: Optional[str] = None
+    serverFallback: str | None = None
     """
     Use this option to define an optional forced server name under which to run OctoPrint. This should only be
     needed if you want to run OctoPrint behind a reverse proxy with a different hostname than OctoPrint itself
@@ -62,7 +61,7 @@ class ReverseProxyConfig(BaseModel):
     above) or a server HTTP Header as manually defined.
     """
 
-    portFallback: Optional[str] = None
+    portFallback: str | None = None
     """
     Use this option to define an optional forced port under which to run OctoPrint. This should only be
     needed if you want to run OctoPrint behind a reverse proxy with a different hostname than OctoPrint itself
@@ -100,16 +99,16 @@ class UploadsConfig(BaseModel):
 
 
 class CommandsConfig(BaseModel):
-    systemShutdownCommand: Optional[str] = None
+    systemShutdownCommand: str | None = None
     """Command to shut down the system OctoPrint is running on."""
 
-    systemRestartCommand: Optional[str] = None
+    systemRestartCommand: str | None = None
     """Command to restart the system OctoPrint is running on."""
 
-    serverRestartCommand: Optional[str] = None
+    serverRestartCommand: str | None = None
     """Command to restart OctoPrint."""
 
-    localPipCommand: Optional[str] = None
+    localPipCommand: str | None = None
     """
     ``pip`` command associated with OctoPrint, used for installing plugins and updates,
     if unset (default) the command will be autodetected based on the current python executable.
@@ -120,7 +119,7 @@ class CommandsConfig(BaseModel):
 
 
 class OnlineCheckConfig(BaseModel):
-    enabled: Optional[bool] = None
+    enabled: bool | None = None
     """Whether the online check is enabled. Ships unset, the user will be asked to make a decision as part of the setup wizard."""
 
     interval: int = CONST_15MIN
@@ -137,7 +136,7 @@ class OnlineCheckConfig(BaseModel):
 
 
 class PluginBlocklistConfig(BaseModel):
-    enabled: Optional[bool] = None
+    enabled: bool | None = None
     """Whether use of the blocklist is enabled. If unset, the user will be asked to make a decision as part of the setup wizard."""
 
     url: str = "https://plugins.octoprint.org/blocklist.json"
@@ -184,7 +183,7 @@ class CookiesConfig(BaseModel):
     secure: bool = False
     """Whether to set the ``Secure`` flag to true on cookies. Only set to true if you are running OctoPrint behind a reverse proxy taking care of SSL termination."""
 
-    samesite: Optional[SameSiteEnum] = SameSiteEnum.lax
+    samesite: SameSiteEnum | None = SameSiteEnum.lax
     """
     ``SameSite`` setting to use on the cookies. Defaults to ``Lax``.
 
@@ -201,7 +200,7 @@ class PythonEolEntry(BaseModel):
     date: str
     """The date when the Python version will reach EOL, in format `YYYY-MM-DD`."""
 
-    last_octoprint: Optional[str] = None
+    last_octoprint: str | None = None
     """The last OctoPrint version that will support this Python version, optional."""
 
 
@@ -223,7 +222,7 @@ class PythonEolCheckConfig(BaseModel):
 
 
 class ServerConfig(BaseModel):
-    host: Optional[str] = None
+    host: str | None = None
     """Use this option to define the host to which to bind the server. If unset, OctoPrint will attempt to bind on all available interfaces, IPv4 and v6 unless either is disabled."""
 
     port: int = 5000
@@ -241,7 +240,7 @@ class ServerConfig(BaseModel):
     seenWizards: dict[str, str] = {}
     """Tracking of seen wizards and versions. You should usually not have to touch this."""
 
-    secretKey: Optional[str] = None
+    secretKey: str | None = None
     """Secret key for encrypting cookies and such, randomly generated on first run."""
 
     heartbeat: int = CONST_15MIN

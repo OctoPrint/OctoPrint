@@ -26,18 +26,11 @@ jobs:
             python: "3.14"
           - branch: "main"
             python: "3.14"
-          # next: 3.9-3.14
-          - branch: "next"
-            python: "3.7"
-          - branch: "next"
-            python: "3.8"
-          # dev: 3.10-3.14
-          - branch: "dev"
-            python: "3.7"
-          - branch: "dev"
-            python: "3.8"
+          # dev: 3.11-3.14
           - branch: "dev"
             python: "3.9"
+          - branch: "dev"
+            python: "3.10"
     runs-on: ${{ matrix.os }}
     steps:
       - name: ⬇ Checkout code

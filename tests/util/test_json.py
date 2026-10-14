@@ -51,7 +51,7 @@ def test_encoding_dumps_typeerror():
         pytest.param(frozendict({"foo": "bar"}), id="frozendict"),
         pytest.param(time.struct_time((2018, 1, 1, 0, 0, 0, 0, 0, 0)), id="struct_time"),
         pytest.param(
-            datetime.datetime(2022, 3, 21, 5, 24, 0, 0, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2022, 3, 21, 5, 24, 0, 0, tzinfo=datetime.UTC),
             id="datetime",
         ),
         pytest.param(frozendict({"a": b"b"}), id="nested"),

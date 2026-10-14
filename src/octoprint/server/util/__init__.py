@@ -349,7 +349,7 @@ def get_user_for_authorization_header(
 
 def get_api_key(
     request: Union[_flask.Request, "tornado.httputil.HTTPServerRequest"],
-) -> Optional[str]:
+) -> str | None:
     """
     Extracts the API key from the given request.
 

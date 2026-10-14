@@ -2,7 +2,6 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from enum import Enum
-from typing import Optional
 
 from octoprint.schema import BaseModel
 
@@ -63,5 +62,5 @@ class Webcam(BaseModel):
     extras: dict = {}
     """Unstructured data describing this webcam"""
 
-    compat: Optional[WebcamCompatibility] = None
+    compat: WebcamCompatibility | None = None
     """A compatibility configuration to allow older clients to make use of this webcam"""

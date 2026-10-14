@@ -25,7 +25,7 @@ import enum
 import logging
 from collections.abc import Iterable
 from gettext import gettext
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, cast
 
 from octoprint.events import Events, eventManager
 from octoprint.printer import (
@@ -281,11 +281,11 @@ class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterRegistra
         return {"connector": self.connector, "profile": self._profile}
 
     @property
-    def firmware_info(self) -> Union[FirmwareInformation, None]:
+    def firmware_info(self) -> FirmwareInformation | None:
         return self._firmware_info
 
     @firmware_info.setter
-    def firmware_info(self, value: Union[FirmwareInformation, None]) -> None:
+    def firmware_info(self, value: FirmwareInformation | None) -> None:
         self._firmware_info = value
         if self._firmware_info:
             eventManager().fire(
@@ -295,11 +295,11 @@ class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterRegistra
             self._listener.on_printer_firmware_info(self._firmware_info)
 
     @property
-    def error_info(self) -> Union[ErrorInformation, None]:
+    def error_info(self) -> ErrorInformation | None:
         return self._error_info
 
     @error_info.setter
-    def error_info(self, value: Union[ErrorInformation, None]) -> None:
+    def error_info(self, value: ErrorInformation | None) -> None:
         self._error_info = value
         if self._error_info:
             payload = self._error_info.model_dump(exclude_none=True)

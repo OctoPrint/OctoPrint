@@ -9,7 +9,6 @@ import os
 import shutil
 import threading
 from collections.abc import Iterable
-from typing import Optional
 from urllib.parse import quote as urlquote
 
 from flask import abort, jsonify, make_response, request, url_for
@@ -685,7 +684,7 @@ def _analyse_and_convert_recursively(
     return result
 
 
-def _to_api_timestamp(timestamp: Optional[datetime.datetime]) -> Optional[int]:
+def _to_api_timestamp(timestamp: datetime.datetime | None) -> int | None:
     if timestamp is None:
         return None
     return int(timestamp.astimezone(None).timestamp())

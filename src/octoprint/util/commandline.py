@@ -7,7 +7,6 @@ import logging
 import queue
 import re
 import time
-from typing import Optional, Union
 
 import sarge
 
@@ -125,7 +124,7 @@ class CommandlineCaller:
         """Callback for stderr output"""
 
     def checked_call(
-        self, command: Union[str, list[str], tuple[str]], **kwargs
+        self, command: str | list[str] | tuple[str], **kwargs
     ) -> tuple[int, list[str], list[str]]:
         """
         Calls a command and raises an error if it doesn't return with return code 0
@@ -150,13 +149,13 @@ class CommandlineCaller:
 
     def call(
         self,
-        command: Union[str, list[str], tuple[str]],
+        command: str | list[str] | tuple[str],
         delimiter: bytes = b"\n",
         buffer_size: int = -1,
         logged: bool = True,
         output_timeout: float = 0.5,
         **kwargs,
-    ) -> tuple[Optional[int], list[str], list[str]]:
+    ) -> tuple[int | None, list[str], list[str]]:
         """
         Calls a command
 
@@ -211,12 +210,12 @@ class CommandlineCaller:
 
     def non_blocking_call(
         self,
-        command: Union[str, list, tuple],
+        command: str | list | tuple,
         delimiter: bytes = b"\n",
         buffer_size: int = -1,
         logged: bool = True,
         **kwargs,
-    ) -> Optional[sarge.Pipeline]:
+    ) -> sarge.Pipeline | None:
         if isinstance(command, (list, tuple)):
             joined_command = " ".join(command)
         else:

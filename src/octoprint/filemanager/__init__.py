@@ -6,7 +6,8 @@ import logging
 import os
 import time
 from collections import namedtuple
-from typing import IO, TYPE_CHECKING, Callable, Optional
+from collections.abc import Callable
+from typing import IO, TYPE_CHECKING
 
 import octoprint.plugin
 import octoprint.util
@@ -1387,7 +1388,7 @@ class FileManager:
 
     def get_thumbnail(
         self, location, path, platehint: int = None, sizehint: str = None
-    ) -> Optional[StorageThumbnail]:
+    ) -> StorageThumbnail | None:
         return self._storage(location).get_thumbnail(
             path, platehint=platehint, sizehint=sizehint
         )
@@ -1459,7 +1460,7 @@ class FileManager:
     def capabilities(self, location) -> StorageCapabilities:
         return self._storage(location).capabilities
 
-    def get_usage(self, location) -> Optional[StorageUsage]:
+    def get_usage(self, location) -> StorageUsage | None:
         return self._storage(location).get_usage()
 
     def _storage(self, location: str) -> StorageInterface:

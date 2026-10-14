@@ -2,7 +2,7 @@ import logging
 import os
 import tempfile
 import time
-from typing import IO, Optional
+from typing import IO
 
 import octoprint.filemanager
 from octoprint.filemanager.util import AbstractFileWrapper
@@ -98,7 +98,7 @@ class PrinterFileStorage(StorageInterface):
     def capabilities(self) -> StorageCapabilities:
         return self._connection.current_storage_capabilities
 
-    def get_size(self, path=None, recursive=False) -> Optional[int]:
+    def get_size(self, path=None, recursive=False) -> int | None:
         files = self._get_printer_files(path=path)
 
         sizes = [f.size for f in files if f.size is not None]
@@ -107,7 +107,7 @@ class PrinterFileStorage(StorageInterface):
 
         return None
 
-    def get_lastmodified(self, path=None, recursive=False) -> Optional[int]:
+    def get_lastmodified(self, path=None, recursive=False) -> int | None:
         files = self._get_printer_files(path=path)
 
         dates = [f.date.timestamp() for f in files if f.date is not None]
@@ -465,14 +465,14 @@ class PrinterFileStorage(StorageInterface):
 
     def get_thumbnail(
         self, path, platehint=None, sizehint=None
-    ) -> Optional[StorageThumbnail]:
+    ) -> StorageThumbnail | None:
         return self._connection.get_thumbnail(
             path, platehint=platehint, sizehint=sizehint
         )
 
     def read_thumbnail(
         self, path, platehint=None, sizehint=None
-    ) -> Optional[tuple[StorageThumbnail, IO]]:
+    ) -> tuple[StorageThumbnail, IO] | None:
         return self._connection.download_thumbnail(
             path, platehint=platehint, sizehint=sizehint
         )
@@ -616,7 +616,7 @@ class PrinterFileStorage(StorageInterface):
         else:
             return self.join_path(pp, pf)
 
-    def get_usage(self) -> Optional[StorageUsage]:
+    def get_usage(self) -> StorageUsage | None:
         if not self._connection:
             return None
         usage = self._connection.get_usage_information()

@@ -49,8 +49,7 @@ def get_systeminfo(
         "connectivity": connectivity_checker.as_dict(),
         "env": environment_detector.environment,
         "systeminfo": {
-            "generated": datetime.datetime.now(datetime.timezone.utc).isoformat()[:19]
-            + "Z"
+            "generated": datetime.datetime.now(datetime.UTC).isoformat()[:19] + "Z"
         },
     }
 

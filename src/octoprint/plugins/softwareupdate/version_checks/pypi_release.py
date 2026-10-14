@@ -4,7 +4,6 @@ __copyright__ = "Copyright (C) 2019 The OctoPrint Project - Released under terms
 import logging
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Optional
 
 import requests
 from packaging.specifiers import InvalidSpecifier, SpecifierSet
@@ -30,7 +29,7 @@ class ReleaseFile:
 @dataclass
 class Release:
     version: Version
-    python_requires: Optional[SpecifierSet]
+    python_requires: SpecifierSet | None
 
 
 def _fetch_files(package: str) -> Iterable[ReleaseFile]:
@@ -118,7 +117,7 @@ def _releases_from_files(files: Iterable[ReleaseFile]) -> Iterable[Release]:
     return list(releases.values())
 
 
-def _get_latest_release(package: str, include_prerelease: bool = False) -> Optional[str]:
+def _get_latest_release(package: str, include_prerelease: bool = False) -> str | None:
     import platform
 
     python_version = platform.python_version()

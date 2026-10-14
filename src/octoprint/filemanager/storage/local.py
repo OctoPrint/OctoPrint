@@ -1093,7 +1093,7 @@ class LocalFileStorage(StorageInterface):
         path, name = self.sanitize(path)
         return os.path.join(path, name)
 
-    def get_usage(self) -> typing.Optional[StorageUsage]:
+    def get_usage(self) -> StorageUsage | None:
         usage = shutil.disk_usage(self.basefolder)
         return StorageUsage(used=usage.used, total=usage.total)
 

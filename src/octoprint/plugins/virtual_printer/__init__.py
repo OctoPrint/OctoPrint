@@ -2,8 +2,6 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from typing import Optional
-
 import octoprint.plugin
 from octoprint.access.permissions import Permissions
 from octoprint.schema import BaseModel
@@ -77,7 +75,7 @@ class VirtualPrinterConfig(BaseModel):
     numExtruders: int = 1
     """Number of extruders to simulate on the virtual printer. Map from tool id (0, 1, ...) to temperature in °C"""
 
-    pinnedExtruders: Optional[dict[int, float]] = None
+    pinnedExtruders: dict[int, float] | None = None
     """Allows pinning certain hotends to a fixed temperature"""
 
     includeCurrentToolInTemps: bool = True
