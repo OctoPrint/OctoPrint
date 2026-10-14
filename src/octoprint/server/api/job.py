@@ -107,32 +107,40 @@ def jobState_post_2_0_0():
 def _get_api_job_response() -> apischema.ApiJobResponse:
     current_data = printer.get_current_data()
 
-    file_data = current_data["job"].get("file", {})
+    job_data = current_data.get("job")
+    if job_data:
+        file_data = job_data.get("file", {})
 
-    file = apischema.ApiJobFile(
-        name=file_data.get("name"),
-        path=file_data.get("path"),
-        display=file_data.get("display"),
-        origin=file_data.get("origin"),
-        size=file_data.get("size"),
-        date=file_data.get("date"),
-        upload=file_data.get("upload"),
-    )
+        file = apischema.ApiJobFile(
+            name=file_data.get("name"),
+            path=file_data.get("path"),
+            display=file_data.get("display"),
+            origin=file_data.get("origin"),
+            size=file_data.get("size"),
+            date=file_data.get("date"),
+            upload=file_data.get("upload"),
+        )
 
-    job_data = current_data["job"]
-    job = apischema.ApiJobInfo(
-        file=file,
-        estimatedPrintTime=job_data.get("estimatedPrintTime"),
-        filament=job_data.get("filament"),
-        user=job_data.get("user"),
-    )
+        job = apischema.ApiJobInfo(
+            file=file,
+            estimatedPrintTime=job_data.get("estimatedPrintTime"),
+            filament=job_data.get("filament"),
+            user=job_data.get("user"),
+        )
+    else:
+        file = apischema.ApiJobFile()
+        job = apischema.ApiJobInfo(file=file)
 
-    progress = apischema.ApiProgressInfo(**current_data["progress"])
+    progress_data = current_data.get("progress")
+    if progress_data:
+        progress = apischema.ApiProgressInfo(**progress_data)
+    else:
+        progress = apischema.ApiProgressInfo()
 
     response = apischema.ApiJobResponse(
         job=job, progress=progress, state=current_data["state"]["text"]
     )
-    if current_data["state"]["error"]:
+    if current_data.get("state", {}).get("error"):
         response.error = current_data["state"]["error"]
 
     return response

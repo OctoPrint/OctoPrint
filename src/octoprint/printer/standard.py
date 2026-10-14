@@ -1772,21 +1772,20 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
     def _update_progress_data_callback(self):
         printTimeLeftOrigin = None
 
-        if self._connection is None:
-            progress = None
-            filepos = None
-            printTime = None
-            cleanedPrintTime = None
-            printTimeLeft = None
-        else:
+        progress = None
+        filepos = None
+        printTime = None
+        cleanedPrintTime = None
+        printTimeLeft = None
+
+        if self._connection is not None:
             job_progress = self._connection.job_progress
-            if not job_progress:
-                return
-            progress = job_progress.progress
-            filepos = job_progress.pos
-            printTime = job_progress.elapsed
-            cleanedPrintTime = job_progress.cleaned_elapsed
-            printTimeLeft = job_progress.left_estimate
+            if job_progress:
+                progress = job_progress.progress
+                filepos = job_progress.pos
+                printTime = job_progress.elapsed
+                cleanedPrintTime = job_progress.cleaned_elapsed
+                printTimeLeft = job_progress.left_estimate
 
         if printTimeLeft is None:
             # no print time estimation from printer, let's do our own
