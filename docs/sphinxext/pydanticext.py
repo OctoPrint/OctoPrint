@@ -5,6 +5,7 @@ __copyright__ = "Copyright (C) 2025 Gina Häußge - Released under terms of the 
 
 import inspect
 import re
+import types
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Literal, Optional, Union, get_args, get_origin
@@ -51,7 +52,7 @@ class PydanticFieldDoc:
 
 
 class PydanticModelInspector:
-    CONTAINER_TYPE_ORIGINS = (Union, Literal)
+    CONTAINER_TYPE_ORIGINS = (Union, Literal, types.UnionType)
 
     def __init__(self):
         self.scanner = self._create_scanner()
