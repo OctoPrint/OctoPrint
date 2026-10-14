@@ -1,9 +1,11 @@
 ***The canonical URL for OctoPrint's security policy is https://octoprint.org/security/ - its contents are copied here for convenience.***
 
+<!--
 > [!WARNING]
 > **OctoPrint is participating in the [Summer of Bliss](https://daniel.haxx.se/blog/2026/06/15/curl-summer-of-bliss/) and will not be processing any security reports between July 10th & August 23rd 2026**. Any reports sent during this time will get processed from August 24th onward. This also extends the reaction & mitigation times accordingly.
 >
 > OctoPrint's maintainer needs a vacation too.
+-->
 
 **If you think that you have found a security vulnerability in OctoPrint, please disclose it to us via a [GitHub Security Advisory (GHSA)](https://github.com/OctoPrint/OctoPrint/security/advisories) or alternatively our security e-mail address at [security@octoprint.org](mailto:security@octoprint.org)**.
 
