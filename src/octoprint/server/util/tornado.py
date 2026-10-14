@@ -322,6 +322,9 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         # multipart boundary
         self._multipart_boundary = None
 
+        # count of multipart parts
+        self._multipart_count = 0
+
         # Parts, files and values will be stored here
         self._parts = {}
         self._files = []
@@ -497,7 +500,8 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
             self._current_part = None
 
         # check for max part count
-        if len(self._parts) >= self.MAX_PARTS:
+        self._multipart_count += 1
+        if self._multipart_count > self.MAX_PARTS:
             raise tornado.web.HTTPError(  # noqa: B904
                 400,
                 log_message="invalid multipart/form-data: too many parts",

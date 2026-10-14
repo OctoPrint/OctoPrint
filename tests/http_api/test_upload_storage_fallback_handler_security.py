@@ -89,6 +89,20 @@ SEMICOL_ENCODED = _percent_encode_fully(";")
             FOLDERNAME,
             id="create folder with MAX_PARTS-1 additional parts",
         ),
+        pytest.param(
+            "".join(
+                (
+                    f"--{BOUNDARY}{CRLF}"
+                    f'content-disposition: form-data; name="foldername"{CRLF}{CRLF}'
+                    f"{FOLDERNAME}{CRLF}"
+                )
+                for _ in range(UploadStorageFallbackHandler.MAX_PARTS)
+            )
+            + f"--{BOUNDARY}--{CRLF}",
+            f"multipart/form-data; boundary={BOUNDARY}",
+            FOLDERNAME,
+            id="create folder request with MAX_PARTS foldername parts",
+        ),
     ],
 )
 def test_regular_uploads_working(baseURL, headers, setup, body, content_type, path):
@@ -343,6 +357,18 @@ def test_multipart_large_part(baseURL, headers, setup, body):
             + f"--{BOUNDARY}--{CRLF}",
             id="create folder request with MAX_PARTS additional parts",
         ),
+        pytest.param(
+            "".join(
+                (
+                    f"--{BOUNDARY}{CRLF}"
+                    f'content-disposition: form-data; name="foldername"{CRLF}{CRLF}'
+                    f"{FOLDERNAME}{CRLF}"
+                )
+                for _ in range(UploadStorageFallbackHandler.MAX_PARTS + 1)
+            )
+            + f"--{BOUNDARY}--{CRLF}",
+            id="create folder request with MAX_PARTS + 1 foldername parts",
+        ),
     ],
 )
 def test_multipart_too_many_parts(baseURL, headers, setup, body):
@@ -427,4 +453,4 @@ def headers(credentials):
 @pytest.fixture
 def setup(baseURL, headers, caplog):
     _ensure_path_unknown(baseURL, headers, FILENAME)
-    _ensure_path_unknown(baseURL, headers, FILENAME)
+    _ensure_path_unknown(baseURL, headers, FOLDERNAME)
