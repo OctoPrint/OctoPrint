@@ -527,11 +527,7 @@ class SystemEventSubscription(EventSubscription):
     def __init__(self, printer, *commands: str, **kwargs):
         super().__init__(printer, *commands, **kwargs)
 
-        if "shell" not in kwargs:
-            self._logger.warning(
-                "Deprecation warning: You have a system command event subscription that doesn't define the 'shell' argument. For now this will continue to mean that 'shell' will be set to 'True' on the resulting command call. As that is a potential security issue, OctoPrint 2.1.0 will change this behaviour and default to 'shell=False'. If you don't want this, you have to add 'shell: true' to your event subscription."
-            )
-        self.shell = kwargs.get("shell", True)
+        self.shell = kwargs.get("shell", False)
         self.cwd = kwargs.get("cwd", None)
 
     def _escape_params(self, params):
