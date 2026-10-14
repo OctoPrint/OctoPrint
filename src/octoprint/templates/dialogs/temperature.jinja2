@@ -12,8 +12,9 @@
             <div class="control-group">
                 <label class="control-label">{{ _("Current Offset") }}</label>
                 <div class="controls">
-                    <label class="control-text"
-                           data-bind="html: changingOffset.offset() + ' &deg;C'"></label>
+                    <label class="control-text">
+                        <span data-bind="text: changingOffset.offset()"></span> &deg;C
+                    </label>
                 </div>
             </div>
             <div class="control-group">
