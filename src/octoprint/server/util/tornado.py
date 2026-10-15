@@ -443,7 +443,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
             # found the delimiter in the currently available data
             delimiter_data_end = 0 if delimiter_loc == 0 else delimiter_loc - 2
             data, self._buffer = data[0:delimiter_data_end], data[delimiter_loc:]
-            end_of_header = self._buffer.find(b"\r\n\r\n")
+            end_of_header = self._buffer.find(b"\r\n\r\n")  # double CRLF in buffer
         else:
             # make sure any boundary (with single or double ==) contained at the end of chunk does not get
             # truncated by this processing round => save it to the buffer for next round
@@ -456,11 +456,10 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
             and (
                 (
                     end_of_header == -1 and len(self._buffer) > self._max_part_header_size
-                )  # no part header end & buffer too big
+                )  # no end of part header found & buffer too big
                 or (
-                    end_of_header >= 0
-                    and end_of_header - delimiter_loc > self._max_part_header_size
-                )  # part header size too big
+                    end_of_header > self._max_part_header_size
+                )  # end of part header found in buffer, but size too big
             )
         ):
             # if the buffer has grown beyond our max size, that means the part header didn't
