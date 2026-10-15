@@ -430,11 +430,13 @@ $(function () {
                         !currentFileKey.startsWith(futureFileKey + ":") &&
                         !futureFileKey.startsWith(currentFileKey + ":")
                     ) {
-                        self._loadFileData(data.file.origin, data.file.path).always(
-                            () => {
-                                self._cachedFileKey = futureFileKey;
-                            }
-                        );
+                        self._loadFileData(
+                            data.file.origin,
+                            data.file.path,
+                            data.file
+                        ).always(() => {
+                            self._cachedFileKey = futureFileKey;
+                        });
                     }
                 }
             } else {
@@ -525,14 +527,14 @@ $(function () {
             self.healthRatioCritical(data.critical);
         };
 
-        self._loadFileData = (origin, path) => {
+        self._loadFileData = (origin, path, fallback) => {
             return OctoPrint.files
                 .get(origin, path)
                 .then((data) => {
                     self.filedata(data);
                 })
                 .fail(() => {
-                    self.filedata(undefined);
+                    self.filedata(fallback);
                 });
         };
 
