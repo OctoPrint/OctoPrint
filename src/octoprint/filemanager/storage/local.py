@@ -13,6 +13,7 @@ import typing
 from contextlib import contextmanager
 from math import isfinite
 from os import listdir, scandir, walk
+from typing import Callable, Optional
 
 try:
     import gcode_thumbnail_tool as gtt
@@ -241,7 +242,9 @@ class LocalFileStorage(StorageInterface):
 
         return size
 
-    def get_lastmodified(self, path: str = None, recursive: bool = False) -> int:
+    def get_lastmodified(
+        self, path: Optional[str] = None, recursive: bool = False
+    ) -> int:
         if path is None:
             path = self.basefolder
 
@@ -271,7 +274,7 @@ class LocalFileStorage(StorageInterface):
 
         return int(last_modified)
 
-    def get_hash(self, path: str = None, recursive: bool = False) -> str:
+    def get_hash(self, path: Optional[str] = None, recursive: bool = False) -> str:
         import hashlib
 
         hash = hashlib.sha1()
@@ -299,7 +302,7 @@ class LocalFileStorage(StorageInterface):
         folder_path = os.path.join(path, name)
         return os.path.exists(folder_path) and os.path.isdir(folder_path)
 
-    def get_storage_entry(self, path: str) -> StorageEntry:
+    def get_storage_entry(self, path: str) -> Optional[StorageEntry]:
         path_on_disk = self.sanitize_path(path)
         if not os.path.exists(path_on_disk):
             return None
@@ -316,8 +319,8 @@ class LocalFileStorage(StorageInterface):
 
     def list_storage_entries(
         self,
-        path: str = None,
-        filter: callable = None,
+        path: Optional[str] = None,
+        filter: Optional[Callable] = None,
         recursive: bool = True,
         level: int = 0,
         force_refresh: bool = False,
@@ -352,7 +355,7 @@ class LocalFileStorage(StorageInterface):
             return result
 
         def apply_filter(
-            nodes: dict[str, StorageEntry], filter_func: callable
+            nodes: dict[str, StorageEntry], filter_func: Callable
         ) -> dict[str, StorageEntry]:
             result = {}
             for key, node in nodes.items():
@@ -591,9 +594,9 @@ class LocalFileStorage(StorageInterface):
         path: str,
         file_obj: AbstractFileWrapper,
         allow_overwrite: bool = False,
-        display: str = None,
-        user: str = None,
-        progress_callback: callable = None,
+        display: Optional[str] = None,
+        user: Optional[str] = None,
+        progress_callback: Optional[Callable] = None,
         *args,
         **kwargs,
     ):
@@ -789,9 +792,9 @@ class LocalFileStorage(StorageInterface):
 
     def has_analysis(self, path: str) -> bool:
         metadata = self.get_metadata(path)
-        return metadata and "analysis" in metadata
+        return bool(metadata and "analysis" in metadata)
 
-    def get_metadata(self, path: str, default=None) -> dict:
+    def get_metadata(self, path: str, default=None) -> Optional[dict]:
         path, name = self.sanitize(path)
         return self._get_metadata_entry(path, name, default=default)
 
@@ -810,9 +813,11 @@ class LocalFileStorage(StorageInterface):
     def has_thumbnail(self, path) -> bool:
         path, name = self.sanitize(path)
         thumbnails = self._get_thumbnails(path, name)
-        return thumbnails and len(thumbnails) > 0
+        return bool(thumbnails and len(thumbnails) > 0)
 
-    def get_thumbnail(self, path, platehint=None, sizehint=None) -> StorageThumbnail:
+    def get_thumbnail(
+        self, path, platehint=None, sizehint=None
+    ) -> Optional[StorageThumbnail]:
         # platehint is currently not supported on local storage
         sh, thumb = self._thumbnail_from_sizehint(path, sizehint=sizehint)
         if not thumb:
@@ -822,7 +827,7 @@ class LocalFileStorage(StorageInterface):
 
     def read_thumbnail(
         self, path, platehint=None, sizehint=None
-    ) -> tuple[StorageThumbnail, typing.IO]:
+    ) -> Optional[tuple[StorageThumbnail, typing.IO]]:
         # platehint is currently not supported on local storage
         sh, thumb = self._thumbnail_from_sizehint(path, sizehint=sizehint)
         if not thumb:
@@ -879,7 +884,7 @@ class LocalFileStorage(StorageInterface):
         )
 
     def _thumbnail_from_sizehint(
-        self, path: str, sizehint: str = None
+        self, path: str, sizehint: Optional[str] = None
     ) -> tuple[str, str]:
         path, name = self.sanitize(path)
         thumbnails = self._get_thumbnails(path, name)
@@ -1094,7 +1099,7 @@ class LocalFileStorage(StorageInterface):
         path, name = self.sanitize(path)
         return os.path.join(path, name)
 
-    def get_usage(self) -> typing.Optional[StorageUsage]:
+    def get_usage(self) -> Optional[StorageUsage]:
         usage = psutil.disk_usage(self.basefolder)
         return StorageUsage(used=usage.used, total=usage.total)
 
@@ -1264,7 +1269,7 @@ class LocalFileStorage(StorageInterface):
         path: str,
         metadata: dict,
         force_refresh: bool = False,
-    ) -> tuple[StorageEntry, bool]:
+    ) -> tuple[Optional[StorageEntry], bool]:
         try:
             path_on_disk = self.path_on_disk(path)
 
@@ -1317,8 +1322,7 @@ class LocalFileStorage(StorageInterface):
                         origin=self.storage,
                         path=path,
                     )
-                    if stat:
-                        storage_entry.date = int(stat.st_mtime)
+                    storage_entry.date = int(stat.st_mtime)
 
                     storage_entry = self._enrich_folder(
                         storage_entry, force_refresh=force_refresh
@@ -1542,12 +1546,11 @@ class LocalFileStorage(StorageInterface):
                                 if k in additional_metadata_keys
                             }
 
-                    if stat:
-                        storage_entry.size = stat.st_size
-                        storage_entry.date = datetime.datetime.fromtimestamp(
-                            stat.st_mtime,
-                            tz=LOCAL_TZ,
-                        )
+                    storage_entry.size = stat.st_size
+                    storage_entry.date = datetime.datetime.fromtimestamp(
+                        stat.st_mtime,
+                        tz=LOCAL_TZ,
+                    )
 
                     thumbnails = self._get_thumbnails(os.path.dirname(path_on_disk), name)
                     if thumbnails:
@@ -1573,7 +1576,9 @@ class LocalFileStorage(StorageInterface):
                 total_size += node["size"]
         return total_size
 
-    def _enrich_folder(self, folder: StorageFolder, force_refresh: bool = False) -> dict:
+    def _enrich_folder(
+        self, folder: StorageFolder, force_refresh: bool = False
+    ) -> StorageFolder:
         assert isinstance(folder, StorageFolder)
 
         path = folder.path
@@ -1599,7 +1604,7 @@ class LocalFileStorage(StorageInterface):
 
     def _enrich_folders(
         self, nodes: dict[str, StorageEntry], force_refresh: bool = False
-    ) -> dict[str, dict]:
+    ) -> dict[str, StorageEntry]:
         enriched = {}
         for key, value in nodes.items():
             if isinstance(value, StorageFolder):
