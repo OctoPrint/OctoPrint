@@ -218,6 +218,7 @@ class VirtualPrinter:
         self._selectedSdFile = None
         self._selectedSdFileSize = None
         self._selectedSdFilePos = None
+        self._sdPathPrefix = self._settings.get(["sdFiles", "path_prefix"])
 
         self._writingToSd = False
         self._writingToSdHandle = None
@@ -1610,7 +1611,7 @@ class VirtualPrinter:
             or not os.path.exists(file["path"])
             or not os.path.isfile(file["path"])
         ):
-            self._send(f"open failed, File: {file['name']}.")
+            self._send(f"open failed, File: {filename}.")
             return
 
         if self._selectedSdFile == file["path"] and check_already_open:
@@ -1619,10 +1620,14 @@ class VirtualPrinter:
         self._selectedSdFile = file["path"]
         self._selectedSdFileSize = file["size"]
         if self._settings.get_boolean(["includeFilenameInOpened"]):
-            self._send(f"File opened: {file['name']}  Size: {self._selectedSdFileSize}")
+            self._send(
+                f"File opened: {self._sdPathPrefix + file['name']}  Size: {self._selectedSdFileSize}"
+            )
         else:
             self._send("File opened")
-        self._send("File selected")
+
+        if not self._settings.get_boolean(["suppressFileSelected"]):
+            self._send("File selected")
 
     def _startSdPrint(self):
         if self._selectedSdFile is not None:

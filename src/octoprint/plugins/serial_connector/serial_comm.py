@@ -3220,7 +3220,10 @@ class MachineCom:
                                 longname=data.longname,
                             )
 
-                    elif "File selected" in line:
+                        # Formerly triggered on "File selected", but this has been removed at least from Prusa Buddy firmware
+                        #
+                        # Looking at Marlin (even back to 1.x), it always reported "File opened" AND "File selected".
+                        # Same with Repetier. So we don't have to wait for "File selected".
                         if self._ignore_select:
                             self._ignore_select = False
                         elif self._currentFile is not None and self.isSdFileSelected():

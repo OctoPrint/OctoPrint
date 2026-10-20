@@ -47,6 +47,9 @@ class VirtualPrinterSdFilesConfig(BaseModel):
     upper_case: bool = False
     """Whether to uppercase the filenames in M20 responses"""
 
+    path_prefix: str = ""
+    """Prefix to attach to sd files in "File opened" messages"""
+
 
 class VirtualPrinterErrorsConfig(BaseModel):
     checksum_mismatch: str = "Checksum mismatch"
@@ -198,6 +201,9 @@ class VirtualPrinterConfig(BaseModel):
     General format:
     ``<filename>[ <filesize in bytes> [ <timestamp>][ (<longname> | "<longname>")]]``
     """
+
+    suppressFileSelected: bool = False
+    """Whether to suppress the "File selected" message sent after "File opened" by the printer"""
 
     throttle: float = 0.01
     """Forced pause for retrieving from the outgoing buffer"""
