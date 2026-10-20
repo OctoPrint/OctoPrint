@@ -11,12 +11,12 @@
 <dl>
     <dt>{{ _("Connection Type") }}</dt>
     <dd>
-        <span data-bind="html: preferredConnectorName"></span>
+        <span data-bind="text: preferredConnectorName"></span>
     </dd>
 
     <dt>{{ _("Connection Parameters") }}</dt>
     <dd data-bind="foreach: preferredConnectorParameters">
-        <span data-bind="html: $data"></span>
+        <span data-bind="text: $data"></span>
         <br />
     </dd>
 </dl>
