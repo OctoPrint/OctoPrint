@@ -68,6 +68,20 @@ SEMICOL_ENCODED = _percent_encode_fully(";")
             FOLDERNAME,
             id="create folder",
         ),
+        pytest.param(
+            (
+                f"--{BOUNDARY}{CRLF}"
+                f'content-disposition: form-data; name="foldername"{CRLF}{CRLF}'
+                f"{FOLDERNAME}{CRLF}"
+                f"--{BOUNDARY}{CRLF}"
+                f'content-disposition: form-data; name="foldername"{CRLF}{CRLF}'
+                f"{FOLDERNAME}{CRLF}"
+                f"--{BOUNDARY}--{CRLF}"
+            ),
+            f"multipart/form-data; boundary={BOUNDARY}",
+            FOLDERNAME,
+            id="create folder, two parts",
+        ),
     ],
 )
 def test_regular_uploads_working(base_url, headers, setup, body, content_type, path):

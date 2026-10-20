@@ -11,7 +11,6 @@ import os
 import re
 import secrets
 import sys
-from typing import Any
 from urllib.parse import urlparse
 
 import tornado
@@ -28,6 +27,7 @@ import tornado.util
 import tornado.web
 from tornado.concurrent import dummy_executor
 from tornado.ioloop import IOLoop
+from werkzeug.datastructures import MultiDict
 from werkzeug.formparser import parse_form_data
 from werkzeug.http import parse_options_header
 from zipstream.ng import ZIP_DEFLATED, ZipStream
@@ -295,7 +295,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         self._multipart_boundary = None
 
         # Parts, files and values will be stored here
-        self._parts = {}
+        self._parts = MultiDict()
         self._files = []
 
         # Part currently being processed
@@ -583,7 +583,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
             del part["file"]
 
         name = part["name"]
-        self._parts[name] = part
+        self._parts.add(name, part)
         if "file" in part:
             self._files.append(part["path"])
             finish_file()
@@ -595,7 +595,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         """
 
         self._new_body = b""
-        for name, part in self._parts.items():
+        for name, part in self._parts.items(multi=True):
             if "filename" in part:
                 # add form fields for filename, path, size and content_type for all files contained in the request
                 if "path" not in part:
@@ -791,7 +791,7 @@ def _extended_header_value(value):
 def _validate_multipart_body(
     body: bytes,
     boundary: bytes,
-    parts: dict[bytes, dict[str, Any]],
+    parts: MultiDict,
     suffixes: dict[str, str],
     path: str | None = None,
 ) -> None:
@@ -808,7 +808,7 @@ def _validate_multipart_body(
         _, form, files = parse_form_data(environ)
 
         expected_form_fields = []
-        for name, part in parts.items():
+        for name, part in parts.items(multi=True):
             if "filename" in part:
                 if "path" not in part:
                     continue
