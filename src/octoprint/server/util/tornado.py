@@ -398,6 +398,8 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         :param data: the data to process as a string
         """
 
+        CRLF_LEN = 2
+
         # check for boundary
         delimiter = b"--%s" % self._multipart_boundary
         delimiter_loc = data.find(delimiter)
@@ -405,13 +407,13 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         end_of_header = -1
         if delimiter_loc != -1:
             # found the delimiter in the currently available data
-            delimiter_data_end = 0 if delimiter_loc == 0 else delimiter_loc - 2
+            delimiter_data_end = 0 if delimiter_loc == 0 else delimiter_loc - CRLF_LEN
             data, self._buffer = data[0:delimiter_data_end], data[delimiter_loc:]
             end_of_header = self._buffer.find(b"\r\n\r\n")
         else:
             # make sure any boundary (with single or double ==) contained at the end of chunk does not get
             # truncated by this processing round => save it to the buffer for next round
-            endlen = len(self._multipart_boundary) + 4
+            endlen = len(self._multipart_boundary) + CRLF_LEN * 2
             data, self._buffer = data[0:-endlen], data[-endlen:]
 
         # stream data to part handler
@@ -419,8 +421,8 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
             self._on_part_data(self._current_part, data)
 
         if end_of_header >= 0:
-            self._on_part_header(self._buffer[delimiter_len + 2 : end_of_header])
-            self._buffer = self._buffer[end_of_header + 4 :]
+            self._on_part_header(self._buffer[delimiter_len + CRLF_LEN : end_of_header])
+            self._buffer = self._buffer[end_of_header + CRLF_LEN * 2 :]
 
         if delimiter_loc != -1 and self._buffer.strip() == delimiter + b"--":
             # we saw the last boundary and are at the end of our request
