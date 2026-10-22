@@ -23,6 +23,7 @@ from flask_babel import gettext
 
 import octoprint.plugin
 import octoprint.plugin.core
+import octoprint.util
 from octoprint.access import ADMIN_GROUP, READONLY_GROUP, USER_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.events import Events

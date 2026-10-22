@@ -7,6 +7,7 @@ import datetime
 import json
 import os
 import threading
+from typing import Optional
 
 from flask import abort, jsonify
 from flask_babel import gettext
@@ -112,13 +113,14 @@ class AchievementsPlugin(
 
     @property
     def _current_year_stats(self) -> YearlyStats:
-        if not self._year_data:
-            self._load_current_year_file()
+        year_data = self._year_data
+        if not year_data:
+            year_data = self._load_current_year_file()
 
-        if self._year_data.year != self._current_year:
-            self._reset_current_year_data()
+        if year_data.year != self._current_year:
+            year_data = self._reset_current_year_data()
 
-        return self._year_data
+        return year_data
 
     ##~~ Additional permissions hook
 
@@ -747,11 +749,12 @@ class AchievementsPlugin(
                     )
                 )
 
-    def _reset_current_year_data(self):
+    def _reset_current_year_data(self) -> YearlyStats:
         self._year_data = YearlyStats(year=self._current_year)
         self._write_current_year_file()
+        return self._year_data
 
-    def _load_current_year_file(self):
+    def _load_current_year_file(self) -> YearlyStats:
         self._fix_current_year_data()  # try to fix data affected by #5223
 
         with self._year_data_mutex:
@@ -760,7 +763,9 @@ class AchievementsPlugin(
                 self._logger.info(
                     "No data file for the current year found, starting with empty data"
                 )
-                self._reset_current_year_data()
+                return self._reset_current_year_data()
+
+            return self._year_data
 
     def _write_current_year_file(self):
         self._write_year_file(self._year_data)
@@ -852,7 +857,7 @@ class AchievementsPlugin(
                     "Error while trying to create sentinel for bug #5223"
                 )
 
-    def _load_year_file(self, year=None) -> YearlyStats:
+    def _load_year_file(self, year=None) -> Optional[YearlyStats]:
         if year is None:
             year = self._current_year
 

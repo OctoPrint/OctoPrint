@@ -51,7 +51,7 @@ def _fetch_files(package: str) -> Iterable[ReleaseFile]:
     return [ReleaseFile(x["filename"], x.get("requires-python")) for x in files]
 
 
-def _parse_version_from_filename(filename) -> Version:
+def _parse_version_from_filename(filename) -> Optional[Version]:
     """
     >>> _parse_version_from_filename("importlib_metadata-8.4.0.tar.gz")
     <Version('8.4.0')>

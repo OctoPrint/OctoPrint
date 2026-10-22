@@ -482,7 +482,10 @@ def _getFileList(
 
 
 def _analyse_and_convert_recursively(
-    origin: str, files: Iterable[StorageEntry], path: str = None, extension_tree=None
+    origin: str,
+    files: Iterable[StorageEntry],
+    path: Optional[str] = None,
+    extension_tree=None,
 ) -> list[apischema.ApiStorageEntry]:
     if path is None:
         path = ""

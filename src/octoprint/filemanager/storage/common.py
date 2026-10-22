@@ -4,7 +4,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 
 import datetime
-from typing import IO, TYPE_CHECKING, Any, Optional
+from typing import IO, TYPE_CHECKING, Any, Callable, Optional
 
 from octoprint.filemanager.util import AbstractFileWrapper
 from octoprint.schema import BaseModel
@@ -188,7 +188,9 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def get_lastmodified(self, path: str = None, recursive: bool = False) -> int:
+    def get_lastmodified(
+        self, path: Optional[str] = None, recursive: bool = False
+    ) -> int:
         """
         Get the modification date of the specified ``path`` or ``path``'s subtree.
 
@@ -200,7 +202,7 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def get_hash(self, path: str = None, recursive: bool = False) -> str:
+    def get_hash(self, path: Optional[str] = None, recursive: bool = False) -> str:
         """
         Get a hash corresponding to the current state of the specified ``path`` or ``path``'s subtree.
 
@@ -243,7 +245,7 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def get_storage_entry(self, path: str) -> StorageEntry:
+    def get_storage_entry(self, path: str) -> Optional[StorageEntry]:
         if "/" in path:
             folder, name = path.rsplit("/", 1)
         else:
@@ -255,8 +257,8 @@ class StorageInterface:
 
     def list_storage_entries(
         self,
-        path: str = None,
-        filter: callable = None,
+        path: Optional[str] = None,
+        filter: Optional[Callable] = None,
         recursive: bool = True,
         level: int = 0,
         force_refresh: bool = False,
@@ -267,7 +269,7 @@ class StorageInterface:
     @deprecated(
         "get_file has been deprecated in favor of get_storage_entry", since="2.0.0"
     )
-    def get_file(self, path: str) -> dict:
+    def get_file(self, path: str) -> Optional[dict]:
         entry = self.get_storage_entry(path)
         if entry is None:
             return None
@@ -279,8 +281,8 @@ class StorageInterface:
     )
     def list_files(
         self,
-        path: str = None,
-        filter: callable = None,
+        path: Optional[str] = None,
+        filter: Optional[Callable] = None,
         recursive: bool = True,
         level: int = 0,
         force_refresh: bool = False,
@@ -387,23 +389,25 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def copy_folder(self, source, destination) -> str:
+    def copy_folder(self, source, destination, allow_overwrite: bool = False) -> str:
         """
         Copies the folder ``source`` to ``destination``
 
         :param string source: path to the source folder
         :param string destination: path to destination
+        :param bool allow_overwrite: whether to allow overwriting an already existing destination folder
 
         :return: the path in the storage to the copy of the folder
         """
         raise NotImplementedError()
 
-    def move_folder(self, source, destination) -> str:
+    def move_folder(self, source, destination, allow_overwrite: bool = False) -> str:
         """
         Moves the folder ``source`` to ``destination``
 
         :param string source: path to the source folder
         :param string destination: path to destination
+        :param bool allow_overwrite: whether to allow overwriting an already existing destination folder
 
         :return: the new path in the storage to the folder
         """
@@ -414,9 +418,9 @@ class StorageInterface:
         path: str,
         data: AbstractFileWrapper,
         allow_overwrite: bool = False,
-        display: str = None,
-        user: str = None,
-        progress_callback: callable = None,
+        display: Optional[str] = None,
+        user: Optional[str] = None,
+        progress_callback: Optional[Callable] = None,
         *args,
         **kwargs,
     ) -> str:
@@ -489,7 +493,7 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def get_metadata(self, path: str, default=None) -> dict:
+    def get_metadata(self, path: str, default=None) -> Optional[dict]:
         """
         Retrieves the metadata for the file ``path``.
 
@@ -526,13 +530,13 @@ class StorageInterface:
         raise NotImplementedError()
 
     def get_thumbnail(
-        self, path: str, platehint: int = None, sizehint: str = None
+        self, path: str, platehint: Optional[int] = None, sizehint: Optional[str] = None
     ) -> Optional[StorageThumbnail]:
         raise NotImplementedError()
 
     def read_thumbnail(
-        self, path: str, platehint: int = None, sizehint: str = None
-    ) -> Optional[IO]:
+        self, path: str, platehint: Optional[int] = None, sizehint: Optional[str] = None
+    ) -> Optional[tuple[StorageThumbnail, IO]]:
         raise NotImplementedError()
 
     def refresh_thumbnails(
@@ -613,7 +617,9 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def create_job(self, path, owner: str = None, params: dict = None) -> "PrintJob":
+    def create_job(
+        self, path, owner: Optional[str] = None, params: Optional[dict] = None
+    ) -> "PrintJob":
         from octoprint.printer.job import DurationEstimate, FilamentEstimate, PrintJob
 
         entry = self.get_storage_entry(path)

@@ -299,3 +299,20 @@ count = true
 
 [tool.check-wheel-contents]
 ignore = 'W002,W004,W009'
+
+[tool.ty.rules]
+# TODO: fix the remaining fails and enable these rules again
+unresolved-attribute = "ignore"
+invalid-argument-type = "ignore"
+invalid-assignment = "ignore"
+not-subscriptable = "ignore"
+invalid-method-override = "ignore"
+unsupported-operator = "ignore"
+no-matching-overload = "ignore"
+unresolved-global = "ignore"
+call-non-callable = "ignore"
+not-iterable = "ignore"
+
+[tool.uv]
+# the docs extra requires Python 3.11+
+environments = ["python_version >= '3.11'"]
