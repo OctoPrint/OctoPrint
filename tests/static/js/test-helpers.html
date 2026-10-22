@@ -3,21 +3,21 @@
     <head>
         <meta charset="utf-8" />
         <title>src/octoprint/static/js/app/helpers.js Tests</title>
-        <link rel="stylesheet" href="lib/qunit-1.18.0.css" />
+        <link rel="stylesheet" href="lib/qunit-3.0.0.css" />
     </head>
     <body>
         <div id="qunit"></div>
         <div id="qunit-fixture"></div>
-        <script src="lib/qunit-1.18.0.js"></script>
-        <script src="lib/qunit-parameterize.js"></script>
+        <script src="lib/qunit-3.0.0.js"></script>
         <script src="../../../src/octoprint/static/js/lib/moment-with-locales.min.js"></script>
         <script src="../../../src/octoprint/static/js/lib/babel.js"></script>
         <script src="../../../src/octoprint/static/js/lib/lodash.min.js"></script>
         <script src="../../../src/octoprint/static/js/lib/sprintf.min.js"></script>
         <script src="../../../src/octoprint/static/js/app/helpers.js"></script>
+        <script>_.mixin({sprintf: sprintf, vsprintf: vsprintf});</script>
 
         <script>
-            var catalog = {
+            const catalog = {
                 messages: undefined,
                 plural_expr: undefined,
                 locale: undefined,
