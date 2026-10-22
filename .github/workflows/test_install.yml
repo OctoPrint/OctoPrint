@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-latest"]
+        os: ["ubuntu-24.04"] # change to ubuntu-latest once we get rid of Python 3.9
         python: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
         branch: ["release", "main", "next", "dev"]
         exclude:
