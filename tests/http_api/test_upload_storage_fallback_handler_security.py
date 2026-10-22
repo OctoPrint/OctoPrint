@@ -68,20 +68,6 @@ SEMICOL_ENCODED = _percent_encode_fully(";")
             FOLDERNAME,
             id="create folder",
         ),
-        pytest.param(
-            (
-                f"--{BOUNDARY}{CRLF}"
-                f'content-disposition: form-data; name="foldername"{CRLF}{CRLF}'
-                f"{FOLDERNAME}{CRLF}"
-                f"--{BOUNDARY}{CRLF}"
-                f'content-disposition: form-data; name="foldername"{CRLF}{CRLF}'
-                f"{FOLDERNAME}{CRLF}"
-                f"--{BOUNDARY}--{CRLF}"
-            ),
-            f"multipart/form-data; boundary={BOUNDARY}",
-            FOLDERNAME,
-            id="create folder, two parts",
-        ),
     ],
 )
 def test_regular_uploads_working(base_url, headers, setup, body, content_type, path):
@@ -90,6 +76,75 @@ def test_regular_uploads_working(base_url, headers, setup, body, content_type, p
     resp = urllib3.request("POST", base_url + "/api/files/local", body=body, headers=hdrs)
 
     _verify_created(base_url, headers, resp, path)
+
+
+@pytest.mark.parametrize(
+    "body, content_type, path_ok, paths_nok",
+    [
+        pytest.param(
+            (
+                "".join(
+                    [
+                        (
+                            f"--{BOUNDARY}{CRLF}"
+                            f'content-disposition: form-data; name="file"; filename="{x}{FILENAME}"{CRLF}'
+                            f"content-type: text/plain{CRLF}{CRLF}"
+                            f"{CONTENT}{CRLF}"
+                        )
+                        for x in range(10)
+                    ]
+                )
+                + f"--{BOUNDARY}--{CRLF}"
+            ),
+            f"multipart/form-data; boundary={BOUNDARY}",
+            f"0{FILENAME}",
+            [f"{x}{FILENAME}" for x in range(10)[1:]],
+            id="ten files",
+        ),
+        pytest.param(
+            (
+                "".join(
+                    [
+                        (
+                            f"--{BOUNDARY}{CRLF}"
+                            f'content-disposition: form-data; name="foldername"{CRLF}{CRLF}'
+                            f"{FOLDERNAME}{x}{CRLF}"
+                        )
+                        for x in range(10)
+                    ]
+                )
+                + f"--{BOUNDARY}--{CRLF}"
+            ),
+            f"multipart/form-data; boundary={BOUNDARY}",
+            f"{FOLDERNAME}0",
+            [f"{FOLDERNAME}{x}" for x in range(10)[1:]],
+            id="ten folders",
+        ),
+    ],
+)
+def test_regular_uploads_only_first_value_is_used(
+    base_url, headers, setup, body, content_type, path_ok, paths_nok
+):
+    """
+    Multiple file parts will be turned into multiple value parts with path, name, etc.
+
+    This test makes sure that regardless of this internal change of the request, the flask based
+    endpoint only ever uses the first file found for the name in the request, even if there
+    are more.
+
+    Should we ever allow multiple file uploads per request, this needs to be changed.
+
+    We also test that multiple foldernames provided in the request are handled equally.
+    """
+    for path in [path_ok] + paths_nok:
+        _ensure_path_unknown(base_url, headers, path)
+
+    hdrs = dict(**headers, **{"Content-Type": content_type})
+    resp = urllib3.request("POST", base_url + "/api/files/local", body=body, headers=hdrs)
+
+    _verify_created(base_url, headers, resp, path_ok)
+    for path_nok in paths_nok:
+        _verify_path_missing(base_url, headers, path_nok)
 
 
 ##~~ request parameters
@@ -331,4 +386,4 @@ def headers(user_credentials):
 @pytest.fixture
 def setup(base_url, headers, caplog):
     _ensure_path_unknown(base_url, headers, FILENAME)
-    _ensure_path_unknown(base_url, headers, FILENAME)
+    _ensure_path_unknown(base_url, headers, FOLDERNAME)
