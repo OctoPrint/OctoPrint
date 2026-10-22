@@ -63,7 +63,7 @@ jobs:
       fail-fast: false
       matrix:
         python: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # change back to ubuntu-latest once we drop Python 3.9
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -118,7 +118,7 @@ jobs:
   test-js-unit:
     name: 🧪 JavaScript unit tests
     needs: build
-    runs-on: ubuntu-22.04 # change back to ubuntu-latest once we figure out why puppeteer is unhappy under 24.04
+    runs-on: ubuntu-22.04 # change back to ubuntu-latest once we figure out why puppeteer is unhappy under 24.04+
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -140,7 +140,7 @@ jobs:
       matrix:
         python: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
         installable: ["wheel", "sdist"]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # change back to ubuntu-latest once we drop Python 3.9
     steps:
       - name: ⬇ Download build result
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -182,7 +182,7 @@ jobs:
   test-e2e:
     name: 🧪 E2E tests
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # change back to ubuntu-latest once we drop Python 3.9
     strategy:
       fail-fast: false
       matrix:
@@ -221,7 +221,7 @@ jobs:
 
   test-http:
     name: 🧪 HTTP/API tests
-    runs-on: ubuntu-22.04 # change back to ubuntu-latest once we drop Python 3.7
+    runs-on: ubuntu-24.04 # change back to ubuntu-latest once we drop Python 3.9
     strategy:
       fail-fast: false
       matrix:
