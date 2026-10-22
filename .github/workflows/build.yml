@@ -118,18 +118,18 @@ jobs:
   test-js-unit:
     name: 🧪 JavaScript unit tests
     needs: build
-    runs-on: ubuntu-22.04 # change back to ubuntu-latest once we figure out why puppeteer is unhappy under 24.04+
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: 🏗 Set up test dependencies
         run: |
-          npm -g install node-qunit-puppeteer@2.1.2
+          npm -g install node-qunit-puppeteer@2.2.1
       - name: 🚀 Run helpers.js test suite
         run: |
-          node-qunit-puppeteer tests/static/js/test-helpers.html
-          node-qunit-puppeteer tests/static/js/test-client-base.html
+          node-qunit-puppeteer tests/static/js/test-helpers.html 10000 "--allow-file-access-from-files --no-sandbox"
+          node-qunit-puppeteer tests/static/js/test-client-base.html 10000 "--allow-file-access-from-files --no-sandbox"
 
   test-install:
     name: 🧪 Installation tests
