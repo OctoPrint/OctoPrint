@@ -19,13 +19,11 @@ def _get_zipinfo(archive: zipfile.ZipFile, name: str) -> zipfile.ZipInfo | None:
         except KeyError:
             # check for a single contained dir, indicated by a common prefix
             files = archive.namelist()
-            prefix = os.path.commonprefix(
-                files
-            )  # e.g. "OctoPrint-RequestSpinner-master/"
+            prefix = os.path.commonpath(files)  # e.g. "OctoPrint-RequestSpinner-master/"
             if not prefix:
                 raise
 
-            return archive.getinfo(prefix + name)
+            return archive.getinfo(f"{prefix}/{name}")
 
     except KeyError:
         # not found
@@ -41,7 +39,7 @@ def _get_tarinfo(archive: tarfile.TarFile, name: str) -> tarfile.TarInfo | None:
         except KeyError:
             # check for a single contained dir, indicated by a common prefix
             files = archive.getnames()
-            prefix = os.path.commonprefix(files)  # e.g. "OctoPrint-RequestSpinner-master"
+            prefix = os.path.commonpath(files)  # e.g. "OctoPrint-RequestSpinner-master"
             if not prefix:
                 raise
             return archive.getmember(f"{prefix}/{name}")
