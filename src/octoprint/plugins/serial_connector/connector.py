@@ -1,6 +1,7 @@
 import copy
 import logging
 import os
+from collections.abc import Callable
 from gettext import gettext
 from typing import TYPE_CHECKING, Any
 
@@ -333,7 +334,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
 
     def set_job(
         self,
-        job: PrintJob,
+        job: PrintJob | None,
         tags=None,
         user=None,
         *args,
@@ -466,7 +467,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
             util.to_unicode("\n".join(lines), "utf-8", errors="replace")
         )
 
-    def get_state_string(self, state: ConnectedPrinterState = None):
+    def get_state_string(self, state: ConnectedPrinterState | None = None):
         if state is None:
             state = self.state
 
@@ -504,14 +505,14 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         )
 
     @property
-    def cancel_position(self) -> dict:
+    def cancel_position(self) -> dict | None:
         if self._comm is None:
             return None
         pos = self._comm.cancel_position
         return pos if pos is None else pos.as_dict()
 
     @property
-    def pause_position(self) -> dict:
+    def pause_position(self) -> dict | None:
         if self._comm is None:
             return None
         pos = self._comm.pause_position
@@ -552,7 +553,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
 
     def get_printer_file(
         self, path: str, refresh: bool = False, *args, **kwargs
-    ) -> PrinterFile:
+    ) -> PrinterFile | None:
         files = self.get_printer_files(refresh=refresh)
         for f in files:
             if f.path == path:
@@ -561,7 +562,12 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
             return None
 
     def upload_printer_file(
-        self, source, target, progress_callback: callable = None, *args, **kwargs
+        self,
+        source,
+        target,
+        progress_callback: Callable | None = None,
+        *args,
+        **kwargs,
     ) -> str:
         if progress_callback is not None:
             self._progress_callback = progress_callback

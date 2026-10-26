@@ -4,7 +4,7 @@ import urllib3
 pytestmark = pytest.mark.http_api
 
 
-def _verify_tree_restricted(tree: dict, expected: dict = None):
+def _verify_tree_restricted(tree: dict, expected: dict | None = None):
     if expected is None:
         expected = {}
 

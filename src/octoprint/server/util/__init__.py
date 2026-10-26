@@ -6,13 +6,14 @@ import base64
 import datetime
 import logging
 import sys
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 PY3 = sys.version_info >= (3, 0)  # should now always be True, kept for plugins
 
 import flask as _flask
 import flask_login
 
+import octoprint.plugin
 import octoprint.server
 import octoprint.timelapse
 from octoprint.plugin import plugin_manager
@@ -27,6 +28,9 @@ from octoprint.util.net import (
 )
 
 from . import flask, sockjs, tornado, watchdog  # noqa: F401
+
+if TYPE_CHECKING:
+    import octoprint.access.users
 
 
 class LoginMechanism:
@@ -181,7 +185,7 @@ def optionsAllowOrigin(request):
 
 
 def get_user_for_apikey(
-    apikey: str, remote_address: str = None
+    apikey: str, remote_address: str | None = None
 ) -> "Optional[octoprint.access.users.User]":
     """
     Tries to find a user based on the given API key.

@@ -37,6 +37,11 @@ repos:
       - id: ruff-check
         args: ["--fix"]
       - id: ruff-format
+  - repo: https://github.com/astral-sh/ty-pre-commit
+    rev: v0.0.84
+    hooks:
+      - id: ty
+        args: ["--isolated", "--all-extras"]
   - repo: https://github.com/djlint/djlint
     rev: v1.36.4
     hooks:

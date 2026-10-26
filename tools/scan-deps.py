@@ -1,15 +1,10 @@
 import os
 
 import requests
+import tomllib
 from packaging.requirements import Requirement
 from packaging.version import parse as parse_version
 from tqdm import tqdm
-
-try:
-    import tomllib
-except ImportError:
-    import tomli as tomllib  # Python < 3.11
-
 
 PYPI_SIMPLE = "https://pypi.org/simple/{package}/"
 PYPI_JSON = "https://pypi.org/pypi/{package}/{version}/json"

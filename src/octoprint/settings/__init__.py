@@ -28,7 +28,7 @@ import sys
 import threading
 import time
 from collections import ChainMap, defaultdict
-from collections.abc import KeysView
+from collections.abc import KeysView, MutableMapping
 from typing import Any
 
 from yaml import YAMLError
@@ -264,7 +264,7 @@ class HierarchicalChainMap:
         self._chainmap = ChainMap(*map(self._flatten, maps))
         self._prefixed_keys = {}
 
-    def _has_prefix(self, prefix: str, current: ChainMap = None) -> bool:
+    def _has_prefix(self, prefix: str, current: ChainMap | None = None) -> bool:
         """
         Check if the given prefix is in the current map. This utilizes the cached
         prefix keys to avoid recomputing the list every time.
@@ -273,7 +273,9 @@ class HierarchicalChainMap:
             current = self._chainmap
         return any(x in current for x in self._cached_prefixed_keys(prefix))
 
-    def _with_prefix(self, prefix: str, current: ChainMap = None) -> dict[str, Any]:
+    def _with_prefix(
+        self, prefix: str, current: ChainMap | None = None
+    ) -> dict[str, Any]:
         """
         Get a dict with all keys that start with the given prefix. This utilizes the
         cached prefix keys to avoid recomputing the list every time.
@@ -521,7 +523,9 @@ class HierarchicalChainMap:
                 pass
 
     def with_config_defaults(
-        self, config: dict[str, Any] = None, defaults: dict[str, Any] = None
+        self,
+        config: dict[str, Any] | None = None,
+        defaults: dict[str, Any] | None = None,
     ) -> "HierarchicalChainMap":
         """
         Builds a new map with the following layers: provided config + any intermediary
@@ -618,11 +622,11 @@ class HierarchicalChainMap:
         del self._chainmap.maps[pos]
 
     @property
-    def all_layers(self) -> list[dict[str, Any]]:
+    def all_layers(self) -> list[MutableMapping[str, Any]]:
         """A list of all layers in this map, flattened."""
         return self._chainmap.maps
 
-    def _middle_layers(self) -> list[dict]:
+    def _middle_layers(self) -> list[MutableMapping[str, Any]]:
         """Returns all layers between the top and bottom layer, flattened."""
         if len(self._chainmap.maps) > 2:
             return self._chainmap.maps[1:-1]

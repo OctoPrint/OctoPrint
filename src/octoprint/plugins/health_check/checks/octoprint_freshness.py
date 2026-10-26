@@ -9,7 +9,7 @@ from . import CheckResult, HealthCheck, Result
 class OctoPrintFreshnessCheck(HealthCheck):
     key = "octoprint_freshness"
 
-    def __init__(self, settings: dict = None):
+    def __init__(self, settings: dict | None = None):
         super().__init__(settings)
 
         self._versions = None
@@ -21,7 +21,7 @@ class OctoPrintFreshnessCheck(HealthCheck):
 
         return self._versions
 
-    def perform_check(self, force: bool = False) -> CheckResult:
+    def perform_check(self, force: bool = False) -> CheckResult | None:
         from octoprint.util.version import get_octoprint_version
 
         if force:

@@ -28,6 +28,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import datetime
 import re
+from collections.abc import Callable
 from typing import IO, TYPE_CHECKING, Any, Optional
 
 from pydantic import computed_field
@@ -194,15 +195,15 @@ class CommonPrinterMixin:
         """
 
     @property
-    def communication_health(self) -> CommunicationHealth:
+    def communication_health(self) -> CommunicationHealth | None:
         return None
 
     @property
-    def firmware_info(self) -> FirmwareInformation:
+    def firmware_info(self) -> FirmwareInformation | None:
         return None
 
     @property
-    def error_info(self) -> ErrorInformation:
+    def error_info(self) -> ErrorInformation | None:
         return None
 
     def commands(self, *commands, tags=None, force=False, **kwargs):
@@ -306,7 +307,11 @@ class CommonPrinterMixin:
         """
 
     def set_temperature_offset(
-        self, offsets: dict = None, tags: set = None, *args, **kwargs
+        self,
+        offsets: dict | None = None,
+        tags: set | None = None,
+        *args,
+        **kwargs,
     ):
         """
         Sets the temperature ``offsets`` to apply to target temperatures read from a GCODE file while printing.
@@ -320,7 +325,7 @@ class CommonPrinterMixin:
 
     @property
     def temperature_offsets(self) -> dict:
-        return None
+        return {}
 
     def feed_rate(self, factor, tags=None, *args, **kwargs):
         """
@@ -360,14 +365,20 @@ class CommonPrinterMixin:
 
     def set_job(
         self,
-        job: PrintJob,
-        tags: set[str] = None,
+        job: PrintJob | None,
+        tags: set[str] | None = None,
         *args,
         **kwargs,
     ):
         pass
 
-    def start_print(self, tags: set[str] = None, params: dict = None, *args, **kwargs):
+    def start_print(
+        self,
+        tags: set[str] | None = None,
+        params: dict | None = None,
+        *args,
+        **kwargs,
+    ):
         """
         Starts printing the currently selected file. If no file is currently selected, does nothing.
 
@@ -375,7 +386,13 @@ class CommonPrinterMixin:
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
         """
 
-    def pause_print(self, tags: set[str] = None, params: dict = None, *args, **kwargs):
+    def pause_print(
+        self,
+        tags: set[str] | None = None,
+        params: dict | None = None,
+        *args,
+        **kwargs,
+    ):
         """
         Pauses the current print job if it is currently running, does nothing otherwise.
 
@@ -383,7 +400,13 @@ class CommonPrinterMixin:
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
         """
 
-    def resume_print(self, tags: set[str] = None, params: dict = None, *args, **kwargs):
+    def resume_print(
+        self,
+        tags: set[str] | None = None,
+        params: dict | None = None,
+        *args,
+        **kwargs,
+    ):
         """
         Resumes the current print job if it is currently paused, does nothing otherwise.
 
@@ -392,7 +415,11 @@ class CommonPrinterMixin:
         """
 
     def toggle_pause_print(
-        self, tags: set[str] = None, params: dict = None, *args, **kwargs
+        self,
+        tags: set[str] | None = None,
+        params: dict | None = None,
+        *args,
+        **kwargs,
     ):
         """
         Pauses the current print job if it is currently running or resumes it if it is currently paused.
@@ -401,11 +428,17 @@ class CommonPrinterMixin:
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
         """
         if self.is_printing():
-            self.pause_print(*args, tags=tags, params=params, **kwargs)
+            self.pause_print(tags=tags, params=params, **kwargs)
         elif self.is_paused():
-            self.resume_print(*args, tags=tags, params=params, **kwargs)
+            self.resume_print(tags=tags, params=params, **kwargs)
 
-    def cancel_print(self, tags: set[str] = None, params: dict = None, *args, **kwargs):
+    def cancel_print(
+        self,
+        tags: set[str] | None = None,
+        params: dict | None = None,
+        *args,
+        **kwargs,
+    ):
         """
         Cancels the current print job.
 
@@ -552,11 +585,11 @@ class ConnectedPrinterMixin(CommonPrinterMixin):
         return None
 
     @property
-    def cancel_position(self) -> dict:
+    def cancel_position(self) -> dict | None:
         return None
 
     @property
-    def pause_position(self) -> dict:
+    def pause_position(self) -> dict | None:
         return None
 
     def connect(self, *args, **kwargs):
@@ -620,7 +653,9 @@ class PrinterFilesMixin:
     def refresh_printer_files(self, blocking=False, timeout=10, *args, **kwargs) -> None:
         pass
 
-    def get_printer_file(self, path: str, refresh=False, *args, **kwargs) -> PrinterFile:
+    def get_printer_file(
+        self, path: str, refresh=False, *args, **kwargs
+    ) -> PrinterFile | None:
         files = self.get_printer_files(refresh=refresh)
         for f in files:
             if f.path == path:
@@ -633,7 +668,7 @@ class PrinterFilesMixin:
         return []
 
     def create_printer_folder(self, target: str, *args, **kwargs) -> str:
-        pass
+        raise NotImplementedError()
 
     def delete_printer_folder(
         self, target: str, recursive: bool = False, *args, **kwargs
@@ -641,20 +676,20 @@ class PrinterFilesMixin:
         pass
 
     def copy_printer_folder(self, source: str, target: str, *args, **kwargs) -> str:
-        pass
+        raise NotImplementedError()
 
     def move_printer_folder(self, source: str, target: str, *args, **kwargs) -> str:
-        pass
+        raise NotImplementedError()
 
     def upload_printer_file(
         self,
         path_or_file: str | IO,
         path: str,
-        progress_callback: callable,
+        progress_callback: Callable | None = None,
         *args,
         **kwargs,
     ) -> str:
-        pass
+        raise NotImplementedError()
 
     def download_printer_file(
         self,
@@ -662,16 +697,16 @@ class PrinterFilesMixin:
         *args,
         **kwargs,
     ) -> IO:
-        return None
+        raise NotImplementedError()
 
     def delete_printer_file(self, path: str, *args, **kwargs) -> None:
         pass
 
     def copy_printer_file(self, source: str, target: str, *args, **kwargs) -> str:
-        pass
+        raise NotImplementedError()
 
     def move_printer_file(self, source: str, target: str, *args, **kwargs) -> str:
-        pass
+        raise NotImplementedError()
 
     def sanitize_file_name(self, name: str, *args, **kwargs) -> str:
         return name
@@ -699,7 +734,7 @@ class PrinterFilesMixin:
         return suggestion
 
     def get_printer_file_metadata(
-        self, path: str, printer_file: PrinterFile = None, *args, **kwargs
+        self, path: str, printer_file: PrinterFile | None = None, *args, **kwargs
     ) -> MetadataEntry | None:
         if printer_file is None:
             printer_file = self.get_printer_file(path)
@@ -721,12 +756,22 @@ class PrinterFilesMixin:
         return False
 
     def get_thumbnail(
-        self, path: str, platehint: int = None, sizehint: str = None, *args, **kwargs
+        self,
+        path: str,
+        platehint: int | None = None,
+        sizehint: str | None = None,
+        *args,
+        **kwargs,
     ) -> StorageThumbnail | None:
         return None
 
     def download_thumbnail(
-        self, path: str, platehint: int = None, sizehint: str = None, *args, **kwargs
+        self,
+        path: str,
+        platehint: int | None = None,
+        sizehint: str | None = None,
+        *args,
+        **kwargs,
     ) -> tuple[StorageThumbnail, IO] | None:
         return None
 
@@ -735,7 +780,9 @@ class PrinterFilesMixin:
     ) -> None:
         pass
 
-    def create_job(self, path: str, owner: str = None, params: dict = None) -> PrintJob:
+    def create_job(
+        self, path: str, owner: str | None = None, params: dict | None = None
+    ) -> PrintJob | None:
         printer_file = self.get_printer_file(path)
         if not printer_file:
             return None
@@ -776,9 +823,9 @@ class PrinterFilesMixin:
 class PrinterMixin(CommonPrinterMixin):
     def connect(
         self,
-        connector: str = None,
-        parameters: dict = None,
-        profile: str = None,
+        connector: str | None = None,
+        parameters: dict | None = None,
+        profile: str | None = None,
         *args,
         **kwargs,
     ):
@@ -801,7 +848,12 @@ class PrinterMixin(CommonPrinterMixin):
         return None
 
     def set_job(
-        self, job: PrintJob, print_after_select=False, pos=None, tags=None, user=None
+        self,
+        job: PrintJob | None,
+        print_after_select=False,
+        pos=None,
+        tags=None,
+        user=None,
     ):
         pass
 
@@ -832,18 +884,18 @@ class PrinterMixin(CommonPrinterMixin):
     def trigger_printjob_event(
         self,
         event,
-        job: PrintJob = None,
-        print_head_position: dict = None,
-        job_position: dict = None,
-        progress: float = None,
-        user: str = None,
-        payload: dict = None,
+        job: PrintJob | None = None,
+        print_head_position: dict | None = None,
+        job_position: dict | None = None,
+        progress: float | None = None,
+        user: str | None = None,
+        payload: dict | None = None,
     ):
         pass
 
     @property
     def connection_state(self) -> dict:
-        return None
+        return {}
 
     @classmethod
     @deprecated(

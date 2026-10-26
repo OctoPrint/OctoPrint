@@ -28,7 +28,7 @@ def get_package_version(package: str) -> str:
     return meta.version(package)
 
 
-def safe_get_package_version(package: str, default: str | None = None) -> str:
+def safe_get_package_version(package: str, default: str | None = None) -> str | None:
     """Returns the version of the provided package, returns the configured ``default`` if it cannot be found"""
     try:
         return get_package_version(package)
@@ -57,7 +57,7 @@ def get_octoprint_version_string() -> str:
     return __version__
 
 
-def get_octoprint_version(cut: int = None, **kwargs) -> Version:
+def get_octoprint_version(cut: int | None = None, **kwargs) -> Version:
     """Returns the current OctoPrint version in a comparable format"""
     octoprint_version_string = normalize_version(get_octoprint_version_string())
     return get_comparable_version(octoprint_version_string, cut=cut, **kwargs)

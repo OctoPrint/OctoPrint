@@ -3,7 +3,7 @@ from typing import Any, TextIO
 
 
 def load_from_file(
-    file: TextIO = None, path: str = None
+    file: TextIO | None = None, path: str | None = None
 ) -> dict[Hashable, Any] | list | None:
     """
     Safely and performantly loads yaml data from the given source. Either a

@@ -12,10 +12,10 @@ from octoprint.schema import BaseModel
 
 
 class Result(Enum):
-    OK: str = "ok"
-    INFO: str = "info"
-    WARNING: str = "warning"
-    ISSUE: str = "issue"
+    OK = "ok"
+    INFO = "info"
+    WARNING = "warning"
+    ISSUE = "issue"
 
 
 class CheckResult(BaseModel):
@@ -35,16 +35,16 @@ OK_RESULT = CheckResult()
 class HealthCheck:
     key: str = "dummy"
 
-    def __init__(self, settings: dict = None):
+    def __init__(self, settings: dict | None = None):
         self._logger = logging.getLogger("octoprint.plugins.healthcheck." + self.key)
         if settings is None:
             settings = {}
         self._settings = settings
 
-    def update_settings(self, settings: dict = None) -> None:
+    def update_settings(self, settings: dict | None = None) -> None:
         if settings is None:
             settings = {}
         self._settings = settings
 
-    def perform_check(self, force: bool = False) -> CheckResult:
+    def perform_check(self, force: bool = False) -> CheckResult | None:
         return CheckResult()

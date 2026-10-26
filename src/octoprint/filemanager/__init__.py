@@ -736,14 +736,14 @@ class FileManager:
     @deprecated(
         "get_file has been deprecated in favor of get_storage_entry", since="2.0.0"
     )
-    def get_file(self, location: str, path: str) -> dict:
+    def get_file(self, location: str, path: str) -> dict | None:
         return self._storage(location).get_file(path)
 
     def list_storage_entries(
         self,
-        locations: list[str] = None,
-        path: str = None,
-        filter: callable = None,
+        locations: list[str] | None = None,
+        path: str | None = None,
+        filter: Callable | None = None,
         recursive: bool = True,
         level: int = 0,
         force_refresh: bool = False,
@@ -770,7 +770,7 @@ class FileManager:
                 self._logger.exception(f"Error while fetching storage entries for {loc}")
         return result
 
-    def get_storage_entry(self, storage: str, path: str) -> StorageEntry:
+    def get_storage_entry(self, storage: str, path: str) -> StorageEntry | None:
         path = self.path_in_storage(storage, path)
 
         return self._storage(storage).get_storage_entry(path)
@@ -783,9 +783,9 @@ class FileManager:
         allow_overwrite: bool = False,
         printer_profile=None,
         analysis=None,
-        display: str = None,
-        user: str = None,
-        progress_callback: callable = None,
+        display: str | None = None,
+        user: str | None = None,
+        progress_callback: Callable | None = None,
         *args,
         **kwargs,
     ):
@@ -1094,7 +1094,7 @@ class FileManager:
         destination_storage: str,
         destination_path: str,
         allow_overwrite: bool = False,
-        progress_callback: Callable = None,
+        progress_callback: Callable | None = None,
     ) -> None:
         self._action_across_storage(
             "copy_file",
@@ -1113,7 +1113,7 @@ class FileManager:
         destination_storage: str,
         destination_path: str,
         allow_overwrite: bool = False,
-        progress_callback: Callable = None,
+        progress_callback: Callable | None = None,
     ) -> None:
         self._action_across_storage(
             "move_file",
@@ -1133,7 +1133,7 @@ class FileManager:
         destination_storage: str,
         destination_path: str,
         allow_overwrite: bool = False,
-        progress_callback: Callable = None,
+        progress_callback: Callable | None = None,
     ) -> None:
         storage_src = self._storage(source_storage)
         storage_dst = self._storage(destination_storage)
@@ -1292,7 +1292,7 @@ class FileManager:
     def has_analysis(self, location, path):
         return self._storage(location).has_analysis(path)
 
-    def get_metadata(self, location: str, path: str) -> dict:
+    def get_metadata(self, location: str, path: str) -> dict | None:
         return self._storage(location).get_metadata(path)
 
     @deprecated(
@@ -1310,7 +1310,7 @@ class FileManager:
         self._storage(location).remove_link(path, rel, data)
 
     def create_job(
-        self, location, path, owner: str = None, params: dict = None
+        self, location, path, owner: str | None = None, params: dict | None = None
     ) -> "PrintJob":
         return self._storage(location).create_job(path, owner=owner, params=params)
 
@@ -1387,15 +1387,23 @@ class FileManager:
         return self._storage(location).has_thumbnail(path)
 
     def get_thumbnail(
-        self, location, path, platehint: int = None, sizehint: str = None
+        self,
+        location,
+        path,
+        platehint: int | None = None,
+        sizehint: str | None = None,
     ) -> StorageThumbnail | None:
         return self._storage(location).get_thumbnail(
             path, platehint=platehint, sizehint=sizehint
         )
 
     def read_thumbnail(
-        self, location, path, platehint: int = None, sizehint: str = None
-    ) -> tuple[StorageThumbnail, IO]:
+        self,
+        location,
+        path,
+        platehint: int | None = None,
+        sizehint: str | None = None,
+    ) -> tuple[StorageThumbnail, IO] | None:
         return self._storage(location).read_thumbnail(
             path, platehint=platehint, sizehint=sizehint
         )

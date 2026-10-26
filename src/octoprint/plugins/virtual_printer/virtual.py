@@ -990,7 +990,7 @@ class VirtualPrinter:
         self.buffered.join()
 
     # noinspection PyUnusedLocal
-    def _gcode_M600(self, data: str) -> None:
+    def _gcode_M600(self, data: str) -> bool:
         self._send("//action:paused")
         self._showPrompt(
             "Heater Timeout",
@@ -1400,7 +1400,10 @@ class VirtualPrinter:
         self._send("echo:EMERGENCY SHUTDOWN DETECTED. KILLED.")
 
     def _triggerResend(
-        self, expected: int = None, actual: int = None, checksum: int = None
+        self,
+        expected: int | None = None,
+        actual: int | None = None,
+        checksum: int | None = None,
     ) -> None:
         with self._incoming_lock:
             if expected is None:

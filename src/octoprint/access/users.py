@@ -11,6 +11,9 @@ import time
 
 import wrapt
 from flask_login import AnonymousUserMixin, UserMixin
+
+# ty: ignore[unresolved-import] - passlib.hash is a proxy module that loads hashes lazily
+from passlib.hash import pbkdf2_sha256
 from werkzeug.local import LocalProxy
 
 from octoprint.access.groups import Group, GroupChangeListener
@@ -23,9 +26,8 @@ NOLOGIN_PWHASH = "nologin"
 
 password_hashers = []
 
-from passlib.hash import pbkdf2_sha256
-
 try:
+    # ty: ignore[unresolved-import] - passlib.hash is a proxy module that loads hashes lazily
     from passlib.hash import argon2
 
     # test if we can actually hash and verify, if not we won't use this backend

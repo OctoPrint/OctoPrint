@@ -8,7 +8,9 @@ import logging
 import os
 import re
 from collections import defaultdict
+from collections.abc import Callable
 from functools import partial
+from typing import Any, TypedDict
 
 from flask import (
     Response,
@@ -63,6 +65,21 @@ _plugin_vars = None
 
 _valid_id_re = re.compile("[a-z_]+")
 _valid_div_re = re.compile("[a-zA-Z_-]+")
+
+
+class TemplateSorting(TypedDict, total=False):
+    add: str
+    key: str | None
+    key_extractor: Callable[[Any, str], Any]
+    custom_add_entries: Callable[[list[str]], dict]
+    custom_add_order: Callable[[list[str]], list[str]]
+    custom_insert_entries: Callable[[list[str]], dict]
+    custom_insert_order: Callable[[list[str], list[str]], list[str]]
+
+
+class TemplateTypeData(TypedDict):
+    order: list[str]
+    entries: dict[str, Any]
 
 
 def _preemptive_unless(base_url=None, additional_unless=None):
@@ -906,7 +923,9 @@ def fetch_template_data(refresh=False):
 
     ##~~ prepare templates
 
-    templates = defaultdict(lambda: {"order": [], "entries": {}})
+    templates: defaultdict[str, TemplateTypeData] = defaultdict(
+        lambda: {"order": [], "entries": {}}
+    )
 
     # rules for transforming template configs to template entries
     template_rules = {
@@ -978,7 +997,7 @@ def fetch_template_data(refresh=False):
             # Finally everything else
             return f"2:{to_unicode(d[0])}"
 
-    template_sorting = {
+    template_sorting: dict[str, TemplateSorting] = {
         "navbar": {"add": "prepend", "key": None},
         "sidebar": {"add": "append", "key": "name"},
         "tab": {"add": "append", "key": "name"},
