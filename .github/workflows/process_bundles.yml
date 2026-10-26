@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   process-bundles:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: OctoPrint/actions/process-systeminfo-bundles@main
         with:
