@@ -298,7 +298,3 @@ no-matching-overload = "ignore"
 unresolved-global = "ignore"
 call-non-callable = "ignore"
 not-iterable = "ignore"
-
-[tool.uv]
-# the docs extra requires Python 3.11+
-environments = ["python_version >= '3.11'"]
