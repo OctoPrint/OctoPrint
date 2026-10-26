@@ -18,15 +18,19 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-24.04"] # change to ubuntu-latest once we get rid of Python 3.9
-        python: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+        python: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
         branch: ["release", "main", "next", "dev"]
         exclude:
           # main & release: 3.7-3.13
-          - branch: "release"
-            python: "3.14"
           - branch: "main"
             python: "3.14"
-          # dev: 3.11-3.14
+          - branch: "main"
+            python: "3.15"
+          - branch: "release"
+            python: "3.14"
+          - branch: "release"
+            python: "3.15"
+          # dev: 3.11-3.15
           - branch: "dev"
             python: "3.9"
           - branch: "dev"
