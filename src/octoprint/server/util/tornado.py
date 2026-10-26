@@ -11,7 +11,6 @@ import os
 import re
 import secrets
 import sys
-from typing import Any
 from urllib.parse import urlparse
 
 import tornado
@@ -28,6 +27,7 @@ import tornado.util
 import tornado.web
 from tornado.concurrent import dummy_executor
 from tornado.ioloop import IOLoop
+from werkzeug.datastructures import MultiDict
 from werkzeug.formparser import parse_form_data
 from werkzeug.http import parse_options_header
 from zipstream.ng import ZIP_DEFLATED, ZipStream
@@ -295,7 +295,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         self._multipart_boundary = None
 
         # Parts, files and values will be stored here
-        self._parts = {}
+        self._parts = MultiDict()
         self._files = []
 
         # Part currently being processed
@@ -398,6 +398,8 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         :param data: the data to process as a string
         """
 
+        CRLF_LEN = 2
+
         # check for boundary
         delimiter = b"--%s" % self._multipart_boundary
         delimiter_loc = data.find(delimiter)
@@ -405,13 +407,13 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         end_of_header = -1
         if delimiter_loc != -1:
             # found the delimiter in the currently available data
-            delimiter_data_end = 0 if delimiter_loc == 0 else delimiter_loc - 2
+            delimiter_data_end = 0 if delimiter_loc == 0 else delimiter_loc - CRLF_LEN
             data, self._buffer = data[0:delimiter_data_end], data[delimiter_loc:]
             end_of_header = self._buffer.find(b"\r\n\r\n")
         else:
             # make sure any boundary (with single or double ==) contained at the end of chunk does not get
             # truncated by this processing round => save it to the buffer for next round
-            endlen = len(self._multipart_boundary) + 4
+            endlen = len(self._multipart_boundary) + CRLF_LEN * 2
             data, self._buffer = data[0:-endlen], data[-endlen:]
 
         # stream data to part handler
@@ -419,8 +421,8 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
             self._on_part_data(self._current_part, data)
 
         if end_of_header >= 0:
-            self._on_part_header(self._buffer[delimiter_len + 2 : end_of_header])
-            self._buffer = self._buffer[end_of_header + 4 :]
+            self._on_part_header(self._buffer[delimiter_len + CRLF_LEN : end_of_header])
+            self._buffer = self._buffer[end_of_header + CRLF_LEN * 2 :]
 
         if delimiter_loc != -1 and self._buffer.strip() == delimiter + b"--":
             # we saw the last boundary and are at the end of our request
@@ -583,7 +585,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
             del part["file"]
 
         name = part["name"]
-        self._parts[name] = part
+        self._parts.add(name, part)
         if "file" in part:
             self._files.append(part["path"])
             finish_file()
@@ -595,7 +597,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         """
 
         self._new_body = b""
-        for name, part in self._parts.items():
+        for name, part in self._parts.items(multi=True):
             if "filename" in part:
                 # add form fields for filename, path, size and content_type for all files contained in the request
                 if "path" not in part:
@@ -791,7 +793,7 @@ def _extended_header_value(value):
 def _validate_multipart_body(
     body: bytes,
     boundary: bytes,
-    parts: dict[bytes, dict[str, Any]],
+    parts: MultiDict,
     suffixes: dict[str, str],
     path: str | None = None,
 ) -> None:
@@ -808,7 +810,7 @@ def _validate_multipart_body(
         _, form, files = parse_form_data(environ)
 
         expected_form_fields = []
-        for name, part in parts.items():
+        for name, part in parts.items(multi=True):
             if "filename" in part:
                 if "path" not in part:
                     continue
