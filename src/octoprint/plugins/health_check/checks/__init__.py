@@ -5,7 +5,6 @@ __copyright__ = "Copyright (C) 2024 The OctoPrint Project - Released under terms
 import hashlib
 import logging
 from enum import Enum
-from typing import Optional
 
 from pydantic import computed_field
 
@@ -36,16 +35,16 @@ OK_RESULT = CheckResult()
 class HealthCheck:
     key: str = "dummy"
 
-    def __init__(self, settings: Optional[dict] = None):
+    def __init__(self, settings: dict | None = None):
         self._logger = logging.getLogger("octoprint.plugins.healthcheck." + self.key)
         if settings is None:
             settings = {}
         self._settings = settings
 
-    def update_settings(self, settings: Optional[dict] = None) -> None:
+    def update_settings(self, settings: dict | None = None) -> None:
         if settings is None:
             settings = {}
         self._settings = settings
 
-    def perform_check(self, force: bool = False) -> Optional[CheckResult]:
+    def perform_check(self, force: bool = False) -> CheckResult | None:
         return CheckResult()

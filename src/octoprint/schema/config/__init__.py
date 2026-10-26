@@ -1,8 +1,6 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from typing import Union
-
 from octoprint.schema import BaseModel
 
 from .access_control import AccessControlConfig
@@ -32,7 +30,7 @@ class Config(BaseModel):
     accessControl: AccessControlConfig = AccessControlConfig()
     api: ApiConfig = ApiConfig()
     appearance: AppearanceConfig = AppearanceConfig()
-    controls: list[Union[CustomControl, CustomControlContainer]] = []
+    controls: list[CustomControl | CustomControlContainer] = []
     devel: DevelConfig = DevelConfig()
     estimation: EstimationConfig = EstimationConfig()
     events: EventsConfig = EventsConfig()

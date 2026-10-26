@@ -12,6 +12,7 @@ or **[creating pull requests](#pull-requests)**.
     * [Where can I find which version and branch I'm on?](#where-can-i-find-which-version-and-branch-im-on)
     * [Where can I find those log files you keep talking about?](#where-can-i-find-those-log-files-you-keep-talking-about)
     * [Where can I find my browser's error console?](#where-can-i-find-my-browsers-error-console)
+  * [How to report a vulnerability?](#how-to-report-a-vulnerability)
   * [Setting up a development environment](#setting-up-a-development-environment)
   * [Pull requests](#pull-requests)
   * [How is OctoPrint versioned](#how-is-octoprint-versioned)
@@ -179,6 +180,10 @@ Please refer to [this FAQ entry](https://community.octoprint.org/t/where-can-i-f
 
 See [How to open the Javascript Console in different browsers](https://webmasters.stackexchange.com/questions/8525/how-to-open-the-javascript-console-in-different-browsers)
 
+## How to report a vulnerability?
+
+Please refer to [OctoPrint's Security Policy](https://octoprint.org/security/).
+
 ## Setting up a development environment
 
 See [the corresponding chapter in the documentation](https://docs.octoprint.org/en/dev/development/environment.html).
@@ -209,7 +214,7 @@ and branching strategy, plus the commit message formatting guidelines.
    just cause unnecessary work and frustration for everyone or
    possibly get the PR rejected.
 3. Create your pull request **from a custom branch** on your end (e.g.
-   `wip/my-new-feature`)[1].
+   `wip/my-new-feature`)[^1].
 4. Create your pull request **only against the `dev` branch**. In case of big changes,
    [get in touch](https://community.octoprint.org/c/development) *first*.
 5. Create **one pull request per feature/bug fix**.
@@ -312,46 +317,8 @@ If AI is used to generate any portion of the pull request, contributors must adh
 
 For more info, please refer to the [AGENTS.md](AGENTS.md) file.
 
-## History
+---
 
-  * 2015-01-23: More guidelines for creating pull requests, support/questions
-    redirected to Mailinglist/G+ community
-  * 2015-01-27: Added another explicit link to the FAQ
-  * 2015-07-07: Added step to add yourself to AUTHORS when creating a PR :)
-  * 2015-12-01: Heavily reworked to include examples, better structure and
-    all information in one document.
-  * 2016-02-10: Added information about branch structure and versioning.
-  * 2016-02-16: Added requirement to add information from template to existing
-    tickets as well, explained issue with "me too" red herrings.
-  * 2016-03-14: Some more requirements for PRs, and a PR template.
-  * 2016-06-08: New `prerelease` and `rc` branches explained.
-  * 2016-09-09: New `rc/*` branches explained.
-  * 2016-09-23: Some more work on "How to file a bug report" based on recent
-    experiences
-  * 2017-01-25: Fixed a typo
-  * 2017-03-09: Allow PRs against `maintenance` branch for bugs in stable.
-  * 2017-03-10: Reproduce bugs in safe mode to make sure they are really caused
-    by OctoPrint itself and not a misbehaving plugin.
-  * 2017-03-27: Added safe mode section to ticket template.
-  * 2017-11-22: Added note on how to run the unit tests
-  * 2018-03-15: Link to new community forum and some clarifications re bug
-    reporting
-  * 2018-03-29: "Where to find version numbers" is now located on the FAQ
-  * 2018-10-18: Allow PRs against `maintenance` branch for improvements and small
-    new features, suggest getting in touch on the forum for larger changes
-  * 2020-08-10: Update versioning scheme and PR instructions
-  * 2020-09-23: Move branch & versioning into development docs
-  * 2020-10-07: Introduce `pre-commit`
-  * 2021-02-04: Issue forms! \o/
-  * 2021-03-04: Correct issue forms link
-  * 2021-04-27: Systeminfo Bundles! \o/
-  * 2025-05-21: Guidelines regarding the use of AI
-  * 2025-09-03: Changes according to the new branching strategy
-  * 2026-01-27: Stricter guidelines regarding the use of AI for Pull Requests, adapted from llama.cpp
-  * 2026-02-25: New section about commit message formatting
+*Last changed on June 24th 2026.*
 
-## Footnotes
-  * [1] - If you are wondering why, the problem is that anything that you add
-    to your PR's branch will also become part of your PR, so if you create a
-    PR from your version of `dev` chances are high you'll add changes to the
-    PR that do not belong to the PR.
+[^1]: If you are wondering why, the problem is that anything that you add to your PR's branch will also become part of your PR, so if you create a PR from your version of `dev` chances are high you'll add changes to the PR that do not belong to the PR.

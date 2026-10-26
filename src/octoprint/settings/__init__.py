@@ -29,7 +29,7 @@ import threading
 import time
 from collections import ChainMap, defaultdict
 from collections.abc import KeysView, MutableMapping
-from typing import Any, Optional
+from typing import Any
 
 from yaml import YAMLError
 
@@ -39,7 +39,6 @@ from octoprint.util import (
     atomic_write,
     dict_merge,
     fast_deepcopy,
-    generate_api_key,
     is_hidden_path,
     time_this,
     yaml,
@@ -265,7 +264,7 @@ class HierarchicalChainMap:
         self._chainmap = ChainMap(*map(self._flatten, maps))
         self._prefixed_keys = {}
 
-    def _has_prefix(self, prefix: str, current: Optional[ChainMap] = None) -> bool:
+    def _has_prefix(self, prefix: str, current: ChainMap | None = None) -> bool:
         """
         Check if the given prefix is in the current map. This utilizes the cached
         prefix keys to avoid recomputing the list every time.
@@ -275,7 +274,7 @@ class HierarchicalChainMap:
         return any(x in current for x in self._cached_prefixed_keys(prefix))
 
     def _with_prefix(
-        self, prefix: str, current: Optional[ChainMap] = None
+        self, prefix: str, current: ChainMap | None = None
     ) -> dict[str, Any]:
         """
         Get a dict with all keys that start with the given prefix. This utilizes the
@@ -525,8 +524,8 @@ class HierarchicalChainMap:
 
     def with_config_defaults(
         self,
-        config: Optional[dict[str, Any]] = None,
-        defaults: Optional[dict[str, Any]] = None,
+        config: dict[str, Any] | None = None,
+        defaults: dict[str, Any] | None = None,
     ) -> "HierarchicalChainMap":
         """
         Builds a new map with the following layers: provided config + any intermediary
@@ -732,6 +731,7 @@ class Settings:
                 "logs",
             ]
         )
+        self.clean_temps(folders=["uploadtemp"])
         self.warn_about_risky_settings()
 
     def _init_basedir(self, basedir):
@@ -764,6 +764,26 @@ class Settings:
         # validate uniqueness of folder paths
         if len(folder_map.values()) != len(set(folder_map.values())):
             raise DuplicateFolderPaths(folders)
+
+    def clean_temps(self, folders=None):
+        if folders is None:
+            return
+
+        import shutil
+
+        for folder in folders:
+            try:
+                path = self.getBaseFolder(folder, create=False, check_writable=False)
+            except OSError:
+                continue
+
+            self._logger.info(f"Cleaning up {path}...")
+            try:
+                shutil.rmtree(path)
+            except Exception:
+                self._logger.exception(
+                    f"Error while trying to delete {path}, leaving it alone"
+                )
 
     def warn_about_risky_settings(self):
         if not self.getBoolean(["devel", "enableRateLimiter"]):
@@ -2399,16 +2419,6 @@ class Settings:
             os.makedirs(path)
         with atomic_write(filename, mode="wt", max_permissions=0o666) as f:
             f.write(script)
-
-    def generateApiKey(self):
-        apikey = generate_api_key()
-        self.set(["api", "key"], apikey)
-        self.save(force=True)
-        return apikey
-
-    def deleteApiKey(self):
-        self.set(["api", "key"], None)
-        self.save(force=True)
 
 
 def _default_basedir(applicationName):

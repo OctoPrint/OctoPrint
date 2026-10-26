@@ -8,8 +8,9 @@ import logging
 import os
 import re
 from collections import defaultdict
+from collections.abc import Callable
 from functools import partial
-from typing import Any, Callable, Optional, TypedDict
+from typing import Any, TypedDict
 
 from flask import (
     Response,
@@ -68,7 +69,7 @@ _valid_div_re = re.compile("[a-zA-Z_-]+")
 
 class TemplateSorting(TypedDict, total=False):
     add: str
-    key: Optional[str]
+    key: str | None
     key_extractor: Callable[[Any, str], Any]
     custom_add_entries: Callable[[list[str]], dict]
     custom_add_order: Callable[[list[str]], list[str]]
@@ -516,7 +517,7 @@ def index():
     # if we need to refresh our template cache or it's not yet set, process it
     fetch_template_data(refresh=force_refresh)
 
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = datetime.datetime.now(datetime.UTC)
 
     enable_timelapse = settings().getBoolean(["webcam", "timelapseEnabled"])
     enable_loading_animation = settings().getBoolean(["devel", "showLoadingAnimation"])

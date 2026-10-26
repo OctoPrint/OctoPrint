@@ -1,18 +1,17 @@
 import datetime
-from typing import Optional
 
 from octoprint.schema import BaseModel
 
 
 class DurationEstimate(BaseModel):
     estimate: float
-    source: Optional[str] = None
+    source: str | None = None
 
 
 class FilamentEstimate(BaseModel):
-    length: Optional[float] = None
-    volume: Optional[float] = None
-    weight: Optional[float] = None
+    length: float | None = None
+    volume: float | None = None
+    weight: float | None = None
 
 
 class PrintJob(BaseModel):
@@ -21,13 +20,13 @@ class PrintJob(BaseModel):
     plate: int = 1
     display: str
     size: int = 0
-    date: Optional[datetime.datetime] = None
-    owner: Optional[str] = None
-    duration_estimate: Optional[DurationEstimate] = None
+    date: datetime.datetime | None = None
+    owner: str | None = None
+    duration_estimate: DurationEstimate | None = None
     filament_estimate: dict[str, FilamentEstimate] = {}
-    path_on_disk: Optional[str] = None
+    path_on_disk: str | None = None
 
-    params: Optional[dict] = None
+    params: dict | None = None
 
     def __str__(self):
         return f"{self.storage}:{self.path}"
@@ -50,4 +49,4 @@ class JobProgress(BaseModel):
     pos: int
     elapsed: float
     cleaned_elapsed: float
-    left_estimate: Optional[float] = None
+    left_estimate: float | None = None

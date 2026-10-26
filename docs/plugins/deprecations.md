@@ -6,16 +6,6 @@ This document lists all active deprecations or possibly disruptive behaviour cha
 (sec-plugins-deprecations-2_1_0)=
 ## Upcoming changes for OctoPrint 2.1.0
 
-(sec-plugins-deprecations-2_1_0-global_apikey)=
-### Removal of Global API key
-
-The global API key will get removed for good in OctoPrint 2.1.0. If your plugin is still relying on it in any shape or form, you need to migrate off of it **now**.
-
-If you utilize it to access APIs provided by other plugins installed in OctoPrint, use the [one-time use `plugin_apikey`](#octoprint.plugin.types.OctoPrintPlugin.plugin_apikey) instead. See also [above](#sec-plugins-octo_2_0_0-api-global_api_key).
-
-```{deprecated} 1.6.0
-```
-
 (sec-plugins-deprecations-2_1_0-prefixed_plugin_templates)=
 ### Plugin specific prefix required in plugin templates
 

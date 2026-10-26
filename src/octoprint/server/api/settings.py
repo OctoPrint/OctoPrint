@@ -14,14 +14,13 @@ import octoprint.util
 from octoprint.access.permissions import Permissions
 from octoprint.schema.config.controls import CustomControl, CustomControlContainer
 from octoprint.server import pluginManager, userManager
-from octoprint.server.api import NO_CONTENT, api
+from octoprint.server.api import api
 from octoprint.server.util.flask import (
     api_version_matches,
     apply_path_restrictions,
     credentials_checked_recently,
     ensure_credentials_checked_recently,
     no_firstrun_access,
-    require_credentials_checked_recently,
     with_revalidation_checking,
 )
 from octoprint.settings import settings, valid_boolean_trues
@@ -174,7 +173,6 @@ def getSettings():
             ),
         },
         "api": {
-            "key": s.get(["api", "key"]),
             "allowCrossOrigin": s.get(["api", "allowCrossOrigin"]),
         },
         "appearance": {
@@ -381,9 +379,6 @@ def getSettings():
         data, PATH_RESTRICTIONS, current_user, keep_leaves=True
     )  # redact all restricted leaves
 
-    if not Permissions.ADMIN.can() or not credentials_checked_recently():
-        data.get("api", {})["key"] = None
-
     return jsonify(data)
 
 
@@ -437,24 +432,6 @@ def setSettings():
     if response:
         return response
     return getSettings()
-
-
-@api.route("/settings/apikey", methods=["POST"])
-@no_firstrun_access
-@Permissions.ADMIN.require(403)
-@require_credentials_checked_recently
-def generateApiKey():
-    apikey = settings().generateApiKey()
-    return jsonify(apikey=apikey)
-
-
-@api.route("/settings/apikey", methods=["DELETE"])
-@no_firstrun_access
-@Permissions.ADMIN.require(403)
-@require_credentials_checked_recently
-def deleteApiKey():
-    settings().deleteApiKey()
-    return NO_CONTENT
 
 
 @api.route("/settings/templates", methods=["GET"])

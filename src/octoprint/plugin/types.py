@@ -685,22 +685,19 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 
     def is_template_autoescaped(self):
         """
-        Whether a plugin's templates have autoescape enabled. For now this defaults to ``False`` to not cause issues with plugins currently
-        pushing HTML into templates through variables. Long term, this will default to ``True`` and hence prevent something like this from
-        working, unless a plugin opts out by returning ``False`` here.
+        Whether a plugin's templates have autoescape enabled. Since OctoPrint 2.1.0 this defaults to ``True``. If your plugin cannot cope with
+        autoescaped templates, return ``False`` here.
 
         It is **strongly** recommended to return ``True`` however and use the ``safe`` filter for those expressions that actually need to support
         HTML entities. That way a plugin will severely reduce the risk of causing XSS security issues.
 
         .. versionadded:: 1.11.0
+
+        .. versionchanged:: 2.1.0
+
+           Default behaviour changed from returning ``False`` to returning ``True``
         """
-        if not getattr(self, "__autoescape_warning_logged", False):
-            self._logger.warning(
-                "The templates of this plugin are currently not being autoescaped. This has potential security implications. "
-                "For that reason OctoPrint 2.1.0 will globally enforce autoescaping. Plugin authors seeing this should read https://faq.octoprint.org/plugin-autoescape."
-            )
-            setattr(self, "__autoescape_warning_logged", True)
-        return False
+        return True
 
 
 class UiPlugin(OctoPrintPlugin, SortablePlugin):
@@ -1386,27 +1383,20 @@ class SimpleApiPlugin(OctoPrintPlugin):
 
     def is_api_protected(self) -> bool:
         """
-        Whether a SimpleApi's endpoints requires a valid user to be logged in to access it. For now, this defaults to ``False`` to leave it up to
-        plugins to decide whether the endpoints *should* be protected. Long term, this will default to ``True`` and hence
-        enforce protection unless a plugin opts out by returning False here.
-
-        If you do not override this method in your mixin implementation, a warning will be logged to the console
-        to alert you of the requirement to make a decision here and to not rely on the default implementation, due to the
-        forthcoming change in implemented default behaviour.
+        Whether a SimpleApi's endpoints requires a valid user to be logged in to access it. As of OctoPrint 2.1.0 this defaults to ``True``
+        and hence enforces protection unless a plugin opts out by returning ``False`` here.
 
         Be advised that by returning ``True`` here, OctoPrint will only check whether a valid user is logged in before forwarding
         the request to your implementation. However, you *really should* add additional permission checks specific to your plugin into your API
         endpoints.
 
         .. versionadded:: 1.11.2
+
+        .. versionchanged:: 2.1.0
+
+           Default behaviour changed from returning ``False`` (and logging a warning) to returning ``True``
         """
-        self._logger.warning(
-            "The simple API of this plugin is relying on the default implementation of "
-            "is_api_protected (newly added in OctoPrint 1.11.2), which in a future version will "
-            "be switched from False to True for security reasons. Plugin authors should ensure they explicitly "
-            "declare the API protection status in their SimpleApiPlugin mixin implementation. "
-        )
-        return False
+        return True
 
     # noinspection PyMethodMayBeStatic
     def on_api_command(self, command, data):

@@ -1,17 +1,10 @@
 import os
 
 import requests
+import tomllib
 from packaging.requirements import Requirement
 from packaging.version import parse as parse_version
 from tqdm import tqdm
-
-try:
-    # ty: ignore[unresolved-import] - tomllib is only available on Python 3.11+
-    import tomllib
-except ImportError:
-    # ty: ignore[unresolved-import] - tomli is only installed on Python < 3.11
-    import tomli as tomllib
-
 
 PYPI_SIMPLE = "https://pypi.org/simple/{package}/"
 PYPI_JSON = "https://pypi.org/pypi/{package}/{version}/json"

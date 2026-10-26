@@ -28,7 +28,8 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import datetime
 import re
-from typing import IO, TYPE_CHECKING, Any, Callable, Optional, Union
+from collections.abc import Callable
+from typing import IO, TYPE_CHECKING, Any, Optional
 
 from pydantic import computed_field
 
@@ -83,9 +84,9 @@ ERROR_FAQS = {
 class ErrorInformation(BaseModel):
     error: str
     reason: str
-    consequence: Optional[str] = None
-    faq: Optional[str] = None
-    logs: Optional[list[str]] = None
+    consequence: str | None = None
+    faq: str | None = None
+    logs: list[str] | None = None
 
 
 class FirmwareInformation(BaseModel):
@@ -194,15 +195,15 @@ class CommonPrinterMixin:
         """
 
     @property
-    def communication_health(self) -> Optional[CommunicationHealth]:
+    def communication_health(self) -> CommunicationHealth | None:
         return None
 
     @property
-    def firmware_info(self) -> Optional[FirmwareInformation]:
+    def firmware_info(self) -> FirmwareInformation | None:
         return None
 
     @property
-    def error_info(self) -> Optional[ErrorInformation]:
+    def error_info(self) -> ErrorInformation | None:
         return None
 
     def commands(self, *commands, tags=None, force=False, **kwargs):
@@ -244,7 +245,7 @@ class CommonPrinterMixin:
 
     def get_additional_controls(
         self,
-    ) -> list[Union[CustomControl, CustomControlContainer]]:
+    ) -> list[CustomControl | CustomControlContainer]:
         return []
 
     def jog(self, axes, relative=True, speed=None, tags=None, *args, **kwargs):
@@ -307,8 +308,8 @@ class CommonPrinterMixin:
 
     def set_temperature_offset(
         self,
-        offsets: Optional[dict] = None,
-        tags: Optional[set] = None,
+        offsets: dict | None = None,
+        tags: set | None = None,
         *args,
         **kwargs,
     ):
@@ -364,8 +365,8 @@ class CommonPrinterMixin:
 
     def set_job(
         self,
-        job: Optional[PrintJob],
-        tags: Optional[set[str]] = None,
+        job: PrintJob | None,
+        tags: set[str] | None = None,
         *args,
         **kwargs,
     ):
@@ -373,8 +374,8 @@ class CommonPrinterMixin:
 
     def start_print(
         self,
-        tags: Optional[set[str]] = None,
-        params: Optional[dict] = None,
+        tags: set[str] | None = None,
+        params: dict | None = None,
         *args,
         **kwargs,
     ):
@@ -387,8 +388,8 @@ class CommonPrinterMixin:
 
     def pause_print(
         self,
-        tags: Optional[set[str]] = None,
-        params: Optional[dict] = None,
+        tags: set[str] | None = None,
+        params: dict | None = None,
         *args,
         **kwargs,
     ):
@@ -401,8 +402,8 @@ class CommonPrinterMixin:
 
     def resume_print(
         self,
-        tags: Optional[set[str]] = None,
-        params: Optional[dict] = None,
+        tags: set[str] | None = None,
+        params: dict | None = None,
         *args,
         **kwargs,
     ):
@@ -415,8 +416,8 @@ class CommonPrinterMixin:
 
     def toggle_pause_print(
         self,
-        tags: Optional[set[str]] = None,
-        params: Optional[dict] = None,
+        tags: set[str] | None = None,
+        params: dict | None = None,
         *args,
         **kwargs,
     ):
@@ -433,8 +434,8 @@ class CommonPrinterMixin:
 
     def cancel_print(
         self,
-        tags: Optional[set[str]] = None,
-        params: Optional[dict] = None,
+        tags: set[str] | None = None,
+        params: dict | None = None,
         *args,
         **kwargs,
     ):
@@ -580,15 +581,15 @@ class ConnectedPrinterMixin(CommonPrinterMixin):
         return self.printer_capabilities
 
     @property
-    def job_progress(self) -> Optional[JobProgress]:
+    def job_progress(self) -> JobProgress | None:
         return None
 
     @property
-    def cancel_position(self) -> Optional[dict]:
+    def cancel_position(self) -> dict | None:
         return None
 
     @property
-    def pause_position(self) -> Optional[dict]:
+    def pause_position(self) -> dict | None:
         return None
 
     def connect(self, *args, **kwargs):
@@ -609,9 +610,9 @@ class ConnectedPrinterMixin(CommonPrinterMixin):
 class PrinterFile(BaseModel):
     path: str
     display: str
-    size: Optional[int] = None
-    date: Optional[datetime.datetime] = None
-    metadata: Optional[MetadataEntry] = None
+    size: int | None = None
+    date: datetime.datetime | None = None
+    metadata: MetadataEntry | None = None
     thumbnails: list[str] = []
 
 
@@ -654,7 +655,7 @@ class PrinterFilesMixin:
 
     def get_printer_file(
         self, path: str, refresh=False, *args, **kwargs
-    ) -> Optional[PrinterFile]:
+    ) -> PrinterFile | None:
         files = self.get_printer_files(refresh=refresh)
         for f in files:
             if f.path == path:
@@ -682,9 +683,9 @@ class PrinterFilesMixin:
 
     def upload_printer_file(
         self,
-        path_or_file: Union[str, IO],
+        path_or_file: str | IO,
         path: str,
-        progress_callback: Optional[Callable] = None,
+        progress_callback: Callable | None = None,
         *args,
         **kwargs,
     ) -> str:
@@ -733,8 +734,8 @@ class PrinterFilesMixin:
         return suggestion
 
     def get_printer_file_metadata(
-        self, path: str, printer_file: Optional[PrinterFile] = None, *args, **kwargs
-    ) -> Optional[MetadataEntry]:
+        self, path: str, printer_file: PrinterFile | None = None, *args, **kwargs
+    ) -> MetadataEntry | None:
         if printer_file is None:
             printer_file = self.get_printer_file(path)
         if not printer_file:
@@ -757,21 +758,21 @@ class PrinterFilesMixin:
     def get_thumbnail(
         self,
         path: str,
-        platehint: Optional[int] = None,
-        sizehint: Optional[str] = None,
+        platehint: int | None = None,
+        sizehint: str | None = None,
         *args,
         **kwargs,
-    ) -> Optional[StorageThumbnail]:
+    ) -> StorageThumbnail | None:
         return None
 
     def download_thumbnail(
         self,
         path: str,
-        platehint: Optional[int] = None,
-        sizehint: Optional[str] = None,
+        platehint: int | None = None,
+        sizehint: str | None = None,
         *args,
         **kwargs,
-    ) -> Optional[tuple[StorageThumbnail, IO]]:
+    ) -> tuple[StorageThumbnail, IO] | None:
         return None
 
     def refresh_thumbnails(
@@ -780,8 +781,8 @@ class PrinterFilesMixin:
         pass
 
     def create_job(
-        self, path: str, owner: Optional[str] = None, params: Optional[dict] = None
-    ) -> Optional[PrintJob]:
+        self, path: str, owner: str | None = None, params: dict | None = None
+    ) -> PrintJob | None:
         printer_file = self.get_printer_file(path)
         if not printer_file:
             return None
@@ -815,16 +816,16 @@ class PrinterFilesMixin:
             params=params,
         )
 
-    def get_usage_information(self) -> Optional[PrinterFilesUsage]:
+    def get_usage_information(self) -> PrinterFilesUsage | None:
         return None
 
 
 class PrinterMixin(CommonPrinterMixin):
     def connect(
         self,
-        connector: Optional[str] = None,
-        parameters: Optional[dict] = None,
-        profile: Optional[str] = None,
+        connector: str | None = None,
+        parameters: dict | None = None,
+        profile: str | None = None,
         *args,
         **kwargs,
     ):
@@ -848,7 +849,7 @@ class PrinterMixin(CommonPrinterMixin):
 
     def set_job(
         self,
-        job: Optional[PrintJob],
+        job: PrintJob | None,
         print_after_select=False,
         pos=None,
         tags=None,
@@ -883,12 +884,12 @@ class PrinterMixin(CommonPrinterMixin):
     def trigger_printjob_event(
         self,
         event,
-        job: Optional[PrintJob] = None,
-        print_head_position: Optional[dict] = None,
-        job_position: Optional[dict] = None,
-        progress: Optional[float] = None,
-        user: Optional[str] = None,
-        payload: Optional[dict] = None,
+        job: PrintJob | None = None,
+        print_head_position: dict | None = None,
+        job_position: dict | None = None,
+        progress: float | None = None,
+        user: str | None = None,
+        payload: dict | None = None,
     ):
         pass
 

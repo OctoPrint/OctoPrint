@@ -12,7 +12,7 @@ import os
 import threading
 import time
 from datetime import datetime, timedelta, timezone
-from typing import Any, Union
+from typing import Any
 
 import flask
 import flask.json
@@ -1425,7 +1425,7 @@ def check_etag(etag):
     )
 
 
-def check_lastmodified(lastmodified: Union[int, float, datetime]) -> bool:
+def check_lastmodified(lastmodified: int | float | datetime) -> bool:
     """Compares the provided lastmodified value with the value of the If-Modified-Since header.
 
     If ``lastmodified`` is an int or float, it's assumed to be a Unix timestamp and converted

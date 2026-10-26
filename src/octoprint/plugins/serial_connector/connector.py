@@ -1,8 +1,9 @@
 import copy
 import logging
 import os
+from collections.abc import Callable
 from gettext import gettext
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any
 
 import octoprint.util as util
 from octoprint.events import Events, eventManager
@@ -333,7 +334,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
 
     def set_job(
         self,
-        job: Optional[PrintJob],
+        job: PrintJob | None,
         tags=None,
         user=None,
         *args,
@@ -376,7 +377,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         return True
 
     @property
-    def job_progress(self) -> Optional[JobProgress]:
+    def job_progress(self) -> JobProgress | None:
         try:
             progress = self._comm.getPrintProgress()
             pos = self._comm.getPrintFilepos()
@@ -466,7 +467,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
             util.to_unicode("\n".join(lines), "utf-8", errors="replace")
         )
 
-    def get_state_string(self, state: Optional[ConnectedPrinterState] = None):
+    def get_state_string(self, state: ConnectedPrinterState | None = None):
         if state is None:
             state = self.state
 
@@ -504,14 +505,14 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         )
 
     @property
-    def cancel_position(self) -> Optional[dict]:
+    def cancel_position(self) -> dict | None:
         if self._comm is None:
             return None
         pos = self._comm.cancel_position
         return pos if pos is None else pos.as_dict()
 
     @property
-    def pause_position(self) -> Optional[dict]:
+    def pause_position(self) -> dict | None:
         if self._comm is None:
             return None
         pos = self._comm.pause_position
@@ -552,7 +553,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
 
     def get_printer_file(
         self, path: str, refresh: bool = False, *args, **kwargs
-    ) -> Optional[PrinterFile]:
+    ) -> PrinterFile | None:
         files = self.get_printer_files(refresh=refresh)
         for f in files:
             if f.path == path:
@@ -564,7 +565,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         self,
         source,
         target,
-        progress_callback: Optional[Callable] = None,
+        progress_callback: Callable | None = None,
         *args,
         **kwargs,
     ) -> str:
@@ -726,7 +727,10 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
                 job = self._file_manager.create_job(storage, path, owner=user)
             except ValueError:
                 # file selected by the printer couldn't be found for proper job creation, so let's fall back to this
-                job = PrintJob(storage=storage, path="???", display="???", owner=user)
+                _, name = path.rsplit("/", 1)
+                job = PrintJob(
+                    storage=storage, path=path, display=name, size=size, owner=user
+                )
 
         super().set_job(job)
         self._listener.on_printer_job_changed(job, user=user, data=data)

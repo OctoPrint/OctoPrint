@@ -2,8 +2,6 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from typing import Optional
-
 from flask import abort, jsonify, request
 
 from octoprint.access.permissions import Permissions
@@ -24,10 +22,10 @@ from octoprint.settings import settings, valid_boolean_trues
 
 class CurrentConnectionState(BaseModel):
     state: str
-    connector: Optional[str]
-    parameters: Optional[dict]
-    capabilities: Optional[dict]
-    profile: Optional[str]
+    connector: str | None
+    parameters: dict | None
+    capabilities: dict | None
+    profile: str | None
 
 
 class AvailablePrinterProfile(BaseModel):
@@ -50,8 +48,8 @@ class ConnectionOptions(BaseModel):
     connectors: list[AvailableConnector]
     profiles: list[AvailablePrinterProfile]
 
-    preferredConnector: Optional[PreferredConnectorSettings]
-    preferredProfile: Optional[str]
+    preferredConnector: PreferredConnectorSettings | None
+    preferredProfile: str | None
 
 
 class ConnectionStateResponse(BaseModel):
@@ -64,9 +62,9 @@ class ConnectionStateResponse(BaseModel):
 
 class CurrentConnectionState_pre_2_0_0(BaseModel):
     state: str
-    printerProfile: Optional[str]
-    port: Optional[str]
-    baudrate: Optional[int]
+    printerProfile: str | None
+    port: str | None
+    baudrate: int | None
 
 
 class ConnectionOptions_pre_2_0_0(BaseModel):
@@ -74,9 +72,9 @@ class ConnectionOptions_pre_2_0_0(BaseModel):
     baudrates: list[int]
     printerProfiles: list[AvailablePrinterProfile]
 
-    portPreference: Optional[str]
-    baudratePreference: Optional[int]
-    printerProfilePreference: Optional[str]
+    portPreference: str | None
+    baudratePreference: int | None
+    printerProfilePreference: str | None
 
     autoconnect: bool
 

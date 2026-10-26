@@ -1,8 +1,8 @@
 .. _sec-modules:
 
-################
-Internal Modules
-################
+######################
+Internal API Reference
+######################
 
 .. toctree::
    :maxdepth: 3

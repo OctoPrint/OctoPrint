@@ -1,13 +1,11 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from typing import Optional
-
 from octoprint.schema import BaseModel
 
 
 class AccessControlConfig(BaseModel):
-    salt: Optional[str] = None
+    salt: str | None = None
     """
     Secret salt used for password hashing.
 
@@ -25,10 +23,10 @@ class AccessControlConfig(BaseModel):
     permissionManager: str = "octoprint.access.permissions.PermissionManager"
     """The permission manager implementation to use."""
 
-    userfile: Optional[str] = None
+    userfile: str | None = None
     """The YAML user file to use. If left out defaults to ``users.yaml`` in the default configuration folder."""
 
-    groupfile: Optional[str] = None
+    groupfile: str | None = None
     """The YAML group file to use. If left out defaults to ``groups.yaml`` in the default configuration folder."""
 
     autologinLocal: bool = False
@@ -37,7 +35,7 @@ class AccessControlConfig(BaseModel):
     localNetworks: list[str] = ["127.0.0.0/8", "::1/128"]
     """A list of networks or IPs for which an automatic logon as the user defined in ``autologinAs`` will take place. If available OctoPrint will evaluate the ``X-Forwarded-For`` HTTP header for determining the client's IP address. Defaults to anything originating from localhost."""
 
-    autologinAs: Optional[str] = None
+    autologinAs: str | None = None
     """The name of the user to automatically log on clients originating from ``localNetworks`` as. Must be the name of one of your configured users."""
 
     autologinHeadsupAcknowledged: bool = False

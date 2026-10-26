@@ -4,7 +4,8 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 
 import datetime
-from typing import IO, TYPE_CHECKING, Any, Callable, Optional
+from collections.abc import Callable
+from typing import IO, TYPE_CHECKING, Any
 
 from octoprint.filemanager.util import AbstractFileWrapper
 from octoprint.schema import BaseModel
@@ -53,7 +54,7 @@ class HistoryEntry(BaseModel):
     timestamp: datetime.datetime
     success: bool
     printerProfile: str
-    printTime: Optional[float] = None
+    printTime: float | None = None
 
 
 class AnalysisVolume(BaseModel):
@@ -72,19 +73,19 @@ class AnalysisDimensions(BaseModel):
 
 
 class AnalysisFilamentUse(BaseModel):
-    length: Optional[float] = None
-    volume: Optional[float] = None
-    weight: Optional[float] = None
+    length: float | None = None
+    volume: float | None = None
+    weight: float | None = None
 
 
 class AnalysisResult(BaseModel):
-    printingArea: Optional[AnalysisVolume] = None
-    dimensions: Optional[AnalysisDimensions] = None
-    travelArea: Optional[AnalysisVolume] = None
-    travelDimensions: Optional[AnalysisDimensions] = None
-    estimatedPrintTime: Optional[float] = None
+    printingArea: AnalysisVolume | None = None
+    dimensions: AnalysisDimensions | None = None
+    travelArea: AnalysisVolume | None = None
+    travelDimensions: AnalysisDimensions | None = None
+    estimatedPrintTime: float | None = None
     filament: dict[str, AnalysisFilamentUse] = {}
-    additional: Optional[dict[str, Any]] = {}
+    additional: dict[str, Any] | None = {}
 
 
 class Statistics(BaseModel):
@@ -93,9 +94,9 @@ class Statistics(BaseModel):
 
 
 class MetadataEntry(BaseModel):
-    analysis: Optional[AnalysisResult] = None
+    analysis: AnalysisResult | None = None
     history: list[HistoryEntry] = []
-    statistics: Optional[Statistics] = None
+    statistics: Statistics | None = None
     additional: dict[str, Any] = {}
 
 
@@ -104,17 +105,17 @@ class StorageEntry(BaseModel):
     display: str
     origin: str
     path: str
-    user: Optional[str] = None
+    user: str | None = None
 
-    date: Optional[datetime.datetime] = None
-    size: Optional[int] = None
+    date: datetime.datetime | None = None
+    size: int | None = None
 
     entry_type: str
     type_path: list[str]
 
 
 class StorageFile(StorageEntry):
-    metadata: Optional[MetadataEntry] = None
+    metadata: MetadataEntry | None = None
     thumbnails: list[str] = []
 
 
@@ -131,7 +132,7 @@ class StorageThumbnail(BaseModel):
     sizehint: str
     plate: int = 1
     mime: str = "application/octet-stream"
-    last_modified: Optional[datetime.datetime] = None
+    last_modified: datetime.datetime | None = None
     size: int = -1
 
 
@@ -188,9 +189,7 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def get_lastmodified(
-        self, path: Optional[str] = None, recursive: bool = False
-    ) -> int:
+    def get_lastmodified(self, path: str | None = None, recursive: bool = False) -> int:
         """
         Get the modification date of the specified ``path`` or ``path``'s subtree.
 
@@ -202,7 +201,7 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def get_hash(self, path: Optional[str] = None, recursive: bool = False) -> str:
+    def get_hash(self, path: str | None = None, recursive: bool = False) -> str:
         """
         Get a hash corresponding to the current state of the specified ``path`` or ``path``'s subtree.
 
@@ -245,7 +244,7 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def get_storage_entry(self, path: str) -> Optional[StorageEntry]:
+    def get_storage_entry(self, path: str) -> StorageEntry | None:
         if "/" in path:
             folder, name = path.rsplit("/", 1)
         else:
@@ -257,8 +256,8 @@ class StorageInterface:
 
     def list_storage_entries(
         self,
-        path: Optional[str] = None,
-        filter: Optional[Callable] = None,
+        path: str | None = None,
+        filter: Callable | None = None,
         recursive: bool = True,
         level: int = 0,
         force_refresh: bool = False,
@@ -269,7 +268,7 @@ class StorageInterface:
     @deprecated(
         "get_file has been deprecated in favor of get_storage_entry", since="2.0.0"
     )
-    def get_file(self, path: str) -> Optional[dict]:
+    def get_file(self, path: str) -> dict | None:
         entry = self.get_storage_entry(path)
         if entry is None:
             return None
@@ -281,8 +280,8 @@ class StorageInterface:
     )
     def list_files(
         self,
-        path: Optional[str] = None,
-        filter: Optional[Callable] = None,
+        path: str | None = None,
+        filter: Callable | None = None,
         recursive: bool = True,
         level: int = 0,
         force_refresh: bool = False,
@@ -418,9 +417,9 @@ class StorageInterface:
         path: str,
         data: AbstractFileWrapper,
         allow_overwrite: bool = False,
-        display: Optional[str] = None,
-        user: Optional[str] = None,
-        progress_callback: Optional[Callable] = None,
+        display: str | None = None,
+        user: str | None = None,
+        progress_callback: Callable | None = None,
         *args,
         **kwargs,
     ) -> str:
@@ -493,7 +492,7 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def get_metadata(self, path: str, default=None) -> Optional[dict]:
+    def get_metadata(self, path: str, default=None) -> dict | None:
         """
         Retrieves the metadata for the file ``path``.
 
@@ -530,13 +529,13 @@ class StorageInterface:
         raise NotImplementedError()
 
     def get_thumbnail(
-        self, path: str, platehint: Optional[int] = None, sizehint: Optional[str] = None
-    ) -> Optional[StorageThumbnail]:
+        self, path: str, platehint: int | None = None, sizehint: str | None = None
+    ) -> StorageThumbnail | None:
         raise NotImplementedError()
 
     def read_thumbnail(
-        self, path: str, platehint: Optional[int] = None, sizehint: Optional[str] = None
-    ) -> Optional[tuple[StorageThumbnail, IO]]:
+        self, path: str, platehint: int | None = None, sizehint: str | None = None
+    ) -> tuple[StorageThumbnail, IO] | None:
         raise NotImplementedError()
 
     def refresh_thumbnails(
@@ -544,7 +543,7 @@ class StorageInterface:
     ) -> bool:
         raise NotImplementedError()
 
-    def get_additional_metadata(self, path: str, key: str) -> Optional[dict[str, Any]]:
+    def get_additional_metadata(self, path: str, key: str) -> dict[str, Any] | None:
         """
         Fetches additional metadata at ``key`` from the metadata of ``path``.
 
@@ -618,7 +617,7 @@ class StorageInterface:
         raise NotImplementedError()
 
     def create_job(
-        self, path, owner: Optional[str] = None, params: Optional[dict] = None
+        self, path, owner: str | None = None, params: dict | None = None
     ) -> "PrintJob":
         from octoprint.printer.job import DurationEstimate, FilamentEstimate, PrintJob
 
@@ -764,7 +763,7 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def get_usage(self) -> Optional[StorageUsage]:
+    def get_usage(self) -> StorageUsage | None:
         return None
 
     def _convert_storage_entry_to_dict(self, entry: StorageEntry) -> dict:

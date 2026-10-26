@@ -15,7 +15,6 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 
 import importlib.metadata as meta
 import logging
-from typing import Optional, Union
 
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
@@ -29,9 +28,7 @@ def get_package_version(package: str) -> str:
     return meta.version(package)
 
 
-def safe_get_package_version(
-    package: str, default: Optional[str] = None
-) -> Optional[str]:
+def safe_get_package_version(package: str, default: str | None = None) -> str | None:
     """Returns the version of the provided package, returns the configured ``default`` if it cannot be found"""
     try:
         return get_package_version(package)
@@ -44,9 +41,7 @@ def parse_specifier(specifier: str) -> SpecifierSet:
     return SpecifierSet(specifier)
 
 
-def is_version_compatible(
-    version: Union[str, Version], specifier: Union[str, SpecifierSet]
-):
+def is_version_compatible(version: str | Version, specifier: str | SpecifierSet):
     """Checks whether the provided ``version`` is compatible to the supplied version ``specifier``"""
     if not isinstance(version, Version):
         version = parse_version(version)
@@ -62,20 +57,20 @@ def get_octoprint_version_string() -> str:
     return __version__
 
 
-def get_octoprint_version(cut: Optional[int] = None, **kwargs) -> Version:
+def get_octoprint_version(cut: int | None = None, **kwargs) -> Version:
     """Returns the current OctoPrint version in a comparable format"""
     octoprint_version_string = normalize_version(get_octoprint_version_string())
     return get_comparable_version(octoprint_version_string, cut=cut, **kwargs)
 
 
-def is_released_octoprint_version(version: Optional[Union[str, Version]] = None) -> bool:
+def is_released_octoprint_version(version: str | Version | None = None) -> bool:
     """Returns whether the current OctoPrint version is a released version"""
     if version is None:
         version = get_octoprint_version()
     return is_release(version)
 
 
-def is_stable_octoprint_version(version: Optional[Union[str, Version]] = None) -> bool:
+def is_stable_octoprint_version(version: str | Version | None = None) -> bool:
     """Returns whether the current OctoPrint version is a stable version"""
     if version is None:
         version = get_octoprint_version()
@@ -84,7 +79,7 @@ def is_stable_octoprint_version(version: Optional[Union[str, Version]] = None) -
 
 def is_octoprint_compatible(
     *compatibility_entries: str,
-    octoprint_version: Optional[Union[str, Version]] = None,
+    octoprint_version: str | Version | None = None,
     **kwargs,
 ) -> bool:
     """
@@ -156,7 +151,7 @@ def get_python_version() -> Version:
 
 
 def is_python_compatible(
-    compat: Union[str, Version], python_version: Optional[Union[str, Version]] = None
+    compat: str | Version, python_version: str | Version | None = None
 ) -> bool:
     """
     Tests if the current python version is compatible to the provided ``compat``.
@@ -178,7 +173,7 @@ def is_python_compatible(
 
 
 def get_comparable_version(
-    version_string: str, cut: Optional[int] = None, base: Optional[bool] = None
+    version_string: str, cut: int | None = None, base: bool | None = None
 ) -> Version:
     """
     Args:
@@ -226,7 +221,7 @@ def get_comparable_version(
     return version
 
 
-def is_stable(version: Union[str, Version]) -> bool:
+def is_stable(version: str | Version) -> bool:
     """
     >>> is_stable("1.3.6rc3")
     False
@@ -251,7 +246,7 @@ def is_stable(version: Union[str, Version]) -> bool:
     return not version.is_prerelease
 
 
-def is_release(version: Union[str, Version]) -> bool:
+def is_release(version: str | Version) -> bool:
     """
     >>> is_release("1.3.6rc3")
     True
@@ -272,7 +267,7 @@ def is_release(version: Union[str, Version]) -> bool:
     return "dev" not in version.public
 
 
-def is_prerelease(version: Union[str, Version]) -> bool:
+def is_prerelease(version: str | Version) -> bool:
     """
     >>> is_prerelease("1.2.3a")
     True

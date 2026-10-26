@@ -481,7 +481,7 @@ class DiscoveryPlugin(
 
                         try:
                             data = sock.recv(1024)
-                        except socket.timeout:
+                        except TimeoutError:
                             pass
                         else:
                             response = Response(data)
@@ -769,7 +769,7 @@ class DiscoveryPlugin(
                                 address=address,
                             )
                         )
-                except socket.timeout:
+                except TimeoutError:
                     pass
                 finally:
                     self._ssdp_notify(alive=True)
@@ -822,4 +822,4 @@ __plugin_disabling_discouraged__ = gettext(
     "discoverable on the network via Bonjour and uPnP."
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=3.9,<4"
+__plugin_pythoncompat__ = ">=3.10,<4"

@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Union
 
 from pydantic import Field
 
@@ -30,24 +30,24 @@ class ApiAnalysisDimensions(BaseModel):
 
 
 class ApiAnalysisFilamentUse(BaseModel):
-    length: Optional[float] = None
+    length: float | None = None
     """Length of used filament"""
-    volume: Optional[float] = None
+    volume: float | None = None
     """Volume of used filament"""
-    weight: Optional[float] = None
+    weight: float | None = None
     """Weight of used filament"""
 
 
 class ApiEntryAnalysis(BaseModelExtra):
-    printingArea: Optional[ApiAnalysisVolume] = None
+    printingArea: ApiAnalysisVolume | None = None
     """Bounding box of coordinates where extrusion happened"""
-    dimensions: Optional[ApiAnalysisDimensions] = None
+    dimensions: ApiAnalysisDimensions | None = None
     """Size of the bounding box where extrusion happened"""
-    travelArea: Optional[ApiAnalysisVolume] = None
+    travelArea: ApiAnalysisVolume | None = None
     """Bounding box of coordinates where movement happened"""
-    travelDimensions: Optional[ApiAnalysisDimensions] = None
+    travelDimensions: ApiAnalysisDimensions | None = None
     """Size of the bounding box where movement happened"""
-    estimatedPrintTime: Optional[float] = None
+    estimatedPrintTime: float | None = None
     """Estimated print time in minutes"""
     filament: dict[str, ApiAnalysisFilamentUse] = {}
     """Estimated filament use, mapping tool to stats"""
@@ -58,9 +58,9 @@ class ApiEntryLastPrint(BaseModel):
     """Whether the print was successful or not"""
     date: float
     """When the print happened"""
-    printerProfile: Optional[str] = None
+    printerProfile: str | None = None
     """Used printer profile"""
-    printTime: Optional[float] = None
+    printTime: float | None = None
     """Print duration"""
 
 
@@ -69,7 +69,7 @@ class ApiEntryPrints(BaseModel):
     """Number of successful prints"""
     failure: int = 0
     """Number of failed prints"""
-    last: Optional[ApiEntryLastPrint] = None
+    last: ApiEntryLastPrint | None = None
     """Information about the last print"""
 
 
@@ -89,12 +89,12 @@ class ApiStorageEntry(BaseModelExtra):
     """Storage this item belongs to"""
     path: str
     """Path of item in storage"""
-    user: Optional[str] = None
+    user: str | None = None
     """User who created the item"""
 
-    date: Optional[int] = None
+    date: int | None = None
     """Last modification date of entry"""
-    size: Optional[int] = None
+    size: int | None = None
     """Size of entry in bytes"""
 
     type_: str = Field(serialization_alias="type")
@@ -102,7 +102,7 @@ class ApiStorageEntry(BaseModelExtra):
     typePath: list[str]
     """Full type path"""
 
-    prints: Optional[ApiEntryPrints] = None
+    prints: ApiEntryPrints | None = None
     """Print stats"""
 
     refs: dict[str, str] = {}
@@ -129,10 +129,10 @@ class ApiStorageFolder(ApiStorageEntry):
 
 
 class ApiStorageFile(ApiStorageEntry):
-    gcodeAnalysis: Optional[ApiEntryAnalysis] = None
+    gcodeAnalysis: ApiEntryAnalysis | None = None
     """GCODE analysis result"""
 
-    statistics: Optional[ApiEntryStatistics] = None
+    statistics: ApiEntryStatistics | None = None
     """Print statistics"""
 
 
@@ -176,10 +176,10 @@ class ApiStorageData(BaseModelExtra):
     capabilities: dict[str, bool]
     """Storage capabilities"""
 
-    files: list[Union[ApiStorageFile, ApiStorageFolder]]
+    files: list[ApiStorageFile | ApiStorageFolder]
     """Files and folders on storage"""
 
-    usage: Optional[ApiStorageUsage] = None
+    usage: ApiStorageUsage | None = None
     """Usage information about storage"""
 
 
@@ -187,7 +187,7 @@ ReadGcodeFilesResponse = dict[str, ApiStorageData]
 
 
 class ReadGcodeFilesResponse_pre_2_0_0(BaseModel):
-    files: list[Union[ApiStorageFile, ApiStorageFolder]]
+    files: list[ApiStorageFile | ApiStorageFolder]
     """List of files and folders from all storages"""
     free: int
     """Free space on local storage in bytes"""
@@ -199,20 +199,20 @@ ReadGcodeFilesForOriginResponse = ApiStorageData
 
 
 class ReadGcodeFilesForOriginResponse_pre_2_0_0(BaseModel):
-    files: list[Union[ApiStorageFile, ApiStorageFolder]]
+    files: list[ApiStorageFile | ApiStorageFolder]
     """List of files and folders from storage"""
-    free: Optional[int] = None
+    free: int | None = None
     """Free space on storage in bytes, if available"""
-    total: Optional[int] = None
+    total: int | None = None
     """Total space on storage in bytes, if available"""
 
 
 class UploadResponse(BaseModel):
-    file: Optional[ApiAddedEntry] = None
+    file: ApiAddedEntry | None = None
     """
     (File only) Information regarding the file that was just uploaded.
     """
-    folder: Optional[ApiAddedEntry] = None
+    folder: ApiAddedEntry | None = None
     """(Folder only) Information regarding the folder that was just created"""
     done: bool
     """
@@ -222,14 +222,14 @@ class UploadResponse(BaseModel):
     Clients may use this information to direct progress displays related to the upload.
     Always ``true`` for folders.
     """
-    effectiveSelect: Optional[bool] = None
+    effectiveSelect: bool | None = None
     """
     (File only) Whether the file that was just uploaded was selected for printing (``true``)
     or not (``false``). If this is ``false`` but was requested to be ``true`` in the upload request,
     the user lacked permissions, the printer was not operational or already printing and thus
     the request could not be fulfilled.
     """
-    effectivePrint: Optional[bool] = None
+    effectivePrint: bool | None = None
     """
     (File only) Whether the file that was just uploaded was started on the printer (``true``)
     or not (``false``). If this is ``false`` but was requested to be ``true`` in the upload request,
@@ -239,12 +239,12 @@ class UploadResponse(BaseModel):
 
 
 class UploadResponse_pre_2_0_0(BaseModel):
-    files: Optional[dict[str, ApiAddedEntry]] = None
+    files: dict[str, ApiAddedEntry] | None = None
     """
     (File only) Information regarding the file that was just uploaded, mapped by the storage that it was uploaded to.
     Will only ever contain a single entry.
     """
-    folder: Optional[ApiAddedEntry] = None
+    folder: ApiAddedEntry | None = None
     """(Folder only) Information regarding the folder that was just created"""
     done: bool
     """
@@ -254,14 +254,14 @@ class UploadResponse_pre_2_0_0(BaseModel):
     Clients may use this information to direct progress displays related to the upload.
     Always ``true`` for folders.
     """
-    effectiveSelect: Optional[bool] = None
+    effectiveSelect: bool | None = None
     """
     (File only) Whether the file that was just uploaded was selected for printing (``true``)
     or not (``false``). If this is ``false`` but was requested to be ``true`` in the upload request,
     the user lacked permissions, the printer was not operational or already printing and thus
     the request could not be fulfilled.
     """
-    effectivePrint: Optional[bool] = None
+    effectivePrint: bool | None = None
     """
     (File only) Whether the file that was just uploaded was started on the printer (``true``)
     or not (``false``). If this is ``false`` but was requested to be ``true`` in the upload request,

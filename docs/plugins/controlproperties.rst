@@ -66,11 +66,11 @@ The following properties are recognized:
   that are still out there, as OctoPrint will not even attempt to load plugins whose Python compatibility
   information doesn't match its current environment.
 
-  If your plugin is compatible to supported Python 3 versions only, you should set this to ``>=3.9,<4``.
+  If your plugin is compatible to supported Python 3 versions only, you should set this to ``>=3.10,<4``.
 
   .. code-block:: python
 
-     __plugin_pythoncompat__ = ">=3.9,<4"
+     __plugin_pythoncompat__ = ">=3.10,<4"
 
 
 .. _sec-plugins-controlproperties-plugin_implementation:

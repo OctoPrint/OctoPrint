@@ -1,39 +1,37 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from typing import Optional
-
 from octoprint.schema import BaseModel
 
 
 class GcodeScriptsConfig(BaseModel):
-    afterPrinterConnected: Optional[str] = None
+    afterPrinterConnected: str | None = None
     """Script run after the connection to the printer has been established."""
 
-    beforePrinterDisconnected: Optional[str] = None
+    beforePrinterDisconnected: str | None = None
     """Script run before the printer gets disconnected."""
 
-    beforePrintStarted: Optional[str] = None
+    beforePrintStarted: str | None = None
     """Script run before a print job is started."""
 
-    afterPrintCancelled: Optional[str] = (
+    afterPrintCancelled: str | None = (
         "; disable motors\nM84\n\n;disable all heaters\n{% snippet 'disable_hotends' %}\n{% snippet 'disable_bed' %}\n;disable fan\nM106 S0"
     )
     """Script run after a print job has been cancelled."""
 
-    afterPrintDone: Optional[str] = None
+    afterPrintDone: str | None = None
     """Script run after a print job completes."""
 
-    beforePrintPaused: Optional[str] = None
+    beforePrintPaused: str | None = None
     """Script run on pausing a print job."""
 
-    afterPrintResumed: Optional[str] = None
+    afterPrintResumed: str | None = None
     """Script run on resuming a print job."""
 
-    beforeToolChange: Optional[str] = None
+    beforeToolChange: str | None = None
     """Script run before sending a tool change command to the printer."""
 
-    afterToolChange: Optional[str] = None
+    afterToolChange: str | None = None
     """Script run after sending a tool change command to the printer."""
 
     snippets: dict[str, str] = {

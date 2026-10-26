@@ -2,7 +2,8 @@ import logging
 import os
 import tempfile
 import time
-from typing import IO, Callable, Optional
+from collections.abc import Callable
+from typing import IO
 
 import octoprint.filemanager
 from octoprint.filemanager.util import AbstractFileWrapper
@@ -98,7 +99,7 @@ class PrinterFileStorage(StorageInterface):
     def capabilities(self) -> StorageCapabilities:
         return self._connection.current_storage_capabilities
 
-    def get_size(self, path=None, recursive=False) -> Optional[int]:
+    def get_size(self, path=None, recursive=False) -> int | None:
         files = self._get_printer_files(path=path)
 
         sizes = [f.size for f in files if f.size is not None]
@@ -107,7 +108,7 @@ class PrinterFileStorage(StorageInterface):
 
         return None
 
-    def get_lastmodified(self, path=None, recursive=False) -> Optional[int]:
+    def get_lastmodified(self, path=None, recursive=False) -> int | None:
         files = self._get_printer_files(path=path)
 
         dates = [f.date.timestamp() for f in files if f.date is not None]
@@ -116,7 +117,7 @@ class PrinterFileStorage(StorageInterface):
 
         return None
 
-    def get_hash(self, path: Optional[str] = None, recursive: bool = False) -> str:
+    def get_hash(self, path: str | None = None, recursive: bool = False) -> str:
         import hashlib
 
         files = sorted(
@@ -147,8 +148,8 @@ class PrinterFileStorage(StorageInterface):
 
     def list_storage_entries(
         self,
-        path: Optional[str] = None,
-        filter: Optional[Callable] = None,
+        path: str | None = None,
+        filter: Callable | None = None,
         recursive: bool = True,
         level: int = 0,
         force_refresh: bool = False,
@@ -345,7 +346,7 @@ class PrinterFileStorage(StorageInterface):
         path: str,
         file_object: AbstractFileWrapper,
         allow_overwrite: bool = False,
-        progress_callback: Optional[Callable] = None,
+        progress_callback: Callable | None = None,
         *args,
         **kwargs,
     ):
@@ -450,7 +451,7 @@ class PrinterFileStorage(StorageInterface):
         metadata = self.get_metadata(path)
         return metadata and "analysis" in metadata
 
-    def get_metadata(self, path: str, default=None) -> Optional[dict]:
+    def get_metadata(self, path: str, default=None) -> dict | None:
         if not self.capabilities.metadata:
             return None
 
@@ -465,14 +466,14 @@ class PrinterFileStorage(StorageInterface):
 
     def get_thumbnail(
         self, path, platehint=None, sizehint=None
-    ) -> Optional[StorageThumbnail]:
+    ) -> StorageThumbnail | None:
         return self._connection.get_thumbnail(
             path, platehint=platehint, sizehint=sizehint
         )
 
     def read_thumbnail(
         self, path, platehint=None, sizehint=None
-    ) -> Optional[tuple[StorageThumbnail, IO]]:
+    ) -> tuple[StorageThumbnail, IO] | None:
         return self._connection.download_thumbnail(
             path, platehint=platehint, sizehint=sizehint
         )
@@ -564,9 +565,7 @@ class PrinterFileStorage(StorageInterface):
         except KeyError:
             pass
 
-    def create_job(
-        self, path, owner: Optional[str] = None, params: Optional[dict] = None
-    ):
+    def create_job(self, path, owner: str | None = None, params: dict | None = None):
         job = self._connection.create_job(path, owner=owner, params=params)
         if job is None:
             job = super().create_job(path, owner=owner, params=params)
@@ -619,7 +618,7 @@ class PrinterFileStorage(StorageInterface):
         else:
             return self.join_path(pp, pf)
 
-    def get_usage(self) -> Optional[StorageUsage]:
+    def get_usage(self) -> StorageUsage | None:
         if not self._connection:
             return None
         usage = self._connection.get_usage_information()

@@ -11,7 +11,7 @@ import inspect
 import logging
 import threading
 import time
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 from frozendict import frozendict
 
@@ -516,7 +516,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             eventManager().fire(Events.DISCONNECTED)
 
     @property
-    def current_connection(self) -> Optional[ConnectedPrinter]:
+    def current_connection(self) -> ConnectedPrinter | None:
         return self._connection
 
     def emergency_stop(self, *args, **kwargs):
@@ -589,7 +589,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
     def get_additional_controls(
         self,
-    ) -> list[Union[PrinterCustomControl, PrinterCustomControlContainer]]:
+    ) -> list[PrinterCustomControl | PrinterCustomControlContainer]:
         controls = []
 
         if self._connection is not None:
@@ -822,7 +822,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
     def set_job(
         self,
-        job: Optional[PrintJob],
+        job: PrintJob | None,
         print_after_select=False,
         pos=None,
         tags=None,
@@ -907,7 +907,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         pos=None,
         user=None,
         tags=None,
-        params: Optional[dict] = None,
+        params: dict | None = None,
         *args,
         **kwargs,
     ):
@@ -934,7 +934,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         self._connection.start_print(pos=pos, user=user, tags=tags, params=params)
 
     def pause_print(
-        self, user=None, tags=None, params: Optional[dict] = None, *args, **kwargs
+        self, user=None, tags=None, params: dict | None = None, *args, **kwargs
     ):
         """
         Pause the current printjob.
@@ -952,7 +952,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         self._connection.pause_print(user=user, tags=tags, params=params)
 
     def resume_print(
-        self, user=None, tags=None, params: Optional[dict] = None, *args, **kwargs
+        self, user=None, tags=None, params: dict | None = None, *args, **kwargs
     ):
         if self._connection is None:
             return
@@ -967,7 +967,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         self._connection.resume_print(user=user, tags=tags, params=params)
 
     def cancel_print(
-        self, user=None, tags=None, params: Optional[dict] = None, *args, **kwargs
+        self, user=None, tags=None, params: dict | None = None, *args, **kwargs
     ):
         if self._connection is None:
             return
@@ -1224,8 +1224,8 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
     def on_printer_state_changed(
         self,
         state: ConnectedPrinterState,
-        state_str: Optional[str] = None,
-        error_str: Optional[str] = None,
+        state_str: str | None = None,
+        error_str: str | None = None,
     ):
         old_state = self._state
 
@@ -1590,7 +1590,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             thread.daemon = True
             thread.start()
 
-    def on_printer_position_changed(self, position, reason: Optional[str] = None):
+    def on_printer_position_changed(self, position, reason: str | None = None):
         if "z" in position:
             # track z changes (we know of)
             self._stateMonitor.set_current_z(position["z"])
@@ -1708,12 +1708,12 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
     def trigger_printjob_event(
         self,
         event,
-        job: Optional[PrintJob] = None,
-        print_head_position: Optional[dict] = None,
-        job_position: Optional[dict] = None,
-        progress: Optional[float] = None,
-        user: Optional[str] = None,
-        payload: Optional[dict] = None,
+        job: PrintJob | None = None,
+        print_head_position: dict | None = None,
+        job_position: dict | None = None,
+        progress: float | None = None,
+        user: str | None = None,
+        payload: dict | None = None,
     ):
         kwargs = {
             "position": print_head_position,
@@ -1787,21 +1787,20 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
     def _update_progress_data_callback(self):
         printTimeLeftOrigin = None
 
-        if self._connection is None:
-            progress = None
-            filepos = None
-            printTime = None
-            cleanedPrintTime = None
-            printTimeLeft = None
-        else:
+        progress = None
+        filepos = None
+        printTime = None
+        cleanedPrintTime = None
+        printTimeLeft = None
+
+        if self._connection is not None:
             job_progress = self._connection.job_progress
-            if not job_progress:
-                return
-            progress = job_progress.progress
-            filepos = job_progress.pos
-            printTime = job_progress.elapsed
-            cleanedPrintTime = job_progress.cleaned_elapsed
-            printTimeLeft = job_progress.left_estimate
+            if job_progress:
+                progress = job_progress.progress
+                filepos = job_progress.pos
+                printTime = job_progress.elapsed
+                cleanedPrintTime = job_progress.cleaned_elapsed
+                printTimeLeft = job_progress.left_estimate
 
         if printTimeLeft is None:
             # no print time estimation from printer, let's do our own
@@ -1888,7 +1887,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         self._set_job_data(self._selected_job)
 
     def _set_job_data(
-        self, job: PrintJob, user: Optional[str] = None, data: Optional[dict] = None
+        self, job: PrintJob, user: str | None = None, data: dict | None = None
     ):
         with self._selected_job_mutex:
             if job is None:

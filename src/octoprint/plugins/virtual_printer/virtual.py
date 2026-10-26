@@ -10,13 +10,103 @@ import queue
 import re
 import threading
 import time
-from typing import Any, Optional
+from typing import Any
 
 from serial import SerialTimeoutException
 
 from octoprint.plugin import plugin_manager
 from octoprint.util import RepeatedTimer, get_dos_filename, to_bytes, to_unicode
 from octoprint.util.files import unix_timestamp_to_m20_timestamp
+
+DEBUG_USAGE = """
+OctoPrint Virtual Printer debug commands
+
+help
+?
+| This help.
+
+# Action Triggers
+
+action_pause
+| Sends a "// action:pause" action trigger to the host.
+action_resume
+| Sends a "// action:resume" action trigger to the host.
+action_disconnect
+| Sends a "// action:disconnect" action trigger to the
+| host.
+action_custom <action>[ <parameters>]
+| Sends a custom "// action:<action> <parameters>"
+| action trigger to the host.
+
+# Communication Errors
+
+dont_answer
+| Will not acknowledge the next command.
+go_awol
+| Will completely stop replying
+trigger_resend_lineno
+| Triggers a resend error with a line number mismatch
+trigger_resend_checksum
+| Triggers a resend error with a checksum mismatch
+trigger_missing_checksum
+| Triggers a resend error with a missing checksum
+trigger_missing_lineno
+| Triggers a "no line number with checksum" error w/o resend request
+trigger_fatal_error_marlin
+| Triggers a fatal error/simulated heater fail, Marlin style
+trigger_fatal_error_repetier
+| Triggers a fatal error/simulated heater fail, Repetier style
+drop_connection
+| Drops the serial connection
+prepare_ok <broken ok>
+| Will cause <broken ok> to be enqueued for use,
+| will be used instead of actual "ok"
+rerequest_last
+| Will cause the last line number + 1 to be rerequest add infinitum
+resend_ratio <int:percentage>
+| Sets the resend ratio to the given percentage, simulating noisy lines.
+| Set to 0 to disable noise simulation.
+toggle_klipper_connection
+| Toggles the Klipper connection state. If disabled, the printer will
+| respond to all commands with "!! Lost communication with MCU 'mcu'"
+
+# Reply Timing / Sleeping
+
+sleep <int:seconds>
+| Sleep <seconds> s
+sleep_after <str:command> <int:seconds>
+| Sleeps <seconds> s after each execution of <command>
+sleep_after_next <str:command> <int:seconds>
+| Sleeps <seconds> s after execution of next <command>
+
+# Temperatures
+
+set_ambient <float:temperature>
+| Sets the simulated ambient temperature to the given value in °C
+mintemp_error
+| Triggers a mintemp error
+maxtemp_error
+| Triggers a maxtemp error
+
+# SD printing
+
+start_sd <str:file>
+| Select and start printing file <file> from SD
+select_sd <str:file>
+| Select file <file> from SD, don't start printing it yet. Use
+| start_sd to start the print
+cancel_sd
+| Cancels an ongoing SD print
+
+# Misc
+
+send <str:message>
+| Sends back <message>
+reset
+| Simulates a reset. Internal state will be lost.
+unbusy
+| Unsets the busy loop.
+"""  # END DEBUG_USAGE
 
 
 # noinspection PyBroadException
@@ -128,6 +218,7 @@ class VirtualPrinter:
         self._selectedSdFile = None
         self._selectedSdFileSize = None
         self._selectedSdFilePos = None
+        self._sdPathPrefix = self._settings.get(["sdFiles", "path_prefix"])
 
         self._writingToSd = False
         self._writingToSdHandle = None
@@ -1310,9 +1401,9 @@ class VirtualPrinter:
 
     def _triggerResend(
         self,
-        expected: Optional[int] = None,
-        actual: Optional[int] = None,
-        checksum: Optional[int] = None,
+        expected: int | None = None,
+        actual: int | None = None,
+        checksum: int | None = None,
     ) -> None:
         with self._incoming_lock:
             if expected is None:
@@ -1336,88 +1427,9 @@ class VirtualPrinter:
             request_resend()
 
     def _debugTrigger(self, data: str) -> None:
+        # HEADS-UP: update DEBUG_USAGE when modifying available debug commands!
         if data == "" or data == "help" or data == "?":
-            usage = """
-            OctoPrint Virtual Printer debug commands
-
-            help
-            ?
-            | This help.
-
-            # Action Triggers
-
-            action_pause
-            | Sends a "// action:pause" action trigger to the host.
-            action_resume
-            | Sends a "// action:resume" action trigger to the host.
-            action_disconnect
-            | Sends a "// action:disconnect" action trigger to the
-            | host.
-            action_custom <action>[ <parameters>]
-            | Sends a custom "// action:<action> <parameters>"
-            | action trigger to the host.
-
-            # Communication Errors
-
-            dont_answer
-            | Will not acknowledge the next command.
-            go_awol
-            | Will completely stop replying
-            trigger_resend_lineno
-            | Triggers a resend error with a line number mismatch
-            trigger_resend_checksum
-            | Triggers a resend error with a checksum mismatch
-            trigger_missing_checksum
-            | Triggers a resend error with a missing checksum
-            trigger_missing_lineno
-            | Triggers a "no line number with checksum" error w/o resend request
-            trigger_fatal_error_marlin
-            | Triggers a fatal error/simulated heater fail, Marlin style
-            trigger_fatal_error_repetier
-            | Triggers a fatal error/simulated heater fail, Repetier style
-            drop_connection
-            | Drops the serial connection
-            prepare_ok <broken ok>
-            | Will cause <broken ok> to be enqueued for use,
-            | will be used instead of actual "ok"
-            rerequest_last
-            | Will cause the last line number + 1 to be rerequest add infinitum
-            resend_ratio <int:percentage>
-            | Sets the resend ratio to the given percentage, simulating noisy lines.
-            | Set to 0 to disable noise simulation.
-            toggle_klipper_connection
-            | Toggles the Klipper connection state. If disabled, the printer will
-            | respond to all commands with "!! Lost communication with MCU 'mcu'"
-
-            # Reply Timing / Sleeping
-
-            sleep <int:seconds>
-            | Sleep <seconds> s
-            sleep_after <str:command> <int:seconds>
-            | Sleeps <seconds> s after each execution of <command>
-            sleep_after_next <str:command> <int:seconds>
-            | Sleeps <seconds> s after execution of next <command>
-
-            # SD printing
-
-            start_sd <str:file>
-            | Select and start printing file <file> from SD
-            select_sd <str:file>
-            | Select file <file> from SD, don't start printing it yet. Use
-            | start_sd to start the print
-            cancel_sd
-            | Cancels an ongoing SD print
-
-            # Misc
-
-            send <str:message>
-            | Sends back <message>
-            reset
-            | Simulates a reset. Internal state will be lost.
-            unbusy
-            | Unsets the busy loop.
-            """
-            for line in usage.split("\n"):
+            for line in DEBUG_USAGE.split("\n"):
                 self._send(f"echo: {line.strip()}")
         elif data == "action_pause":
             self._send("// action:pause")
@@ -1581,7 +1593,7 @@ class VirtualPrinter:
                 result[dosname.lower()] = entry.name.lower()
         return result
 
-    def _getSdFileData(self, filename: str) -> Optional[dict[str, Any]]:
+    def _getSdFileData(self, filename: str) -> dict[str, Any] | None:
         files = self._mappedSdList()
         data = files.get(filename.lower())
         if isinstance(data, str):
@@ -1602,7 +1614,7 @@ class VirtualPrinter:
             or not os.path.exists(file["path"])
             or not os.path.isfile(file["path"])
         ):
-            self._send(f"open failed, File: {file['name']}.")
+            self._send(f"open failed, File: {filename}.")
             return
 
         if self._selectedSdFile == file["path"] and check_already_open:
@@ -1611,10 +1623,14 @@ class VirtualPrinter:
         self._selectedSdFile = file["path"]
         self._selectedSdFileSize = file["size"]
         if self._settings.get_boolean(["includeFilenameInOpened"]):
-            self._send(f"File opened: {file['name']}  Size: {self._selectedSdFileSize}")
+            self._send(
+                f"File opened: {self._sdPathPrefix + file['name']}  Size: {self._selectedSdFileSize}"
+            )
         else:
             self._send("File opened")
-        self._send("File selected")
+
+        if not self._settings.get_boolean(["suppressFileSelected"]):
+            self._send("File selected")
 
     def _startSdPrint(self):
         if self._selectedSdFile is not None:

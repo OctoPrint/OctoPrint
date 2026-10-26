@@ -39,7 +39,6 @@ class HealthCheckPlugin(
 
     def _initialize_checks(self):
         from .checks.filesystem_storage import FilesystemStorageCheck
-        from .checks.global_api_key import GlobalApiKeyCheck
         from .checks.gtt_unusable import GttUnusableCheck
         from .checks.octoprint_freshness import OctoPrintFreshnessCheck
         from .checks.only_admins import OnlyAdminsCheck
@@ -49,7 +48,6 @@ class HealthCheckPlugin(
             OctoPrintFreshnessCheck,
             PythonEolHealthCheck,
             FilesystemStorageCheck,
-            GlobalApiKeyCheck,
             OnlyAdminsCheck,
             GttUnusableCheck,
         ):
@@ -264,7 +262,7 @@ __plugin_disabling_discouraged__ = gettext(
     "OctoPrint installation."
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=3.9,<4"
+__plugin_pythoncompat__ = ">=3.10,<4"
 __plugin_implementation__ = HealthCheckPlugin()
 
 __plugin_hooks__ = {

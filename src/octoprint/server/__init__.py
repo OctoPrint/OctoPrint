@@ -190,9 +190,6 @@ def load_user(userid):
     if userid is None:
         return None
 
-    if userid == "_api":  # TODO remove in 2.1.0
-        return userManager.api_user_factory()
-
     if userid == "_internal":
         return userManager.internal_user_factory()
 
@@ -1413,6 +1410,7 @@ class Server:
             "js/lib/pusher.color.min.js",
             "js/lib/detectmobilebrowser.js",
             "js/lib/ua-parser.min.js",
+            "js/lib/zip.min.js",
             "js/lib/md5.min.js",
             "js/lib/bootstrap-slider-knockout-binding.js",
             "js/lib/loglevel.min.js",
@@ -2220,6 +2218,8 @@ class Server:
             "path": self._settings.get(["server", "uploads", "pathSuffix"]),
         }
 
+        uploadtemp = self._settings.getBaseFolder("uploadtemp")
+
         server_routes.append(
             (
                 r".*",
@@ -2233,6 +2233,7 @@ class Server:
                         headers=added_headers,
                         removed_headers=removed_headers,
                     ),
+                    "path": uploadtemp,
                     "file_prefix": "octoprint-file-upload-",
                     "file_suffix": ".tmp",
                     "suffixes": upload_suffixes,

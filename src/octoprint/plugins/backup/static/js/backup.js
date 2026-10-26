@@ -52,10 +52,19 @@ $(function () {
         self.excludeFromBackup = ko.observableArray([]);
         self.restoreSupported = ko.observable(true);
         self.maxUploadSize = ko.observable(0);
+        self.freeTempSpace = ko.observable(0);
 
         self.backupUploadData = undefined;
         self.backupUploadName = ko.observable();
         self.backupUploadSource = undefined;
+        self.backupUploadCompressed = ko.observable(undefined);
+        self.backupUploadUncompressed = ko.observable(undefined);
+        self.backupUploadTooBig = ko.observable(false);
+        self.backupUploadVersion = ko.observable("-");
+        self.backupUploadVersionIncompatible = ko.observable(false);
+        self.backupUploadValid = ko.observable(false);
+        self.backupUploadUploadsIncluded = ko.observable(false);
+        self.backupUploadTimelapseIncluded = ko.observable(false);
 
         self.config_path = ko.observable();
         self.testPathConfigOk = ko.observable(false);
@@ -141,6 +150,58 @@ $(function () {
             return data.size > self.maxUploadSize();
         };
 
+        self.isAboveFreeTempSpace = function (data) {
+            return (
+                data.uncompressed !== undefined &&
+                data.uncompressed > self.freeTempSpace()
+            );
+        };
+
+        self.isVersionIncompatible = function (data) {
+            const version = data.version;
+            if (version === undefined) return false;
+
+            const [backupMajor, backupMinor, backupRest] = version
+                .split(".", 2)
+                .map((x) => parseInt(x));
+            const [octoMajor, octoMinor, octoRest] = DISPLAY_VERSION.split(".", 2).map(
+                (x) => parseInt(x)
+            );
+
+            return (
+                backupMajor > octoMajor ||
+                (backupMajor === octoMajor && backupMinor > octoMinor)
+            );
+        };
+
+        self.isRestoreImpossible = function (data) {
+            return (
+                !self.restoreSupported() ||
+                self.isAboveFreeTempSpace(data) ||
+                self.isVersionIncompatible(data)
+            );
+        };
+
+        self.enableRestore = function (data) {
+            return !(
+                self.backupInProgress() ||
+                self.restoreInProgress() ||
+                self.isRestoreImpossible(data)
+            );
+        };
+
+        self.enableUploadAndRestore = ko.pureComputed(() => {
+            const data = {
+                uncompressed: self.backupUploadUncompressed(),
+                version: self.backupUploadVersion()
+            };
+            return (
+                self.enableRestore(data) &&
+                self.backupUploadData !== undefined &&
+                self.backupUploadValid()
+            );
+        });
+
         const backupFileuploadOptionsFactory = (source) => {
             return {
                 dataType: "json",
@@ -155,18 +216,77 @@ $(function () {
                     self.backupUploadName(data.files[0].name);
                     self.backupUploadData = data;
                     self.backupUploadSource = source;
+                    self.backupUploadCompressed(data.files[0].size);
+
+                    const zipfile = new zip.ZipReader(new zip.BlobReader(data.files[0]));
+
+                    let size = 0;
+                    let basedirIncluded = false;
+                    let metadataIncluded = false;
+                    let uploadsIncluded = false;
+                    let timelapseIncluded = false;
+
+                    zipfile.getEntries().then((entries) => {
+                        entries.forEach((entry) => {
+                            size += entry.uncompressedSize;
+                            if (entry.filename === "metadata.json" && !entry.directory) {
+                                metadataIncluded = true;
+                                const metadata = entry
+                                    .getData(new zip.TextWriter())
+                                    .then((text) => {
+                                        const parsed = JSON.parse(text);
+                                        self.backupUploadVersion(parsed.version);
+                                        self.backupUploadVersionIncompatible(
+                                            self.isVersionIncompatible({
+                                                version: parsed.version
+                                            })
+                                        );
+                                    });
+                            } else if (entry.filename.startsWith("basedir/")) {
+                                basedirIncluded = true;
+                                if (entry.filename.startsWith("basedir/uploads/")) {
+                                    uploadsIncluded = true;
+                                } else if (
+                                    entry.filename.startsWith("basedir/timelapse/")
+                                ) {
+                                    timelapseIncluded = true;
+                                }
+                            }
+                        });
+                        self.backupUploadUncompressed(size);
+                        self.backupUploadTooBig(
+                            self.isAboveFreeTempSpace({uncompressed: size})
+                        );
+                        self.backupUploadValid(basedirIncluded && metadataIncluded);
+                        self.backupUploadUploadsIncluded(uploadsIncluded);
+                        self.backupUploadTimelapseIncluded(timelapseIncluded);
+                    });
                 },
                 done: (e, data) => {
                     self.backupUploadName(undefined);
                     self.backupUploadData = undefined;
                     self.backupUploadSource = undefined;
+                    self.backupUploadVersion("-");
+                    self.backupUploadVersionIncompatible(false);
+                    self.backupUploadCompressed(undefined);
+                    self.backupUploadUncompressed(undefined);
+                    self.backupUploadTooBig(false);
+                    self.backupUploadUploadsIncluded(false);
+                    self.backupUploadTimelapseIncluded(false);
+                    self.backupUploadValid(false);
                 },
                 fail: (e, data) => {
                     self.setRestoreProgress(
                         "Upload failed!",
                         self.restoreProgressPercentage()
                     );
-                    self.setRestoreError(true);
+                    if (data && data.jqXHR && data.status === 409) {
+                        self.loglines.push({
+                            line: "Backup file already exists, please rename before upload!",
+                            stream: "error"
+                        });
+                    }
+                    self.restoreInProgress(false);
                 },
                 progressall: (e, data) => {
                     const progress = parseInt((data.loaded / data.total) * 100, 10);
@@ -220,6 +340,7 @@ $(function () {
             self.unknownPlugins(response.unknown_plugins);
             self.restoreSupported(response.restore_supported);
             self.maxUploadSize(response.max_upload_size);
+            self.freeTempSpace(response.free_temp_space);
         };
 
         self.reauthenticateDownload = (url) => {
@@ -286,7 +407,7 @@ $(function () {
         };
 
         self.performRestoreFromUpload = function () {
-            if (self.backupUploadData === undefined) return;
+            if (!self.enableUploadAndRestore()) return;
 
             const proceed = () => {
                 self.restoreInProgress(true);
@@ -437,7 +558,6 @@ $(function () {
                     gettext("Restore failed!"),
                     self.restoreProgressPercentage()
                 );
-                self.setRestoreError(true);
             } else if (data.type === "restore_done") {
                 self.loglines.push({line: " ", stream: "message"});
                 self.loglines.push({

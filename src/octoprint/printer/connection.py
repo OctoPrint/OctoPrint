@@ -25,7 +25,7 @@ import enum
 import logging
 from collections.abc import Iterable
 from gettext import gettext
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, cast
 
 from octoprint.events import Events, eventManager
 from octoprint.printer import (
@@ -103,11 +103,11 @@ class ConnectedPrinterListenerMixin:
         pass
 
     def on_printer_state_changed(
-        self, state: ConnectedPrinterState, error_str: Optional[str] = None
+        self, state: ConnectedPrinterState, error_str: str | None = None
     ):
         pass
 
-    def on_printer_position_changed(self, position: dict, reason: Optional[str] = None):
+    def on_printer_position_changed(self, position: dict, reason: str | None = None):
         """
         ``position`` will be a dict that might contain any of
 
@@ -149,12 +149,12 @@ class ConnectedPrinterListenerMixin:
         pass
 
     def on_printer_job_changed(
-        self, job: PrintJob, user: Optional[str] = None, data: Optional[dict] = None
+        self, job: PrintJob, user: str | None = None, data: dict | None = None
     ):
         pass
 
     def on_printer_job_started(
-        self, suppress_script: bool = False, user: Optional[str] = None
+        self, suppress_script: bool = False, user: str | None = None
     ):
         pass
 
@@ -251,7 +251,7 @@ class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterRegistra
     def __init__(
         self,
         owner: PrinterMixin,
-        listener: Optional[ConnectedPrinterListenerMixin] = None,
+        listener: ConnectedPrinterListenerMixin | None = None,
         profile=None,
         *args,
         **kwargs,
@@ -273,10 +273,10 @@ class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterRegistra
         self._logger = logging.getLogger(__name__)
 
     @property
-    def current_job(self) -> Optional[PrintJob]:
+    def current_job(self) -> PrintJob | None:
         return self._job
 
-    def set_job(self, job: Optional[PrintJob], *args, **kwargs) -> None:
+    def set_job(self, job: PrintJob | None, *args, **kwargs) -> None:
         self._job = job
         self._listener.on_printer_job_changed(job, user=kwargs.get("user"))
 
@@ -285,11 +285,11 @@ class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterRegistra
         return {"connector": self.connector, "profile": self._profile}
 
     @property
-    def firmware_info(self) -> Union[FirmwareInformation, None]:
+    def firmware_info(self) -> FirmwareInformation | None:
         return self._firmware_info
 
     @firmware_info.setter
-    def firmware_info(self, value: Union[FirmwareInformation, None]) -> None:
+    def firmware_info(self, value: FirmwareInformation | None) -> None:
         self._firmware_info = value
         if self._firmware_info:
             eventManager().fire(
@@ -299,11 +299,11 @@ class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterRegistra
             self._listener.on_printer_firmware_info(self._firmware_info)
 
     @property
-    def error_info(self) -> Union[ErrorInformation, None]:
+    def error_info(self) -> ErrorInformation | None:
         return self._error_info
 
     @error_info.setter
-    def error_info(self, value: Union[ErrorInformation, None]) -> None:
+    def error_info(self, value: ErrorInformation | None) -> None:
         self._error_info = value
         if self._error_info:
             payload = self._error_info.model_dump(exclude_none=True)
@@ -322,11 +322,11 @@ class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterRegistra
     def state(self, value: ConnectedPrinterState) -> None:
         self.set_state(value)
 
-    def set_state(self, state: ConnectedPrinterState, error: Optional[str] = None):
+    def set_state(self, state: ConnectedPrinterState, error: str | None = None):
         self._state = state
         self._listener.on_printer_state_changed(state, error_str=error)
 
-    def get_state_string(self, state: Optional[ConnectedPrinterState] = None):
+    def get_state_string(self, state: ConnectedPrinterState | None = None):
         if state is None:
             state = self.state
         return state.value

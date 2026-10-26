@@ -15,28 +15,40 @@ jobs:
   install-branch:
     name: Install branch
     strategy:
+      fail-fast: false
       matrix:
-        os: ["ubuntu-latest"]
-        python: ["3.9", "3.10", "3.11", "3.12", "3.13"]
-        branch: ["main", "release"]
+        os: ["ubuntu-24.04"] # change to ubuntu-latest once we get rid of Python 3.9
+        python: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+        branch: ["release", "main", "next", "dev"]
+        exclude:
+          # main & release: 3.7-3.13
+          - branch: "release"
+            python: "3.14"
+          - branch: "main"
+            python: "3.14"
+          # dev: 3.11-3.14
+          - branch: "dev"
+            python: "3.9"
+          - branch: "dev"
+            python: "3.10"
     runs-on: ${{ matrix.os }}
     steps:
       - name: ⬇ Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           path: src
           persist-credentials: false
 
       - name: 🐍 Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ matrix.python }}
 
       # Checkout code and install
       - name: ⬇ Checkout code to test
         if: ${{ matrix.branch != 'release' }}
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ matrix.branch }}
           fetch-depth: 0
@@ -82,17 +94,17 @@ jobs:
           fi
 
       - name: 📧 Discord success notification
-        continue-on-error: true
+        if: github.repository == 'OctoPrint/OctoPrint'
         env:
           DISCORD_WEBHOOK: ${{ secrets.discord_webhook }}
-        uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554 # 0.4.0
-        with:
-          args: "☑️ Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ matrix.branch }}` was successful"
+          BODY: '{"content": "☑️ Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ matrix.branch }}` was successful"}'
+        run: |
+          curl -H "Content-Type: application/json" -d "$BODY" "$DISCORD_WEBHOOK"
+
       - name: 📧 Discord failure notification
-        continue-on-error: true
-        if: failure()
+        if: failure() && github.repository == 'OctoPrint/OctoPrint'
         env:
           DISCORD_WEBHOOK: ${{ secrets.discord_webhook }}
-        uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554 # 0.4.0
-        with:
-          args: "🚫 Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ matrix.branch }}` failed"
+          BODY: '{"content": "🚫 Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ matrix.branch }}` failed"}'
+        run: |
+          curl -H "Content-Type: application/json" -d "$BODY" "$DISCORD_WEBHOOK"

@@ -7,7 +7,6 @@ import datetime
 import json
 import os
 import threading
-from typing import Optional
 
 from flask import abort, jsonify
 from flask_babel import gettext
@@ -91,7 +90,7 @@ class AchievementsPlugin(
         return super().initialize()
 
     def _server_timezone(self):
-        return datetime.datetime.now(datetime.timezone.utc).astimezone()
+        return datetime.datetime.now(datetime.UTC).astimezone()
 
     def _now(self):
         if self._tz is None:
@@ -857,7 +856,7 @@ class AchievementsPlugin(
                     "Error while trying to create sentinel for bug #5223"
                 )
 
-    def _load_year_file(self, year=None) -> Optional[YearlyStats]:
+    def _load_year_file(self, year=None) -> YearlyStats | None:
         if year is None:
             year = self._current_year
 
@@ -905,7 +904,7 @@ __plugin_disabling_discouraged__ = gettext(
     "Without this plugin you will no longer be able to earn achievements and track stats about your OctoPrint instance."
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=3.9,<4"
+__plugin_pythoncompat__ = ">=3.10,<4"
 __plugin_implementation__ = AchievementsPlugin()
 __plugin_helpers__ = {
     "get_unlocked_achievements": __plugin_implementation__.get_unlocked_achievements,

@@ -33,7 +33,7 @@ def get_systeminfo(
                 last_safe_mode["reason"] = f.readline().strip()
             last_safe_mode["date"] = (
                 datetime.datetime.fromtimestamp(
-                    os.path.getmtime(safe_mode_file), tz=datetime.timezone.utc
+                    os.path.getmtime(safe_mode_file), tz=datetime.UTC
                 ).isoformat()[:19]
                 + "Z"
             )
@@ -49,8 +49,7 @@ def get_systeminfo(
         "connectivity": connectivity_checker.as_dict(),
         "env": environment_detector.environment,
         "systeminfo": {
-            "generated": datetime.datetime.now(datetime.timezone.utc).isoformat()[:19]
-            + "Z"
+            "generated": datetime.datetime.now(datetime.UTC).isoformat()[:19] + "Z"
         },
     }
 

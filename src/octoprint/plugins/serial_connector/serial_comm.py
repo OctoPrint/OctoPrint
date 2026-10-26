@@ -20,7 +20,7 @@ import threading
 import time
 from collections import deque, namedtuple
 from functools import partial
-from typing import IO, Optional, Union
+from typing import IO
 
 import serial
 import wrapt
@@ -3220,7 +3220,10 @@ class MachineCom:
                                 longname=data.longname,
                             )
 
-                    elif "File selected" in line:
+                        # Formerly triggered on "File selected", but this has been removed at least from Prusa Buddy firmware
+                        #
+                        # Looking at Marlin (even back to 1.x), it always reported "File opened" AND "File selected".
+                        # Same with Repetier. So we don't have to wait for "File selected".
                         if self._ignore_select:
                             self._ignore_select = False
                         elif self._currentFile is not None and self.isSdFileSelected():
@@ -6017,7 +6020,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 
     def __init__(
         self,
-        path_or_file: Union[str, IO],
+        path_or_file: str | IO,
         offsets_callback=None,
         current_tool_callback=None,
         user=None,
@@ -6070,12 +6073,10 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 
         return super().getProgress()
 
-    def getRemainingPrintTime(self) -> Optional[float]:
+    def getRemainingPrintTime(self) -> float | None:
         return self._print_time_left_m73
 
-    def fromM73(
-        self, progress: Optional[float] = None, time_left: Optional[float] = None
-    ):
+    def fromM73(self, progress: float | None = None, time_left: float | None = None):
         if progress is not None:
             self._progress_m73 = progress
         if time_left is not None:
@@ -6190,9 +6191,7 @@ class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
         self._local_name = local_name
         self._remote_name = remote_name
 
-    def fromM73(
-        self, progress: Optional[float] = None, time_left: Optional[float] = None
-    ):
+    def fromM73(self, progress: float | None = None, time_left: float | None = None):
         pass  # disabled
 
     def start(self):

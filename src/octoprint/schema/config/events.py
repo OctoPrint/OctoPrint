@@ -2,7 +2,6 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from enum import Enum
-from typing import Optional
 
 from octoprint.schema import BaseModel
 
@@ -16,7 +15,7 @@ class EventSubscription(BaseModel):
     event: str
     """The event to subscribe to."""
 
-    name: Optional[str] = None
+    name: str | None = None
     """The event name to show on the UI."""
 
     command: str

@@ -6,7 +6,6 @@
     }
 })(this, function (OctoPrintClient, $) {
     const url = "api/settings";
-    const apiKeyUrl = url + "/apikey";
     const reauthReqUrl = url + "/reauthReq";
 
     const OctoPrintSettingsClient = function (base) {
@@ -47,14 +46,6 @@
         data["plugins"] = {};
         data["plugins"][plugin] = settings;
         return this.save(data, opts);
-    };
-
-    OctoPrintSettingsClient.prototype.generateApiKey = function (opts) {
-        return this.base.postJson(apiKeyUrl, opts);
-    };
-
-    OctoPrintSettingsClient.prototype.deleteApiKey = function (opts) {
-        return this.base.delete(apiKeyUrl, opts);
     };
 
     OctoPrintClient.registerComponent("settings", OctoPrintSettingsClient);

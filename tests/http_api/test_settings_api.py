@@ -1,12 +1,10 @@
-from typing import Optional
-
 import pytest
 import urllib3
 
 pytestmark = pytest.mark.http_api
 
 
-def _verify_tree_restricted(tree: dict, expected: Optional[dict] = None):
+def _verify_tree_restricted(tree: dict, expected: dict | None = None):
     if expected is None:
         expected = {}
 
@@ -120,5 +118,5 @@ def test_admin(base_url, admin_credentials):
     assert data["accessControl"]["defaultReauthenticationTimeout"] is not None
 
     assert "api" in data
-    assert "key" in data["api"]
+    assert "key" not in data["api"]  # removed in 2.1.0
     assert data["api"]["allowCrossOrigin"] is not None

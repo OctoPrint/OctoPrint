@@ -5,15 +5,14 @@ import os.path
 import tarfile
 import tempfile
 import zipfile
-from collections.abc import Generator
-from typing import Callable, Optional, Union
+from collections.abc import Callable, Generator
 
 import filetype
 
 PRE_PEP517_PIP_ARGS = ["--use-pep517", "--no-build-isolation"]
 
 
-def _get_zipinfo(archive: zipfile.ZipFile, name: str) -> Optional[zipfile.ZipInfo]:
+def _get_zipinfo(archive: zipfile.ZipFile, name: str) -> zipfile.ZipInfo | None:
     try:
         try:
             return archive.getinfo(name)
@@ -35,7 +34,7 @@ def _get_zipinfo(archive: zipfile.ZipFile, name: str) -> Optional[zipfile.ZipInf
     return None
 
 
-def _get_tarinfo(archive: tarfile.TarFile, name: str) -> Optional[tarfile.TarInfo]:
+def _get_tarinfo(archive: tarfile.TarFile, name: str) -> tarfile.TarInfo | None:
     try:
         try:
             return archive.getmember(name)
@@ -102,7 +101,7 @@ def is_pre_pep517_plugin_package(path: str) -> bool:
 
 
 def has_legacy_octoprint_setuptools_dependency(
-    data: Union[bytes, str], encoding="utf-8"
+    data: bytes | str, encoding="utf-8"
 ) -> bool:
     if isinstance(data, str):
         data = data.encode(encoding)
@@ -117,7 +116,7 @@ class InstallPreparationResult:
 
 @contextlib.contextmanager
 def prepare_install(
-    install_arg: str, log: Optional[Callable] = None
+    install_arg: str, log: Callable | None = None
 ) -> Generator[InstallPreparationResult, None, None]:
     from octoprint.util.net import download_file
 
