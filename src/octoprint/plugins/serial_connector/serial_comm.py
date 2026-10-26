@@ -178,6 +178,17 @@ regex_firmware_splitter = re.compile(r"(^|\s+)([A-Z][A-Z0-9_]*):")
 regex_resend_linenumber = re.compile(r"(N|N:)?(?P<n>%s)" % regex_int_pattern)
 """Regex to use for request line numbers in resend requests"""
 
+regex_invalid_extruder = re.compile(
+    r"invalid extruder [-t]?(?P<value>%s)" % regex_int_pattern
+)
+"""
+Regex used for matching 'Invalid extruder' responses.
+
+Groups will be as follows:
+
+  * ``value``: tool number, either with T prefix or without, may also be negative
+"""
+
 regex_serial_devices = re.compile(r"^(?:ttyUSB|ttyACM|tty\.usb|cu\.|cuaU|ttyS|rfcomm).*")
 """Regex used to filter out valid tty devices"""
 
@@ -3054,14 +3065,19 @@ class MachineCom:
                 elif "invalid extruder" in lower_line:
                     tool = None
 
-                    match = regexes_parameters["intT"].search(line)
+                    match = regex_invalid_extruder.search(lower_line)
                     if match:
                         try:
                             tool = int(match.group("value"))
                         except ValueError:
                             pass  # should never happen
 
-                    if tool is None or tool == self._currentTool:
+                    if tool < 0:
+                        # Prusa Buddy Firmware might return -1 if a command was received that expected a T parameter
+                        # but didn't have one. We ignore this here.
+                        pass
+
+                    elif tool is None or tool == self._currentTool:
                         if self._toolBeforeChange is not None:
                             fallback_tool = self._toolBeforeChange
                         else:
@@ -3070,27 +3086,47 @@ class MachineCom:
                         invalid_tool = self._currentTool
 
                         if self._sanity_check_tools:
-                            # log to terminal and remember as invalid
-                            message = "T{} reported as invalid, reverting to T{}".format(
-                                invalid_tool, fallback_tool
+                            # remember as invalid
+                            self._known_invalid_tools.add(invalid_tool)
+                            fallback_tool_invalid = (
+                                fallback_tool in self._known_invalid_tools
                             )
+
+                            # log to terminal
+                            message = f"T{invalid_tool} reported as invalid"
+                            payload = {"tool": invalid_tool}
+
+                            if not fallback_tool_invalid:
+                                message = (
+                                    "T{} reported as invalid, reverting to T{}".format(
+                                        invalid_tool, fallback_tool
+                                    )
+                                )
+                                payload["fallback"] = fallback_tool
+
                             self._log("Warn: " + message)
                             self._logger.warning(message)
                             eventManager().fire(
                                 Events.INVALID_TOOL_REPORTED,
-                                {"tool": invalid_tool, "fallback": fallback_tool},
+                                payload,
                             )
 
-                            self._known_invalid_tools.add(invalid_tool)
-
-                            # we actually do send a T command here instead of just settings self._currentTool just in case
-                            # we had any scripts or plugins modify stuff due to the prior tool change
-                            self.sendCommand(
-                                f"T{fallback_tool}",
-                                tags={
-                                    "trigger:revert_invalid_tool",
-                                },
-                            )
+                            # switch to fallback if possible
+                            if fallback_tool_invalid:
+                                message = "Fallback tool T{} has also been reported as invalid".format(
+                                    fallback_tool
+                                )
+                                self._log("Warn: " + message)
+                                self._logger.warning(message)
+                            else:
+                                # we actually do send a T command here instead of just setting self._currentTool just in case
+                                # we had any scripts or plugins modify stuff due to the prior tool change
+                                self.sendCommand(
+                                    f"T{fallback_tool}",
+                                    tags={
+                                        "trigger:revert_invalid_tool",
+                                    },
+                                )
                         else:
                             # just log to terminal, user disabled sanity check
                             self._log(

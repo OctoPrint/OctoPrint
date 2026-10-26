@@ -544,15 +544,15 @@ $(function () {
         };
 
         self.onEventInvalidToolReported = function (payload) {
+            const message =
+                payload.fallback != null
+                    ? gettext(
+                          "Your printer reported tool T%(tool)d as invalid, reverting back to T%(fallback)d"
+                      )
+                    : gettext("Your printer reported tool T%(tool)d as invalid");
             new PNotify({
                 title: gettext("Invalid tool reported"),
-                text: _.sprintf(
-                    gettext(
-                        "Your printer reported tool T%(tool)d as invalid, " +
-                            "reverting back to T%(fallback)d"
-                    ),
-                    payload
-                ),
+                text: _.sprintf(message, payload),
                 type: "error",
                 hide: false
             });

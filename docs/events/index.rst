@@ -820,7 +820,7 @@ InvalidToolReported
    Payload:
 
    * ``tool``: the tool number that was reported as invalid by the firmware
-   * ``fallback``: the tool number that OctoPrint will revert to
+   * ``fallback``: the tool number that OctoPrint will revert to, may be unset if no such number can be determined
 
    .. versionadded:: 1.5.0
 
