@@ -5615,22 +5615,32 @@ class MachineCom:
     def _gcode_M110_sending(
         self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs
     ):
-        newLineNumber = 0
-        match = regexes_parameters["intN"].search(cmd)
-        if match:
-            newLineNumber = int(match.group("value"))
+        linenum = 0
+
+        matches = list(regexes_parameters["intN"].finditer(cmd))
+        if matches:
+            # We used the last N parameter provided as that seems logical (later parameter overwrites the value of former).
+            # Of course, that is not necessarily what the firmware does (current Marlin does, Prusa Marlin & other
+            # derivatives don't), so we'll later have to rewrite the command here to not cause havoc.
+
+            if len(matches) > 1:
+                self._logger.info(
+                    "Multiple N parameters detected in M110 command, using the last one to set current line number!"
+                )
+
+            linenum = int(matches[-1].group("value"))
 
         with self._line_mutex:
-            self._logger.info(
-                f"M110 detected, setting current line number to {newLineNumber}"
-            )
+            self._logger.info(f"M110 detected, setting current line number to {linenum}")
 
             # send M110 command with new line number
-            self._current_line = newLineNumber
+            self._current_line = linenum
 
             # after a reset of the line number we have no way to determine what line exactly the printer now wants
             self._lastLines.clear()
         self._resendDelta = None
+
+        return f"M110 N{linenum}"
 
     def _trigger_emergency_stop(self, close=True):
         self._logger.info("Force-sending M112 to the printer")
