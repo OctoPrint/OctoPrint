@@ -189,6 +189,12 @@ Groups will be as follows:
   * ``value``: tool number, either with T prefix or without, may also be negative
 """
 
+regex_linenumber_prefix = re.compile(r"^N\d+\s*")
+"""Regex used to match line number prefix"""
+
+regex_checksum_suffix = re.compile(r"\*\d+\s*$")
+"""Regex used to match checksum suffix"""
+
 regex_serial_devices = re.compile(r"^(?:ttyUSB|ttyACM|tty\.usb|cu\.|cuaU|ttyS|rfcomm).*")
 """Regex used to filter out valid tty devices"""
 
@@ -4655,6 +4661,8 @@ class MachineCom:
                 else:
                     return False
 
+            cmd = strip_linenumber_and_checksum(cmd)
+
             gcode, subcode = gcode_and_subcode_for_cmd(cmd)
 
             if not self.isStreaming():
@@ -6958,6 +6966,32 @@ def gcode_and_subcode_for_cmd(cmd):
         return None, None
 
     return gcode, values.get("subcode", None)
+
+
+def strip_linenumber_and_checksum(cmd):
+    """
+    Strips line number prefix and/or checksum suffix from command.
+
+    Examples:
+        >>> strip_linenumber_and_checksum("M110")
+        'M110'
+        >>> strip_linenumber_and_checksum("N123 M110")
+        'M110'
+        >>> strip_linenumber_and_checksum("N123M110")
+        'M110'
+        >>> strip_linenumber_and_checksum("M110*123")
+        'M110'
+        >>> strip_linenumber_and_checksum("N123 M110*123")
+        'M110'
+        >>> strip_linenumber_and_checksum("")
+        ''
+        >>> strip_linenumber_and_checksum(None)
+        ''
+    """
+    if not cmd:
+        return ""
+    cmd = regex_linenumber_prefix.sub("", cmd)  # strip line number prefix
+    return regex_checksum_suffix.sub("", cmd)
 
 
 def _normalize_command_handler_result(
