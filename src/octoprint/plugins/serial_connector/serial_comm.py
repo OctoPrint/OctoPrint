@@ -3188,53 +3188,58 @@ class MachineCom:
                         ):
                             # something went wrong, printer is reporting that we actually are not printing right now...
                             self.cancelPrint(external_sd=True)
-                    elif "File opened" in line and not self._ignore_select:
-                        # answer to M23, at least on Marlin, Repetier and Sprinter: "File opened:%s Size:%d"
-                        match = regex_sdFileOpened.search(line)
-                        if match:
-                            name = match.group("name")
-                            size = int(match.group("size"))
-                        else:
-                            name = "Unknown"
-                            size = 0
-                        user = None
-
-                        if self._sdFileToSelect:
-                            name = self._sdFileToSelect
-                            user = self._sdFileToSelectUser
-
-                        self._sdFileToSelect = None
-                        self._sdFileToSelectUser = None
-
-                        self._currentFile = PrintingSdFileInformation(
-                            name, size, user=user
-                        )
-
-                        if name in self._sdFiles:
-                            # update list with size
-                            data = self._sdFiles[name]
-                            self._sdFiles[name] = SDFileData(
-                                name=name,
-                                size=size,
-                                timestamp=data.timestamp,
-                                longname=data.longname,
-                            )
-
-                        # Formerly triggered on "File selected", but this has been removed at least from Prusa Buddy firmware
-                        #
-                        # Looking at Marlin (even back to 1.x), it always reported "File opened" AND "File selected".
-                        # Same with Repetier. So we don't have to wait for "File selected".
+                    elif "File opened" in line:
                         if self._ignore_select:
                             self._ignore_select = False
-                        elif self._currentFile is not None and self.isSdFileSelected():
-                            # final answer to M23, at least on Marlin, Repetier and Sprinter: "File selected"
-                            self._callback.on_comm_file_selected(
-                                self._currentFile.getFilename(),
-                                self._currentFile.getFilesize(),
-                                True,
-                                user=self._currentFile.getUser(),
-                                data=self._sdFiles.get(self._currentFile.getFilename()),
+
+                        else:
+                            # answer to M23, at least on Marlin, Repetier and Sprinter: "File opened:%s Size:%d"
+                            match = regex_sdFileOpened.search(line)
+                            if match:
+                                name = match.group("name")
+                                size = int(match.group("size"))
+                            else:
+                                name = "Unknown"
+                                size = 0
+                            user = None
+
+                            if self._sdFileToSelect:
+                                name = self._sdFileToSelect
+                                user = self._sdFileToSelectUser
+
+                            self._sdFileToSelect = None
+                            self._sdFileToSelectUser = None
+
+                            self._currentFile = PrintingSdFileInformation(
+                                name, size, user=user
                             )
+
+                            if name in self._sdFiles:
+                                # update list with size
+                                data = self._sdFiles[name]
+                                self._sdFiles[name] = SDFileData(
+                                    name=name,
+                                    size=size,
+                                    timestamp=data.timestamp,
+                                    longname=data.longname,
+                                )
+
+                            # Formerly triggered on "File selected", but this has been removed at least from Prusa Buddy firmware
+                            #
+                            # Looking at Marlin (even back to 1.x), it always reported "File opened" AND "File selected".
+                            # Same with Repetier. So we don't have to wait for "File selected".
+                            if self._currentFile is not None and self.isSdFileSelected():
+                                # final answer to M23, at least on Marlin, Repetier and Sprinter: "File selected"
+                                self._callback.on_comm_file_selected(
+                                    self._currentFile.getFilename(),
+                                    self._currentFile.getFilesize(),
+                                    True,
+                                    user=self._currentFile.getUser(),
+                                    data=self._sdFiles.get(
+                                        self._currentFile.getFilename()
+                                    ),
+                                )
+
                     elif "Writing to file" in line and self.isStreaming():
                         self._changeState(self.STATE_PRINTING)
                     elif "Done printing file" in line and self.isSdPrinting():
