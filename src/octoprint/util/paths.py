@@ -21,7 +21,7 @@ def normalize(path, expand_user=True, expand_vars=True, real=True, **kwargs):
 
 def is_sub_path_of(path: str, prefix: str) -> bool:
     """
-    Tests if `path` is a sub path (or identical) to `path`.
+    Tests if `path` is a sub path (or identical) to `prefix`.
 
     >>> is_sub_path_of("/a/b/c", "/a/b")
     True
