@@ -19,7 +19,8 @@ class FilesystemStorageCheck(HealthCheck):
                 folder, allow_fallback=False, check_writable=False
             )
             usage = shutil.disk_usage(path)
-            percent = float(usage.used) / float(usage.total)
+            usable = usage.used + usage.free
+            percent = round(usage.used / usable * 100, 1) if usable else 0.0
             context[folder] = percent
 
             if percent > self._settings.get("issue_threshold", 95):
