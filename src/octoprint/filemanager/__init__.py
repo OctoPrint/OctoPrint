@@ -298,7 +298,7 @@ class FileManager:
             self._logger.info(
                 "Adding backlog items from all storage types to analysis queue..."
             )
-            for storage_type, storage_manager in self._storage_managers.items():
+            for storage_type, storage_manager in list(self._storage_managers.items()):
                 self._determine_analysis_backlog(storage_type, storage_manager)
 
         import threading
