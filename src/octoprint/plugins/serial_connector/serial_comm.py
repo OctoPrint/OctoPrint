@@ -179,7 +179,8 @@ regex_resend_linenumber = re.compile(r"(N|N:)?(?P<n>%s)" % regex_int_pattern)
 """Regex to use for request line numbers in resend requests"""
 
 regex_invalid_extruder = re.compile(
-    r"invalid extruder [-t]?(?P<value>%s)" % regex_int_pattern
+    r"(?:t(?=\d+\s*invalid extruder)|invalid extruder\s*t?)(?P<value>-?%s)"
+    % regex_int_pattern
 )
 """
 Regex used for matching 'Invalid extruder' responses.
@@ -3078,7 +3079,7 @@ class MachineCom:
                         except ValueError:
                             pass  # should never happen
 
-                    if tool < 0:
+                    if tool is not None and tool < 0:
                         # Prusa Buddy Firmware might return -1 if a command was received that expected a T parameter
                         # but didn't have one. We ignore this here.
                         pass
