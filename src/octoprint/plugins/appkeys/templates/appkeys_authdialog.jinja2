@@ -39,7 +39,6 @@
         var BASE_URL = "{{ url_for('index') }}";
         var USER_TOKEN = "{{ user_token }}";
         var DECISION_URL = "{{ url_for('plugin.appkeys.handle_decision', user_token=user_token) }}";
-        var REDIRECT_URL = "{{ redirect_url }}";
         </script>
         <script src="{{ url_for('static', filename='js/lib/jquery/jquery.min.js') }}"></script>
         <script src="{{ url_for('static', filename='js/lib/sockjs.min.js') }}"></script>
