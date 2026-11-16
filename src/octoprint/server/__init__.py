@@ -555,11 +555,15 @@ class Server:
             PrefixAwareJinjaEnvironment,
             ReverseProxiedEnvironment,
         )
+        from octoprint.server.util.tornado import UploadStorageFallbackHandler
 
         # we must set this here because setting app.debug will access app.jinja_env
         app.jinja_options = {"autoescape": True}
         app.jinja_environment = PrefixAwareJinjaEnvironment
 
+        app.config["MAX_FORM_PARTS"] = (
+            UploadStorageFallbackHandler.MAX_PARTS * 4
+        )  # max if all parts are files turned into 4 parts (name, path, size, content type)
         app.config["TEMPLATES_AUTO_RELOAD"] = True
         app.config["REMEMBER_COOKIE_DURATION"] = 90 * 24 * 60 * 60  # 90 days
         app.config["REMEMBER_COOKIE_HTTPONLY"] = True
