@@ -1806,11 +1806,6 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             # no print time estimation from printer, let's do our own
             estimator = self._estimator
             if progress is not None:
-                progress_int = int(progress * 100)
-                if self._lastProgressReport != progress_int:
-                    self._lastProgressReport = progress_int
-                    self._report_print_progress_to_plugins(progress_int)
-
                 if progress == 0:
                     printTimeLeft = None
                     printTimeLeftOrigin = None
@@ -1846,6 +1841,15 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         else:
             # we have an estimate from the printer/connector, let's trust that
             printTimeLeftOrigin = "printer"
+
+        if progress is not None:
+            try:
+                progress_int = int(progress * 100)
+            except Exception:
+                self._logger.warning(f"Invalid progress value: {progress!r}")
+            if self._lastProgressReport != progress_int:
+                self._lastProgressReport = progress_int
+                self._report_print_progress_to_plugins(progress_int)
 
         return self._dict(
             completion=progress * 100 if progress is not None else None,

@@ -211,3 +211,19 @@ to send both the ``csrf_token`` cookie as well as an ``X-CSRF-Token`` header con
    Take a look at the implementations of ``OctoPrintClient.getCookie`` and ``OctoPrintClient.getHeaders`` in ``src/octoprint/static/js/client/base.js``
    for details on how to retrieve the cookie value and how to construct the header.
 
+.. _sec-api-general-requestlimits:
+
+Request limits
+==============
+
+To protect the resources of the underlying system, OctoPrint applies some limitations to incoming requests:
+
+1. *Request bodies* in general must not be larger than :ref:`configured <sec-configuration-config_yaml-server>` in ``server.maxSize``, 100KB by default. Exceptions are in place for the following endpoints:
+     * :ref:`Upload file <sec-api-fileops-uploadfile>` (`/api/files`): :ref:`configured <sec-configuration-config_yaml-server>` in ``server.uploads.maxSize``, 1GB by default
+     * :ref:`Upload a language pack <sec-api-languages-upload>` (`/api/languages`): 5MB
+     * Backup restore upload (``/plugin/backup/restore``): 1GB
+     * Plugin archive upload (``/plugin/pluginmanager/upload_file``): 50MB
+   Plugins may define additional exceptions with higher limits for their own endpoints via :ref:`hook <sec-plugins-hook-server-http-bodysize>`.
+2. *Multipart headers* must not be larger than 5KB.
+3. *Multipart bodies* other than file uploads must not be larger than 500KB.
+4. *Multipart part count* must not be larger than 100 parts.

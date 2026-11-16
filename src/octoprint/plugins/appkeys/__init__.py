@@ -267,7 +267,6 @@ class AppKeysPlugin(
         app_id = pending.app_id
         user_token = pending.user_token
         remote_address = pending.remote_address
-        redirect_url = flask.request.args.get("redirect", "")
 
         response = flask.make_response(
             flask.render_template(
@@ -276,7 +275,6 @@ class AppKeysPlugin(
                 remote_address=remote_address,
                 user=user_id,
                 user_token=user_token,
-                redirect_url=redirect_url,
                 theming=[],
                 request_text=gettext(
                     'A client identifying itself as "<strong>%(app)s</strong>" has requested access to control OctoPrint through the API. The request originates from <code>%(remote_address)s</code>.'

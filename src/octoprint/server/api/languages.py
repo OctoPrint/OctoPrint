@@ -16,6 +16,7 @@ from octoprint.server.api import api
 from octoprint.server.util.flask import no_firstrun_access
 from octoprint.settings import settings
 from octoprint.util import yaml
+from octoprint.util.paths import is_sub_path_of
 
 
 @api.route("/languages", methods=["GET"])
@@ -153,12 +154,20 @@ def uploadLanguagePack():
 @no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def deleteInstalledLanguagePack(locale, pack):
+    try:
+        Locale.parse(locale)
+    except Exception:
+        abort(400, description="Invalid locale")
+
+    translation_folder = settings().getBaseFolder("translations")
+
     if pack == "_core":
-        target_path = os.path.join(settings().getBaseFolder("translations"), locale)
+        target_path = os.path.join(translation_folder, locale)
     else:
-        target_path = os.path.join(
-            settings().getBaseFolder("translations"), "_plugins", pack, locale
-        )
+        target_path = os.path.join(translation_folder, "_plugins", pack, locale)
+
+    if not is_sub_path_of(target_path, translation_folder):
+        abort(404)
 
     if os.path.isdir(target_path):
         import shutil
@@ -179,9 +188,7 @@ def _validate_and_install_language_pack(path, target):
         with zipfile.ZipFile(path, mode="r") as zip:
             # protect against path traversal
             if any(
-                not os.path.abspath(os.path.join(temp_dir, x)).startswith(
-                    temp_dir + os.path.sep
-                )
+                not is_sub_path_of(os.path.join(temp_dir, x), temp_dir)
                 for x in zip.namelist()
             ):
                 return False

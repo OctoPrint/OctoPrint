@@ -1193,6 +1193,11 @@ def gcodeFileCommand(storage, path=""):
 
                 select_after_slicing = False
                 if "select" in data and data["select"] in valid_boolean_trues:
+                    if not Permissions.FILES_SELECT.can():
+                        abort(
+                            403,
+                            description="You do not have the permissions to select for printing",
+                        )
                     if not printer.is_operational():
                         abort(
                             409,
@@ -1202,6 +1207,11 @@ def gcodeFileCommand(storage, path=""):
 
                 print_after_slicing = False
                 if "print" in data and data["print"] in valid_boolean_trues:
+                    if not Permissions.PRINT.can():
+                        abort(
+                            403,
+                            description="You don't have the permissions to start printing",
+                        )
                     if not printer.is_operational():
                         abort(
                             409,

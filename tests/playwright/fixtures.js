@@ -119,6 +119,35 @@ exports.test = base.test.extend({
         await use(filesApi);
     },
 
+    appkeysApi: async ({browser, baseURL}, use) => {
+        const ctx = await browser.newContext();
+        const appkeysApi = {
+            request: async (name) => {
+                const response = await ctx.request.post(
+                    baseURL + "/plugin/appkeys/request",
+                    {data: {app: name}}
+                );
+                const data = await response.json();
+                return [data.app_token, data.auth_dialog];
+            },
+            startPolling: (token) => {
+                const poll = () => {
+                    const response = ctx.request
+                        .get(baseURL + "/plugin/appkeys/request/" + token)
+                        .then((response) => {
+                            if (response.status === 202) {
+                                // no decision has been made yet, continue to poll
+                                setTimeout(poll, 1000);
+                            }
+                        });
+                };
+
+                poll();
+            }
+        };
+        await use(appkeysApi);
+    },
+
     credentials: async ({}, use) => {
         await use(credentials);
     },

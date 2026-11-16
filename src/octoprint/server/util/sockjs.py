@@ -343,25 +343,6 @@ class PrinterStateConnection(
                 self._subscriptions_active = True
                 self._logger.debug("Client makes use of subscriptions")
 
-            def list_or_boolean(value):
-                if isinstance(value, list):
-                    return value
-                elif isinstance(value, bool):
-                    return [] if not value else None
-                else:
-                    raise ValueError("value must be a list or boolean")
-
-            def regex_or_boolean(value):
-                if isinstance(value, str):
-                    try:
-                        return re.compile(value)
-                    except Exception:
-                        raise ValueError("value must be a valid regex") from None
-                elif isinstance(value, bool):
-                    return value
-                else:
-                    raise ValueError("value must be a string or boolean")
-
             try:
                 subscribe = message["subscribe"]
 
@@ -370,8 +351,8 @@ class PrinterStateConnection(
                     if state:
                         state = {"logs": True, "messages": False}
                 elif isinstance(state, dict):
-                    logs = regex_or_boolean(state.get("logs", False))
-                    messages = regex_or_boolean(state.get("messages", False))
+                    logs = pattern_or_boolean(state.get("logs", False))
+                    messages = pattern_or_boolean(state.get("messages", False))
                     state = {
                         "logs": logs,
                         "messages": messages,
@@ -496,14 +477,15 @@ class PrinterStateConnection(
             )
         self._emit("history", payload=data_to_send)
 
-    def _filter_state_subscription(self, sub, values):
-        if not self._subscriptions_active or self._subscriptions["state"][sub] is True:
-            return values
+    def _filter_state_subscription(self, sub, lines):
+        if not self._subscriptions_active:
+            return lines
 
-        if self._subscriptions["state"][sub] is False:
-            return []
+        if sub not in self._subscriptions["state"]:
+            return lines
 
-        return [line for line in values if self._subscriptions["state"][sub].search(line)]
+        subscription = self._subscriptions["state"][sub]
+        return filter_lines(lines, subscription)
 
     def _filter_logs(self, logs):
         return self._filter_state_subscription("logs", logs)
@@ -788,3 +770,76 @@ class PrinterStateConnection(
                     f"Error processing authed hook handler for plugin {name}",
                     extra={"plugin": name},
                 )
+
+
+def list_or_boolean(value):
+    if isinstance(value, list):
+        return value
+    elif isinstance(value, bool):
+        return [] if not value else None
+    else:
+        raise ValueError("value must be a list or boolean")
+
+
+STAR_REDUCER = re.compile(r"\*+")
+
+
+def to_pattern(value: str, before: bool = False, after: bool = False):
+    pattern = re.escape(value)
+    if before:
+        pattern = ".*" + pattern
+    if after:
+        pattern += ".*"
+    return re.compile(pattern)
+
+
+def pattern_or_boolean(value):
+    if isinstance(value, str):
+        value = value.strip()
+        if not value:
+            # empty string -> we consider that a "match everything"
+            return True
+
+        value = STAR_REDUCER.sub("*", value)
+        if value == "*":
+            # a single * means we match everything, so just subscribe to everything
+            return True
+
+        star_before = star_after = False
+        if value.startswith("*"):
+            star_before = True
+            value = value[1:]
+        if value.endswith("*"):
+            star_after = True
+            value = value[:-1]
+
+        if "*" in value:
+            raise ValueError(
+                "pattern only supports * at start and/or end, not in between"
+            )
+
+        if not (star_before ^ star_after):
+            # simple search string if no star or both stars
+            return value
+
+        try:
+            return to_pattern(value, before=star_before, after=star_after)
+        except Exception as exc:
+            raise ValueError("cannot compile pattern to regex") from exc
+
+    elif isinstance(value, bool):
+        return value
+
+    else:
+        raise ValueError("value must be a string or boolean")
+
+
+def filter_lines(lines, sub):
+    if sub is True:
+        return lines
+    elif isinstance(sub, str):
+        return [line for line in lines if sub in line]
+    elif isinstance(sub, re.Pattern):
+        return [line for line in lines if sub.fullmatch(line)]
+    else:
+        return []

@@ -78,6 +78,12 @@ class UserManager(GroupChangeListener):
 
     @property
     def enabled(self):
+        """This used to return whether ACL was enabled or not, when it still could get disabled"""
+        return True
+
+    @property
+    def initialized(self):
+        """Whether the UserManager has been initialized & can be used"""
         return True
 
     def login_user(self, user):
@@ -540,6 +546,10 @@ class FilebasedUserManager(UserManager):
 
     def _refresh_groups(self, user):
         user._groups = self._to_groups(*(g.key for g in user.groups))
+
+    @property
+    def initialized(self):
+        return self.has_been_customized()
 
     def add_user(
         self,
