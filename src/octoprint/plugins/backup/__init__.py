@@ -70,6 +70,13 @@ class BackupPlugin(
     _backup_in_progress = threading.Lock()
     _restore_in_progress = threading.Lock()
 
+    @property
+    def first_run(self):
+        return (
+            self._settings.global_get(["server", "firstRun"])
+            and not self._user_manager.initialized
+        )
+
     # Additional permissions hook
 
     def get_additional_permissions(self):
@@ -204,9 +211,10 @@ class BackupPlugin(
 
     @octoprint.plugin.BlueprintPlugin.route("/restore", methods=["POST"])
     def perform_restore(self):
-        if not (
-            Permissions.ADMIN.can() and credentials_checked_recently()
-        ) and not self._settings.global_get(["server", "firstRun"]):
+        if (
+            not (Permissions.ADMIN.can() and credentials_checked_recently())
+            and not self.first_run
+        ):
             flask.abort(403)
 
         if not self._restore_supported(self._settings):
@@ -375,9 +383,7 @@ class BackupPlugin(
     ##~~ WizardPlugin
 
     def is_wizard_required(self):
-        return self._settings.global_get(["server", "firstRun"]) and is_os_compatible(
-            ["!windows"]
-        )
+        return self.first_run and is_os_compatible(["!windows"])
 
     def get_wizard_details(self):
         return {"required": self.is_wizard_required()}
