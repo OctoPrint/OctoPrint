@@ -310,13 +310,13 @@ def test_multipart_noop(base_url, headers, setup, body, content_type):
         ),
     ],
 )
-def test_multipart_large_header(baseURL, headers, setup, body):
+def test_multipart_large_header(base_url, headers, setup, body):
     content_type = f"multipart/form-data; boundary={BOUNDARY}"
     hdrs = dict(**headers, **{"Content-Type": content_type})
 
-    resp = urllib3.request("POST", baseURL + "/api/files/local", body=body, headers=hdrs)
+    resp = urllib3.request("POST", base_url + "/api/files/local", body=body, headers=hdrs)
 
-    _verify_rejected(baseURL, headers, resp)
+    _verify_rejected(base_url, headers, resp)
 
 
 @pytest.mark.parametrize(
@@ -333,13 +333,13 @@ def test_multipart_large_header(baseURL, headers, setup, body):
         )
     ],
 )
-def test_multipart_large_part(baseURL, headers, setup, body):
+def test_multipart_large_part(base_url, headers, setup, body):
     content_type = f"multipart/form-data; boundary={BOUNDARY}"
     hdrs = dict(**headers, **{"Content-Type": content_type})
 
-    resp = urllib3.request("POST", baseURL + "/api/files/local", body=body, headers=hdrs)
+    resp = urllib3.request("POST", base_url + "/api/files/local", body=body, headers=hdrs)
 
-    _verify_rejected(baseURL, headers, resp)
+    _verify_rejected(base_url, headers, resp)
 
 
 @pytest.mark.parametrize(
@@ -376,20 +376,22 @@ def test_multipart_large_part(baseURL, headers, setup, body):
         ),
     ],
 )
-def test_multipart_too_many_parts(baseURL, headers, setup, body):
+def test_multipart_too_many_parts(base_url, headers, setup, body):
     content_type = f"multipart/form-data; boundary={BOUNDARY}"
     hdrs = dict(**headers, **{"Content-Type": content_type})
 
-    resp = urllib3.request("POST", baseURL + "/api/files/local", body=body, headers=hdrs)
+    resp = urllib3.request("POST", base_url + "/api/files/local", body=body, headers=hdrs)
 
-    _verify_rejected(baseURL, headers, resp)
+    _verify_rejected(base_url, headers, resp)
 
 
 ##~~ helpers
 
 
-def _ensure_path_unknown(baseURL, headers, path):
-    resp = urllib3.request("DELETE", f"{baseURL}/api/files/local/{path}", headers=headers)
+def _ensure_path_unknown(base_url, headers, path):
+    resp = urllib3.request(
+        "DELETE", f"{base_url}/api/files/local/{path}", headers=headers
+    )
     if resp.status not in [204, 404]:
         pytest.fail(
             f"unexpected status returned on path unknown check for `{path}`: {resp.status}"
@@ -399,18 +401,18 @@ def _ensure_path_unknown(baseURL, headers, path):
 ##~~ verifiers
 
 
-def _verify_created(baseURL, headers, resp, path):
+def _verify_created(base_url, headers, resp, path):
     assert resp.status == 201
 
     resp = urllib3.request(
         "GET",
-        f"{baseURL}/api/files/local/{path}",
+        f"{base_url}/api/files/local/{path}",
         headers=headers,
     )
     assert resp.status == 200
 
 
-def _verify_rejected(baseURL, headers, resp):
+def _verify_rejected(base_url, headers, resp):
     # should be Bad Request
     assert resp.status == 400
 
@@ -419,10 +421,10 @@ def _verify_rejected(baseURL, headers, resp):
     assert "text/html" in resp.headers.get("content-type")
 
     # also make sure no file got uploaded
-    _verify_path_missing(baseURL, headers, FILENAME)
+    _verify_path_missing(base_url, headers, FILENAME)
 
 
-def _verify_noop(baseURL, headers, resp):
+def _verify_noop(base_url, headers, resp):
     # should be Bad Request
     assert resp.status == 400
 
@@ -435,13 +437,13 @@ def _verify_noop(baseURL, headers, resp):
     assert body.get("error") == "No file to upload and no folder to create"
 
     # also make sure no file got uploaded
-    _verify_path_missing(baseURL, headers, FILENAME)
+    _verify_path_missing(base_url, headers, FILENAME)
 
 
-def _verify_path_missing(baseURL, headers, path):
+def _verify_path_missing(base_url, headers, path):
     resp = urllib3.request(
         "GET",
-        f"{baseURL}/api/files/local/{path}",
+        f"{base_url}/api/files/local/{path}",
         headers=headers,
     )
     assert resp.status == 404
