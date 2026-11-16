@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2026-10-07 11:04+0200\n"
+"POT-Creation-Date: 2026-11-16 12:25+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -247,13 +247,13 @@ msgstr ""
 
 #: src/octoprint/plugins/achievements/static/js/achievements.js:423
 #: src/octoprint/static/js/app/viewmodels/files.js:930
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:602
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:604
 msgid "Yes"
 msgstr ""
 
 #: src/octoprint/plugins/achievements/static/js/achievements.js:424
 #: src/octoprint/static/js/app/viewmodels/files.js:929
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:601
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:603
 msgid "No"
 msgstr ""
 
@@ -1308,7 +1308,7 @@ msgstr ""
 #: src/octoprint/templates/dialogs/files.jinja2:61
 #: src/octoprint/templates/dialogs/files.jinja2:118
 #: src/octoprint/templates/dialogs/slicing.jinja2:65
-#: src/octoprint/templates/dialogs/temperature.jinja2:58
+#: src/octoprint/templates/dialogs/temperature.jinja2:59
 #: src/octoprint/templates/sidebar/state.jinja2:78
 msgid "Cancel"
 msgstr ""
@@ -1317,7 +1317,7 @@ msgstr ""
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:800
 #: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:285
 #: src/octoprint/templates/dialogs/settings.jinja2:81
-#: src/octoprint/templates/dialogs/temperature.jinja2:61
+#: src/octoprint/templates/dialogs/temperature.jinja2:62
 msgid "Save"
 msgstr ""
 
@@ -2430,7 +2430,7 @@ msgstr ""
 #: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:822
 #: src/octoprint/static/js/app/viewmodels/control.js:217
 #: src/octoprint/static/js/app/viewmodels/files.js:1456
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:472
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:474
 #: src/octoprint/static/js/app/viewmodels/temperature.js:159
 #: src/octoprint/static/js/app/viewmodels/temperature.js:170
 #: src/octoprint/static/js/app/viewmodels/temperature.js:438
@@ -6869,14 +6869,14 @@ msgid "Only show %(type)s files"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/files.js:925
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:597
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:599
 msgid ""
 "This will start a new print job. Please ensure that the print bed is "
 "clear."
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/files.js:928
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:600
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:602
 msgid "Do you want to start the print job now?"
 msgstr ""
 
@@ -7370,7 +7370,7 @@ msgstr ""
 msgid "sec"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:542
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:544
 #, python-format
 msgid ""
 "<p>%(ratio)d%% of transmitted lines have triggered errors. The "
@@ -7379,25 +7379,25 @@ msgid ""
 "target='_blank'>this FAQ entry</a> on tips on how to solve this.</p>"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:554
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:556
 msgid "Critical communication health!"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:569
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:571
 msgid ""
 "This will restart the print job from the beginning. Please ensure that "
 "the print bed is clear."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:627
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:629
 msgid "This will cancel your print."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:628
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:630
 msgid "No, continue the print"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:629
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:631
 msgid "Yes, cancel the print"
 msgstr ""
 
@@ -8241,24 +8241,24 @@ msgstr ""
 msgid "Current Offset"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/temperature.jinja2:20
+#: src/octoprint/templates/dialogs/temperature.jinja2:21
 msgid "New Offset"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/temperature.jinja2:26
+#: src/octoprint/templates/dialogs/temperature.jinja2:27
 msgid "-1"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/temperature.jinja2:39
+#: src/octoprint/templates/dialogs/temperature.jinja2:40
 msgid "+1"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/temperature.jinja2:46
+#: src/octoprint/templates/dialogs/temperature.jinja2:47
 #: src/octoprint/templates/tabs/temperature.jinja2:108
 msgid "Delete Offset"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/temperature.jinja2:49
+#: src/octoprint/templates/dialogs/temperature.jinja2:50
 msgid ""
 "Hint: Hitting <kbd>Enter</kbd> in the input field will also submit the "
 "form"
