@@ -18,10 +18,10 @@ from octoprint.util.version import (
 )
 
 SENTRY_URL_SERVER = (
-    "https://40b9c792d0016aa67bda144ac23ccb79@o118517.ingest.us.sentry.io/1373987"
+    "https://9ae9d8c7714e48a76a4485fec9564507@o118517.ingest.us.sentry.io/1373987"
 )
 SENTRY_URL_COREUI = (
-    "https://f6757c2efde92249e13158537eabef68@o118517.ingest.us.sentry.io/1374096"
+    "https://35df9977ea2e548d21857c3e7c300292@o118517.ingest.us.sentry.io/1374096"
 )
 
 SETTINGS_DEFAULTS = {
@@ -43,8 +43,9 @@ IGNORED_EXCEPTIONS = [
     # IOErrors of any kind due to a full file system
     (
         IOError,
-        lambda exc, logger, plugin, cb: exc.errorgetattr(exc, "errno")  # noqa: B009
-        and exc.errno in (getattr(errno, "ENOSPC"),),  # noqa: B009
+        lambda exc, logger, plugin, cb: (
+            exc.errorgetattr(exc, "errno") and exc.errno in (getattr(errno, "ENOSPC"),)  # noqa: B009
+        ),
     ),
     # RequestExceptions of any kind
     requests.exceptions.RequestException,
@@ -53,9 +54,11 @@ IGNORED_EXCEPTIONS = [
     # Anything triggered by or in third party plugin Astroprint
     (
         Exception,
-        lambda exc, logger, plugin, cb: logger.startswith("octoprint.plugins.astroprint")
-        or plugin == "astroprint"
-        or (cb and cb.startswith("octoprint_astroprint.")),
+        lambda exc, logger, plugin, cb: (
+            logger.startswith("octoprint.plugins.astroprint")
+            or plugin == "astroprint"
+            or (cb and cb.startswith("octoprint_astroprint."))
+        ),
     ),
 ]
 
