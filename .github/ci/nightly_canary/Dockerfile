@@ -2,11 +2,18 @@ ARG DOCKER_ARCH="amd64"
 ARG DEBIAN_VERSION="bullseye"
 FROM --platform=linux/${DOCKER_ARCH} debian:${DEBIAN_VERSION}-slim AS build_env
 
+ARG DEBIAN_VERSION
+ARG BUILD_TYPE="generic"
+
+RUN [ "$DEBIAN_VERSION" != "bullseye" ] || \
+  ( \
+    sed -i 's!deb\.debian\.org!archive\.debian\.org!g' /etc/apt/sources.list && \
+    echo 'Acquire::Check-Valid-Until "false";' | tee /etc/apt/apt.conf.d/10-nocheckvalid \
+  )
+
 RUN apt-get -y update && apt-get -y install curl gnupg2
 
 # Add RPI packages (the whole base system, since RPI ships its own GCC)
-ARG DEBIAN_VERSION
-ARG BUILD_TYPE="generic"
 RUN [ "$BUILD_TYPE" != "raspi" ] || \
   ( \
     ( [ "$(dpkg --print-architecture)" != "armhf" ] || echo "deb http://raspbian.raspberrypi.org/raspbian/ $DEBIAN_VERSION main contrib non-free rpi" > /etc/apt/sources.list.d/raspbian.list ) && \
