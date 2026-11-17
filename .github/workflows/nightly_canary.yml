@@ -83,13 +83,9 @@ jobs:
 
       - name: 🏗 Prepare docker build
         run: |
-          if [ -d OctoPrint/.github/ci/nightly_canary ]; then
-            dockerfile="${{ github.workspace }}/OctoPrint/.github/ci/nightly_canary/Dockerfile"
-          else
-            # we've checked out a ref that doesn't yet have the canary workflow, let's fetch the needed Dockerfile
-            curl -L -o Dockerfile "https://raw.githubusercontent.com/OctoPrint/OctoPrint/refs/heads/dev/.github/ci/nightly_canary/Dockerfile"
-            dockerfile="${{ github.workspace }}/Dockerfile"
-          fi
+          # always fetch the Dockerfile from the dev branch, regardless of octo_ref
+          curl -L -o Dockerfile "https://raw.githubusercontent.com/OctoPrint/OctoPrint/refs/heads/dev/.github/ci/nightly_canary/Dockerfile"
+          dockerfile="${{ github.workspace }}/Dockerfile"
           echo "Set Dockerfile to $dockerfile"
 
           echo "DOCKERFILE=$dockerfile" >> $GITHUB_ENV
