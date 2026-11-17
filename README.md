@@ -1,4 +1,4 @@
-<p align="center"><img src="https://octoprint.org/assets/img/logo.png" alt="OctoPrint's logo" /></p>
+<p align="center"><img src="https://octoprint.org/img/logo.png" alt="OctoPrint's logo" /></p>
 
 <h1 align="center">OctoPrint</h1>
 
@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/pypi/v/OctoPrint?logo=python&logoColor=white" alt="PyPI"/>
   <img src="https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2FOctoPrint%2FOctoPrint%2Frefs%2Fheads%2Fdev%2Fpyproject.toml&query=%24.project.requires-python&prefix=Python%20&label=supports" alt="Supported Python versions">
 
-  <img src="https://img.shields.io/github/actions/workflow/status/OctoPrint/OctoPrint/build.yml?branch=master" alt="Build status"/>
+  <img src="https://img.shields.io/github/actions/workflow/status/OctoPrint/OctoPrint/build.yml?branch=dev" alt="Build status"/>
   <a href="https://community.octoprint.org"><img src="https://img.shields.io/discourse/users?label=forum&logo=discourse&logoColor=white&server=https%3A%2F%2Fcommunity.octoprint.org" alt="Community Forum"/></a>
   <a href="https://discord.octoprint.org"><img src="https://img.shields.io/discord/704958479194128507?label=discord&logo=discord&logoColor=white" alt="Discord"/></a>
   <a href="https://octoprint.org/conduct/"><img src="https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg" alt="Contributor Covenant"/></a>
