@@ -11,8 +11,7 @@ RUN [ "$BUILD_TYPE" != "raspi" ] || \
   ( \
     ( [ "$(dpkg --print-architecture)" != "armhf" ] || echo "deb http://raspbian.raspberrypi.org/raspbian/ $DEBIAN_VERSION main contrib non-free rpi" > /etc/apt/sources.list.d/raspbian.list ) && \
     echo "deb http://archive.raspberrypi.org/debian/ $DEBIAN_VERSION main" > /etc/apt/sources.list.d/raspi.list && \
-    # FIXME: switch key file to pi-gen version once https://github.com/RPi-Distro/pi-gen/pull/863 has been merged
-    curl -sL --compressed "https://octoprint.org/files/raspberrypi-keys-sha256.gpg" | gpg --dearmor > /etc/apt/trusted.gpg.d/raspberrypi.gpg \
+    curl -sL --compressed "https://github.com/RPi-Distro/pi-gen/raw/refs/heads/master/stage0/files/raspberrypi.gpg" | gpg --dearmor > /etc/apt/trusted.gpg.d/raspberrypi.gpg \
   )
 
 # Default packages
