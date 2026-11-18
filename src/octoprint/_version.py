@@ -43,11 +43,11 @@ import sys
 # Adjust this on every release (candidate) ----------------------------------------------
 
 BRANCH_VERSIONS = [
-    # bugfix is the branch for preparation of the 1.11.x bugfix releases
+    # bugfix is the branch for preparation of the 2.0.x bugfix releases
     # so are any bug/... branches
     {
-        "tag": "2.0.1",
-        "commit": "9255bb3469811d29d483b83212bea212f2e13b98",
+        "tag": "2.0.2",
+        "commit": "012a92d7f5bffa1c2c059264968283fc578ca985",
         "patterns": ["bugfix", "bug/.*"],
     },
     # next is currently the branch for preparation of 2.0.0rc8
