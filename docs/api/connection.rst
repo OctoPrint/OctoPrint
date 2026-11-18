@@ -18,9 +18,14 @@ Get connection settings
          Retrieve the current connection settings, including information regarding the connectors plugins
          their parameter options and the current connection state.
  
-         Requires the ``STATUS`` permission.
+         Requires the ``STATUS`` permission at a minimum. 
+         
+         Without the ``CONNECTION`` permission, current connection parameters (``current.parameters``), 
+         saved preferred connector parameters (``preferredConnector.parameters``) and parameter options 
+         for available connectors (``options.connectors[].parameters``) will be redacted and set to an 
+         empty dictionary ``{}``.
  
-         **Example**
+         **Example with CONNECTION permission**
  
          .. sourcecode:: http
  
@@ -92,6 +97,63 @@ Get connection settings
                }
              }
  
+         **Example without CONNECTION permission**
+ 
+         .. sourcecode:: http
+ 
+             GET /api/connection HTTP/1.1
+             Host: example.com
+             Authorization: Bearer abcdef...
+             X-OctoPrint-Api-Version: 2.0.0
+ 
+         .. sourcecode:: http
+ 
+             HTTP/1.1 200 OK
+             Content-Type: application/json
+ 
+             {
+               "current": {
+                 "state": "Operational",
+                 "connector": "serial",
+                 "parameters": {},
+                 "capabilities": {
+                   "job_on_hold": true,
+                   "temperature_offsets": true
+                 },
+                 "profile": "_default"
+               },
+               "options": {
+                 "connectors": [
+                   {
+                     "connector": "serial",
+                     "name": "Serial Connection",
+                     "parameters": {}
+                   },
+                   {
+                     "connector": "moonraker",
+                     "name": "Klipper (Moonraker)",
+                     "parameters": {}
+                   },
+                   {
+                     "connector": "bambu",
+                     "name": "Bambu (local)",
+                     "parameters": {}
+                   }
+                 ],
+                 "profiles": [
+                   {
+                     "id": "_default",
+                     "name": "Default Profile"
+                   }
+                 ],
+                 "preferredConnector": {
+                   "connector": "serial",
+                   "parameters": {}
+                 },
+                 "preferredProfile": "_default"
+               }
+             }
+
          :statuscode 200: No error
 
    .. md-tab-item:: API version pre 2.0.0

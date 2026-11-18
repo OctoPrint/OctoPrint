@@ -125,7 +125,7 @@ def connectionState_2_0_0():  # 2.0.0+
         current=CurrentConnectionState(
             state=state,
             connector=connector,
-            parameters=connection_state,
+            parameters=connection_state if Permissions.CONNECTION.can() else {},
             capabilities=capabilities,
             profile=profile.get("id") if profile else None,
         ),
@@ -246,7 +246,9 @@ def _get_options_2_0_0() -> ConnectionOptions:  # 2.0.0+
             AvailableConnector(
                 connector=connector.connector,
                 name=connector.name,
-                parameters=connector.connection_options(),
+                parameters=connector.connection_options()
+                if Permissions.CONNECTION.can()
+                else {},
             )
             for connector in connector_options
         ],
@@ -260,7 +262,9 @@ def _get_options_2_0_0() -> ConnectionOptions:  # 2.0.0+
         ],
         preferredConnector=PreferredConnectorSettings(
             connector=preferred_connection_connector,
-            parameters=preferred_connection_params,
+            parameters=preferred_connection_params
+            if Permissions.CONNECTION.can()
+            else {},
         ),
         preferredProfile=default_profile["id"] if "id" in default_profile else None,
     )
