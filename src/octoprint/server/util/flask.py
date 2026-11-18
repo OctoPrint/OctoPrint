@@ -2168,6 +2168,9 @@ def apply_path_restrictions(data, restrictions, user, inplace=True, keep_leaves=
 
         node = data
 
+        if not isinstance(path, (list, tuple)):
+            path = [str(path)]
+
         if len(path) > 1:
             for entry in path[:-1]:
                 if entry not in node:
