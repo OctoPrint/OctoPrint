@@ -9,7 +9,7 @@ from octoprint.server.util.flask import apply_path_restrictions
 
 @pytest.fixture
 def data():
-    return {"a": 1, "b": {"b1": 1, "b2": 2}, "c": [1, 2, 3]}
+    return {"aaa": 1, "bbb": {"bbb1": 1, "bbb2": 2}, "ccc": [1, 2, 3]}
 
 
 def generate_anonymous_user():
@@ -25,133 +25,142 @@ def generate_user_with(*permissions):
     [
         # "never" matching
         pytest.param(
-            {"never": [["b"], ["c"]]},
+            {"never": [["bbb"], ["ccc"]]},
             generate_user_with(Permissions.SETTINGS_READ),
             False,
             False,
-            {"a": 1, "b": {}, "c": []},
+            {"aaa": 1, "bbb": {}, "ccc": []},
             id="never_as_user",
         ),
         pytest.param(
-            {"never": [["b"], ["c"]]},
+            {"never": [["bbb"], ["ccc"]]},
             generate_user_with(Permissions.SETTINGS),
             False,
             False,
-            {"a": 1, "b": {}, "c": []},
+            {"aaa": 1, "bbb": {}, "ccc": []},
             id="never_as_admin",
         ),
         # user type
         pytest.param(
-            {"user": [["b"], ["c"]]},
+            {"user": [["bbb"], ["ccc"]]},
             generate_anonymous_user(),
             False,
             False,
-            {"a": 1, "b": {}, "c": []},
+            {"aaa": 1, "bbb": {}, "ccc": []},
             id="user_as_anon",
         ),
         pytest.param(
-            {"user": [["b"], ["c"]]},
+            {"user": [["bbb"], ["ccc"]]},
             generate_user_with(Permissions.SETTINGS),
             False,
             False,
-            {"a": 1, "b": {"b1": 1, "b2": 2}, "c": [1, 2, 3]},
+            {"aaa": 1, "bbb": {"bbb1": 1, "bbb2": 2}, "ccc": [1, 2, 3]},
             id="user_as_user",
         ),
         # admin type
         pytest.param(
-            {"admin": [["b"], ["c"]]},
+            {"admin": [["bbb"], ["ccc"]]},
             generate_user_with(Permissions.SETTINGS_READ),
             False,
             False,
-            {"a": 1, "b": {}, "c": []},
+            {"aaa": 1, "bbb": {}, "ccc": []},
             id="admin_as_user",
         ),
         pytest.param(
-            {"admin": [["b"], ["c"]]},
+            {"admin": [["bbb"], ["ccc"]]},
             generate_user_with(Permissions.SETTINGS),
             False,
             False,
-            {"a": 1, "b": {"b1": 1, "b2": 2}, "c": [1, 2, 3]},
+            {"aaa": 1, "bbb": {"bbb1": 1, "bbb2": 2}, "ccc": [1, 2, 3]},
             id="admin_as_admin",
         ),
         # permission based matching
         pytest.param(
-            {Permissions.CONTROL: [["b"], ["c"]]},
+            {Permissions.CONTROL: [["bbb"], ["ccc"]]},
             generate_user_with(Permissions.SETTINGS_READ, Permissions.CONTROL),
             False,
             False,
-            {"a": 1, "b": {"b1": 1, "b2": 2}, "c": [1, 2, 3]},
+            {"aaa": 1, "bbb": {"bbb1": 1, "bbb2": 2}, "ccc": [1, 2, 3]},
             id="permission_match",
         ),
         pytest.param(
-            {Permissions.CONTROL: [["b"], ["c"]]},
+            {Permissions.CONTROL: [["bbb"], ["ccc"]]},
             generate_user_with(Permissions.SETTINGS_READ),
             False,
             False,
-            {"a": 1, "b": {}, "c": []},
+            {"aaa": 1, "bbb": {}, "ccc": []},
             id="permission_fail",
         ),
         # keep leaves
         pytest.param(
-            {"never": [["b"], ["c"]]},
+            {"never": [["bbb"], ["ccc"]]},
             generate_user_with(Permissions.SETTINGS_READ),
             False,
             True,
-            {"a": 1, "b": {"b1": None, "b2": None}, "c": []},
+            {"aaa": 1, "bbb": {"bbb1": None, "bbb2": None}, "ccc": []},
             id="keep_leaves",
         ),
         # in place
         pytest.param(
-            {"never": [["b"], ["c"]]},
+            {"never": [["bbb"], ["ccc"]]},
             generate_user_with(Permissions.SETTINGS_READ),
             True,
             False,
-            {"a": 1, "b": {}, "c": []},
+            {"aaa": 1, "bbb": {}, "ccc": []},
             id="inplace",
         ),
         # custom default
         pytest.param(
-            {"never": [["b"], [("c", "custom")]]},
+            {"never": [["bbb"], [("ccc", "custom")]]},
             generate_user_with(Permissions.SETTINGS_READ),
             False,
             False,
-            {"a": 1, "b": {}, "c": "custom"},
+            {"aaa": 1, "bbb": {}, "ccc": "custom"},
             id="custom_default",
         ),
         pytest.param(
-            {"never": [["b"], [("c", lambda: "callback")]]},
+            {"never": [["bbb"], [("ccc", lambda: "callback")]]},
             generate_user_with(Permissions.SETTINGS_READ),
             False,
             False,
-            {"a": 1, "b": {}, "c": "callback"},
+            {"aaa": 1, "bbb": {}, "ccc": "callback"},
             id="custom_default_callback",
         ),
         # subpath
         pytest.param(
-            {"never": [["b", "b1"], ["c"]]},
+            {"never": [["bbb", "bbb1"], ["ccc"]]},
             generate_user_with(Permissions.SETTINGS_READ),
             False,
             False,
-            {"a": 1, "b": {"b1": None, "b2": 2}, "c": []},
+            {"aaa": 1, "bbb": {"bbb1": None, "bbb2": 2}, "ccc": []},
             id="subpath",
         ),
         # unknown path
         pytest.param(
-            {"never": [["b"], ["c"], ["d", "d1"]]},
+            {"never": [["bbb"], ["ccc"], ["d", "d1"]]},
             generate_user_with(Permissions.SETTINGS_READ),
             False,
             False,
-            {"a": 1, "b": {}, "c": []},
+            {"aaa": 1, "bbb": {}, "ccc": []},
             id="unknown_path",
         ),
         # empty path
         pytest.param(
-            {"never": [["b"], ["c"], []]},
+            {"never": [["bbb"], ["ccc"], []]},
             generate_user_with(Permissions.SETTINGS_READ),
             False,
             False,
-            {"a": 1, "b": {}, "c": []},
+            {"aaa": 1, "bbb": {}, "ccc": []},
             id="empty_path",
+        ),
+        # accidental use of single str instead of list for path
+        pytest.param(
+            {"never": ["bbb", "ccc"]},
+            generate_user_with(Permissions.SETTINGS_READ),
+            False,
+            False,
+            {"aaa": 1, "bbb": {}, "ccc": []},
+            id="str path",
         ),
     ],
 )

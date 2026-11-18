@@ -181,10 +181,10 @@ class ClassicWebcamPlugin(
     def get_settings_restricted_paths(self):
         return {
             octoprint.access.permissions.Permissions.SETTINGS: [
-                "snapshotAuth",
-                "snapshotUsername",
-                "snapshotPassword",
-                "snapshotBearerToken",
+                ["snapshotAuth"],
+                ["snapshotUsername"],
+                ["snapshotPassword"],
+                ["snapshotBearerToken"],
             ]
         }
 
