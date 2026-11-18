@@ -5,7 +5,6 @@
 <p align="center">
   <img src="https://img.shields.io/github/v/release/OctoPrint/OctoPrint?logo=github&logoColor=white" alt="GitHub release"/>
   <img src="https://img.shields.io/pypi/v/OctoPrint?logo=python&logoColor=white" alt="PyPI"/>
-  <img src="https://img.shields.io/github/actions/workflow/status/OctoPrint/OctoPrint/build.yml?branch=master" alt="Build status"/>
   <a href="https://community.octoprint.org"><img src="https://img.shields.io/discourse/users?label=forum&logo=discourse&logoColor=white&server=https%3A%2F%2Fcommunity.octoprint.org" alt="Community Forum"/></a>
   <a href="https://discord.octoprint.org"><img src="https://img.shields.io/discord/704958479194128507?label=discord&logo=discord&logoColor=white" alt="Discord"/></a>
   <a href="https://octoprint.org/conduct/"><img src="https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg" alt="Contributor Covenant"/></a>
