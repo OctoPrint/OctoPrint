@@ -685,6 +685,7 @@ class MachineCom:
         self._firmware_capabilities_received = False
         self._firmware_info = {}
         self._firmware_capabilities = {}
+        self._firmware_name: str = ""
 
         self._defer_sd_refresh = self._settings.get_boolean(["waitToLoadSdFileList"])
 
@@ -2956,9 +2957,9 @@ class MachineCom:
                 elif "NAME:" in line or line.startswith("NAME."):
                     # looks like a response to M115
                     data = parse_firmware_line(line)
-                    firmware_name = data.get("FIRMWARE_NAME")
+                    firmware_name = data.get("FIRMWARE_NAME", "")
 
-                    if firmware_name is None:
+                    if not firmware_name:
                         # Malyan's "Marlin compatible firmware" isn't actually Marlin compatible and doesn't even
                         # report its firmware name properly in response to M115. Wonderful - why stick to established
                         # protocol when you can do your own thing, right?
@@ -5905,7 +5906,7 @@ class MachineComPrintCallback:
     def on_comm_record_fileposition(self, origin, name, pos):
         pass
 
-    def on_comm_firmware_info(self, firmware_name, firmware_data):
+    def on_comm_firmware_info(self, firmware_name: str, firmware_data: dict[str, str]):
         pass
 
 
@@ -6762,7 +6763,7 @@ def parse_temperature_line(line, current):
     return max(max_tool_num, current), canonicalize_temperatures(result, current)
 
 
-def parse_firmware_line(line):
+def parse_firmware_line(line: str) -> dict[str, str]:
     """
     Parses the provided firmware info line.
 
@@ -6795,7 +6796,7 @@ def parse_firmware_line(line):
     return result
 
 
-def parse_capability_line(line):
+def parse_capability_line(line: str) -> tuple[str, bool]:
     """
     Parses the provided firmware capability line.
 
