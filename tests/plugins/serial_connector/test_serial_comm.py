@@ -563,3 +563,29 @@ def test__validate_m20_timestamp(val, expected):
 )
 def test_parse_file_list_line(val, expected):
     assert comm.parse_file_list_line(val) == expected
+
+
+@pytest.mark.parametrize(
+    "line, expected_tool",
+    [
+        ("Invalid extruder T0", 0),
+        (
+            "echo:T1 Invalid extruder",
+            1,
+        ),  # Marlin inconsistency, see https://github.com/OctoPrint/OctoPrint/pull/5482
+        (
+            "echo:M104 Invalid extruder 1",
+            1,
+        ),  # Marlin inconsistency, see https://github.com/OctoPrint/OctoPrint/pull/5482
+        (
+            "echo: Invalid extruder -1",
+            -1,
+        ),  # Prusa Buddy, see https://github.com/OctoPrint/OctoPrint/issues/5474
+    ],
+)
+def test_parse_invalid_extruder(line, expected_tool):
+    match = comm.regex_invalid_extruder.search(line.lower())
+    assert match is not None
+
+    tool = int(match.group("value"))
+    assert tool == expected_tool
