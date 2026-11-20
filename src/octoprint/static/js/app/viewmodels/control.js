@@ -316,7 +316,7 @@ $(function () {
 
             if (control.input) {
                 const attributeToInt = (obj, key, def) => {
-                    if (obj.key) {
+                    if (obj[key]) {
                         const val = obj[key];
                         if (_.isNumber(val)) {
                             return val;
