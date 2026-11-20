@@ -29,7 +29,7 @@ a GCODE script including user input.
        layout: horizontal
        children:
        - name: Enable Fan
-         command: M106 S%(speed)s
+         command: M106 S{speed}
          input:
          - name: Speed (0-255)
            parameter: speed
@@ -50,7 +50,7 @@ a GCODE script including user input.
        - name: Move X (parametric)
          commands:
          - G91
-         - G1 X%(distance)s F%(speed)s
+         - G1 X{distance} F{speed}
          - G90
          input:
          - default: 10
@@ -184,7 +184,7 @@ Controls
        .. code-block-ext:: yaml
 
           name: Enable Fan
-          command: M106 S%(speed)s
+          command: M106 S{speed}
           input:
             - name: Speed (0-255)
               parameter: speed
