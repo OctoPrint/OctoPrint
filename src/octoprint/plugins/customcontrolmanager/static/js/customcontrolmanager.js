@@ -33,8 +33,7 @@ $(function () {
         name: "",
         parameter: "",
         default: "",
-        value: "",
-        slider: false
+        value: ""
     };
 
     const MINIMAL_CONTAINER = {
@@ -351,8 +350,7 @@ $(function () {
             const input = {
                 name: ko.observable(""),
                 parameter: ko.observable(""),
-                value: ko.observable(""),
-                slider: false
+                value: ko.observable("")
             };
 
             self.control().input.push(input);
@@ -568,8 +566,6 @@ $(function () {
                         }
 
                         input.default = defaultVal;
-                    } else {
-                        input.slider = false;
                     }
                     input.value = input.default;
 
