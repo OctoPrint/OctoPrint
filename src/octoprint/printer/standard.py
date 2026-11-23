@@ -909,7 +909,11 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         Starts the currently loaded print job.
         Only starts if the printer is connected and operational, not currently printing and a printjob is loaded
         """
-        if self._connection is None or not self._connection.is_ready():
+        if (
+            self._connection is None
+            or not self._connection.is_operational()
+            or self._connection.is_printing()
+        ):
             return
 
         with self._selected_job_mutex:
