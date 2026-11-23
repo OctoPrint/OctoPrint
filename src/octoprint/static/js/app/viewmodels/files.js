@@ -1307,8 +1307,6 @@ $(function () {
             if (_.contains(self.activeRemovals(), data.origin + ":" + data.path))
                 return false;
             if (self.entryIsBusy(data)) return false;
-            if (self.printerState.fileid() === `${data.origin}:${data.path}`)
-                return false;
 
             const storage = data.origin;
             const capabilities = self.storageCapabilities(storage);
@@ -1322,8 +1320,6 @@ $(function () {
 
         self.enableMove = function (data) {
             if (self.entryIsBusy(data)) return false;
-            if (self.printerState.fileid() === `${data.origin}:${data.path}`)
-                return false;
 
             const storage = data.origin;
             const capabilities = self.storageCapabilities(storage);
