@@ -664,7 +664,7 @@ def _analyse_and_convert_recursively(
                 ) -> str:
                     meta = fileManager.get_thumbnail(origin, path, sizehint=size)
                     lm = time.time()
-                    if meta.last_modified:
+                    if meta and meta.last_modified:
                         lm = meta.last_modified.timestamp()
                     return str(int(lm))
 
