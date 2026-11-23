@@ -56,3 +56,36 @@ def sanitize(text, safe_chars="-_.", demoji=True):
 
 def remove_unicode_variations(text):
     return _UNICODE_VARIATIONS.sub("", text)
+
+
+_OLD_FORMAT_REGEX = re.compile(r"%\([a-zA-Z0-9_]+\)[#0\- +]*[hlL]?[diouxXeEfFgGcrs]")
+
+
+def has_old_style_formatting(text: str) -> bool:
+    """
+    Checks whether ``text`` contains old ``%(foo)s`` style formatting.
+
+    Examples:
+
+    >>> has_old_style_formatting("test {foo!s} bar")
+    False
+    >>> has_old_style_formatting("G1 X%(x)s F%(feedrate)s")
+    True
+    >>> has_old_style_formatting("G1 X%(x)f F%(feedrate)f")
+    True
+    >>> has_old_style_formatting("G1 X%(x)f F%(feedrate)lf")
+    True
+    >>> has_old_style_formatting("G1 X%(x)f F%(feedrate)0f")
+    True
+    >>> has_old_style_formatting("G1 X%(x)f F%(feedrate)+f")
+    True
+    >>> has_old_style_formatting("G1 X%(x)f F%(feedrate)-f")
+    True
+
+    Args:
+        text: The text to check
+
+    Returns:
+        ``True`` if old style formatting was found, ``False`` otherwise
+    """
+    return _OLD_FORMAT_REGEX.search(text) is not None

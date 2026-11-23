@@ -405,6 +405,8 @@ def printerStorageState():
 @no_firstrun_access
 @Permissions.CONTROL.require(403)
 def printerCommand():
+    from octoprint.util.text import has_old_style_formatting
+
     if not printer.is_operational():
         abort(409, description="Printer is not operational")
 
@@ -435,10 +437,10 @@ def printerCommand():
         for command in commands:
             commandToSend = command
             if len(parameters) > 0:
-                if api_version_matches(">=2.0.0"):
-                    commandToSend = command.format(**parameters)
-                else:
+                if has_old_style_formatting(command):
                     commandToSend = command % parameters
+                else:
+                    commandToSend = command.format(**parameters)
             commandsToSend.append(commandToSend)
 
         printer.commands(commandsToSend, tags=tags)
