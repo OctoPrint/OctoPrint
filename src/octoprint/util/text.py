@@ -58,7 +58,20 @@ def remove_unicode_variations(text):
     return _UNICODE_VARIATIONS.sub("", text)
 
 
-_OLD_FORMAT_REGEX = re.compile(r"%\([a-zA-Z0-9_]+\)[#0\- +]*[hlL]?[diouxXeEfFgGcrs]")
+_OLD_FORMAT_REGEX = re.compile(
+    r"%\([a-zA-Z0-9_]+\)[#0\- +]*\d*(\.[0-9]+)?[hlL]?[diouxXeEfFgGcrs]"
+)
+# '%(' + name + ')' + opt(conversion_flags) + opt(min_field_width) + opt(precision) + opt(length_mod) + conversion_type
+#
+# conversion_flags: '#', '0', '-', ' ', '+'
+# min_field_width: \d+
+# precision: '.' + \d+
+# length_mod: 'h' | 'l' | 'L'
+# conversion_type: 'd' | 'i' | 'o' | 'u' | 'x' | 'X' | 'e' | 'E' | 'f' | 'F' | 'g' | 'G' | 'c' | 'r' | 's'
+#
+# we ignore stuff without a named placeholder as well as parameterized width and precision
+#
+# see https://docs.python.org/2/library/stdtypes.html#string-formatting
 
 
 def has_old_style_formatting(text: str) -> bool:
@@ -81,6 +94,22 @@ def has_old_style_formatting(text: str) -> bool:
     True
     >>> has_old_style_formatting("G1 X%(x)f F%(feedrate)-f")
     True
+    >>> has_old_style_formatting("G1 X%(x)f F%(feedrate).2f")
+    True
+    >>> has_old_style_formatting("foo %(fnord)10s bar")
+    True
+    >>> has_old_style_formatting("foo %(fnord)-10s bar")
+    True
+    >>> has_old_style_formatting("foo %(fnord).5s bar")
+    True
+    >>> has_old_style_formatting("foo %(fnord)-10.5s bar")
+    True
+    >>> has_old_style_formatting("foo %(fnord)06.2f bar")
+    True
+    >>> has_old_style_formatting("foo %(fnord)+d bar")
+    True
+    >>> has_old_style_formatting("foo %% bar")
+    True
 
     Args:
         text: The text to check
@@ -88,4 +117,4 @@ def has_old_style_formatting(text: str) -> bool:
     Returns:
         ``True`` if old style formatting was found, ``False`` otherwise
     """
-    return _OLD_FORMAT_REGEX.search(text) is not None
+    return "%%" in text or _OLD_FORMAT_REGEX.search(text) is not None
