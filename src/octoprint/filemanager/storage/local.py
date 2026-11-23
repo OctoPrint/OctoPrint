@@ -616,11 +616,16 @@ class LocalFileStorage(StorageInterface):
                 f"{name} does already exist in {path} and is not a file",
                 code=StorageError.ALREADY_EXISTS,
             )
-        if os.path.exists(file_path) and not allow_overwrite:
-            raise StorageError(
-                f"{name} does already exist in {path} and overwriting is prohibited",
-                code=StorageError.ALREADY_EXISTS,
-            )
+        if os.path.exists(file_path):
+            if not allow_overwrite:
+                raise StorageError(
+                    f"{name} does already exist in {path} and overwriting is prohibited",
+                    code=StorageError.ALREADY_EXISTS,
+                )
+
+            # make sure we delete existing metadata & thumbnails on overwrite
+            self._remove_metadata_entry(path, name)
+            self._remove_thumbnails(path, name)
 
         # make sure folders exist
         if not os.path.exists(path):
@@ -1746,7 +1751,6 @@ class LocalFileStorage(StorageInterface):
             self._logger.debug(f"Extracted thumbnail {output_name} from {path}")
 
     def _remove_thumbnails(self, path: str, name: str) -> None:
-        path = self.sanitize_path(path)
         thumbnail_path = os.path.join(path, self.THUMBNAIL_DIR)
 
         if not os.path.exists(thumbnail_path):

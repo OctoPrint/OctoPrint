@@ -6,6 +6,7 @@ import datetime
 import hashlib
 import logging
 import threading
+import time
 from collections.abc import Iterable
 from typing import Optional
 from urllib.parse import quote as urlquote
@@ -658,9 +659,21 @@ def _analyse_and_convert_recursively(
                     + f"downloads/thumbs/{origin}/{quoted_path}"
                 )
 
+                def cache_buster(
+                    origin: str, path: str, size: Optional[str] = None
+                ) -> str:
+                    meta = fileManager.get_thumbnail(origin, path, sizehint=size)
+                    lm = time.time()
+                    if meta and meta.last_modified:
+                        lm = meta.last_modified.timestamp()
+                    return str(int(lm))
+
                 for size in entry.thumbnails:
-                    refs[f"thumbnail_{size}"] = url + "?size=" + size
-                refs["thumbnail"] = url
+                    cb = cache_buster(origin, entry.path, size=size)
+                    refs[f"thumbnail_{size}"] = f"{url}?size={size}&_cb={cb}"
+
+                cb = cache_buster(origin, entry.path)
+                refs["thumbnail"] = f"{url}?_cb={cb}"
 
             result.append(
                 apischema.ApiStorageFile(
