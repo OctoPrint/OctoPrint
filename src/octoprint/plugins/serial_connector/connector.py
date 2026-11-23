@@ -501,6 +501,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
             self.is_operational()
             and not self.is_printing()
             and not self.state == ConnectedPrinterState.TRANSFERRING_FILE
+            and not self.state == ConnectedPrinterState.PAUSED
         )
 
     @property
