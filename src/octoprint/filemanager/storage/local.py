@@ -1751,7 +1751,6 @@ class LocalFileStorage(StorageInterface):
             self._logger.debug(f"Extracted thumbnail {output_name} from {path}")
 
     def _remove_thumbnails(self, path: str, name: str) -> None:
-        path = self.sanitize_path(path)
         thumbnail_path = os.path.join(path, self.THUMBNAIL_DIR)
 
         if not os.path.exists(thumbnail_path):
