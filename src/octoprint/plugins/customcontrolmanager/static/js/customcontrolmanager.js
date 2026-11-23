@@ -222,7 +222,8 @@ $(function () {
                 for (const item of obj.input) {
                     const input = {
                         name: item.name,
-                        parameter: item.parameter
+                        parameter: item.parameter,
+                        slider: null
                     };
 
                     if (item.slider) {
