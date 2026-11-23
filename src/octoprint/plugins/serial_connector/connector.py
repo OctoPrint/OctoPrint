@@ -721,7 +721,10 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
                 job = self._file_manager.create_job(storage, path, owner=user)
             except ValueError:
                 # file selected by the printer couldn't be found for proper job creation, so let's fall back to this
-                _, name = path.rsplit("/", 1)
+                if "/" in path:
+                    _, name = path.rsplit("/", 1)
+                else:
+                    name = path
                 job = PrintJob(
                     storage=storage, path=path, display=name, size=size, owner=user
                 )
