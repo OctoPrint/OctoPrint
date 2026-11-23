@@ -844,23 +844,23 @@ class LocalFileStorage(StorageInterface):
 
         if os.path.isdir(path_on_disk):
 
-            def process_folder(folder: str, base: str):
+            def process_folder(folder: str):
                 for item in os.scandir(folder):
                     if item.name.startswith("."):
                         continue
 
                     if item.is_dir():
                         if recursive:
-                            process_folder(item.path, f"{base}/{item.name}")
+                            process_folder(item.path)
                         continue
 
                     if force or len(self._get_thumbnails(folder, item.name)) == 0:
-                        self._extract_thumbnails(f"{base}/{item.name}")
+                        self._extract_thumbnails(item.path)
 
-            process_folder(path_on_disk, path)
+            process_folder(path_on_disk)
 
         elif force or not self.has_thumbnail(path):
-            self._extract_thumbnails(path)
+            self._extract_thumbnails(path_on_disk)
 
     def _to_thumbnail_info(
         self, thumb: str, sizehint: str, printable: str
@@ -1729,7 +1729,7 @@ class LocalFileStorage(StorageInterface):
         return sorted_result
 
     def _extract_thumbnails(self, path: str) -> None:
-        folder, name = self.sanitize(path)
+        folder, name = os.path.split(path)
 
         if gtt is None:
             return
