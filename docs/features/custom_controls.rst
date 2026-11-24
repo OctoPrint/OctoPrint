@@ -143,12 +143,24 @@ Controls
      - (Optional) A single GCODE command to send to the printer. Will be rendered as a button which sends the command to
        the printer upon click. The button text will be the value of the ``name`` attribute. Mutually exclusive with
        ``commands`` and ``script``. The rendered button will be disabled if the printer is currently offline or printing or
-       alternatively if the requirements defined via the ``enabled`` attribute are not met.
+       alternatively if the requirements defined via the ``enabled`` attribute are not met. May contain placeholders in
+       :ref:`Python Format String Syntax <formatstrings>` for any defined input parameters.
+
+       .. versionchanged:: 2.0.0
+          The placeholder format has been changed from `old style <https://docs.python.org/2/library/stdtypes.html#string-formatting>`_ to 
+          :ref:`new style  <formatstrings>` formatting. However, OctoPrint will detect if your ``command``/``commands`` definition
+          still contains old style formatting and if so apply that.
    * - ``commands``
      - (Optional) A list of GCODE commands to send to the printer. Will be rendered as a button which sends the commands
        to the printer upon click. The button text will be the value of the ``name`` attribute. Mutually exclusive with
        ``command`` and ``script``. The rendered button will be disabled if the printer is currently offline or printing
-       or alternatively if the requirements defined via the ``enabled`` attribute are not met.
+       or alternatively if the requirements defined via the ``enabled`` attribute are not met. May contain placeholders in
+       :ref:`Python Format String Syntax <formatstrings>` for any defined input parameters.
+
+       .. versionchanged:: 2.0.0
+          The placeholder format has been changed from `old style <https://docs.python.org/2/library/stdtypes.html#string-formatting>`_ to 
+          :ref:`new style  <formatstrings>` formatting. However, OctoPrint will detect if your ``command``/``commands`` definition
+          still contains old style formatting and if so apply that.
    * - ``script``
      - (Optional) The name of a full blown :ref:`GCODE script <sec-features-gcode_scripts>` to send to the printer.
        Will be rendered as a button which sends the script to the printer upon click. The button text will be the value
