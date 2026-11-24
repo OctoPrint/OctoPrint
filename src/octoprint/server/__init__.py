@@ -1950,7 +1950,7 @@ class Server:
             util.tornado.access_validation_factory(
                 app,
                 util.flask.permission_validator,
-                permissions.Permissions.TIMELAPSE_LIST,
+                permissions.Permissions.TIMELAPSE_DOWNLOAD,
             ),
         ] + access_validators_from_plugins
         download_validators = [
