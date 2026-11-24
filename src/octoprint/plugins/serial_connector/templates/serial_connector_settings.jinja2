@@ -657,6 +657,16 @@
                             </div>
                         </div>
                         <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox"
+                                           data-bind="checked: settings.settings.plugins.serial_connector.sdCaseSensitive"
+                                           id="settings-serialSdCaseSensitive">
+                                    {{ _("SD card file names are case sensitive") }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
                             <label class="control-label">
                                 {{ _("Simulate <code>ok</code> for resend requests") }}
                             </label>

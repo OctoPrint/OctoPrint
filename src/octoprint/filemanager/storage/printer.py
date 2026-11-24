@@ -591,8 +591,10 @@ class PrinterFileStorage(StorageInterface):
     def sanitize_name(self, name: str) -> str:
         return self._connection.sanitize_file_name(name.replace("/", ""))
 
-    def available_name(self, path, name):
-        return self._connection.available_file_name(path, name.replace("/", ""))
+    def available_name(self, path, name, keep_case: bool = False) -> str:
+        return self._connection.available_file_name(
+            path, name.replace("/", ""), keep_case=keep_case
+        )
 
     def split_path(self, path: str) -> tuple[str, str]:
         path = self._strip_leading_slash(path)
