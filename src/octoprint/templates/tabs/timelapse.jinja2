@@ -250,8 +250,9 @@
                        data-bind="value: name, checked: $root.markedForFileDeletion, invisible: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)()">
             </td>
             <td class="timelapse_files_thumb">
-                <div class="thumb" data-bind="css: { letterbox: $data.thumbnail }">
-                    <!-- ko if: $data.thumbnail -->
+                <div class="thumb"
+                     data-bind="css: { letterbox: $data.thumbnail && $root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DOWNLOAD)() }">
+                    <!-- ko if: $data.thumbnail && $root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DOWNLOAD)() -->
                     {# djlint:off H006,H013 #}
                     <img data-bind="attr:{src: thumbnail}" loading="lazy" />
                     {# djlint: on #}
