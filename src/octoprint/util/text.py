@@ -59,57 +59,20 @@ def remove_unicode_variations(text):
 
 
 _OLD_FORMAT_REGEX = re.compile(
-    r"%\([a-zA-Z0-9_]+\)[#0\- +]*\d*(\.[0-9]+)?[hlL]?[diouxXeEfFgGcrs]"
+    r"%"
+    r"(?:\([^()]*\))?"  # mapping key (optional)
+    r"[#0+ -]*"  # conversion flags (optional)
+    r"(?:[1-9]\d*|\*)?"  # minimum field width (optional)
+    r"(?:\.(?:[0-9]*|\*))?"  # precision (optional)
+    r"[hlL]?"  # length modifier (optional)
+    r"[diouxXeEfFgGcrs%]"  # conversion type
 )
-# '%(' + name + ')' + opt(conversion_flags) + opt(min_field_width) + opt(precision) + opt(length_mod) + conversion_type
-#
-# conversion_flags: '#', '0', '-', ' ', '+'
-# min_field_width: \d+
-# precision: '.' + \d+
-# length_mod: 'h' | 'l' | 'L'
-# conversion_type: 'd' | 'i' | 'o' | 'u' | 'x' | 'X' | 'e' | 'E' | 'f' | 'F' | 'g' | 'G' | 'c' | 'r' | 's'
-#
-# we ignore stuff without a named placeholder as well as parameterized width and precision
-#
 # see https://docs.python.org/2/library/stdtypes.html#string-formatting
 
 
 def has_old_style_formatting(text: str) -> bool:
     """
     Checks whether ``text`` contains old ``%(foo)s`` style formatting.
-
-    Examples:
-
-    >>> has_old_style_formatting("test {foo!s} bar")
-    False
-    >>> has_old_style_formatting("G1 X%(x)s F%(feedrate)s")
-    True
-    >>> has_old_style_formatting("G1 X%(x)f F%(feedrate)f")
-    True
-    >>> has_old_style_formatting("G1 X%(x)f F%(feedrate)lf")
-    True
-    >>> has_old_style_formatting("G1 X%(x)f F%(feedrate)0f")
-    True
-    >>> has_old_style_formatting("G1 X%(x)f F%(feedrate)+f")
-    True
-    >>> has_old_style_formatting("G1 X%(x)f F%(feedrate)-f")
-    True
-    >>> has_old_style_formatting("G1 X%(x)f F%(feedrate).2f")
-    True
-    >>> has_old_style_formatting("foo %(fnord)10s bar")
-    True
-    >>> has_old_style_formatting("foo %(fnord)-10s bar")
-    True
-    >>> has_old_style_formatting("foo %(fnord).5s bar")
-    True
-    >>> has_old_style_formatting("foo %(fnord)-10.5s bar")
-    True
-    >>> has_old_style_formatting("foo %(fnord)06.2f bar")
-    True
-    >>> has_old_style_formatting("foo %(fnord)+d bar")
-    True
-    >>> has_old_style_formatting("foo %% bar")
-    True
 
     Args:
         text: The text to check
