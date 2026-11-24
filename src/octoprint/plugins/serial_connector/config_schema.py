@@ -228,6 +228,9 @@ class SerialConfig(BaseModel):
     sdLowerCase: bool = False
     """Whether to treat all sd card file names as lower case"""
 
+    sdCaseSensitive: bool = False
+    """Whether the file names on th SD card are case sensitive or not"""
+
     sdCancelCommand: str = "M25"
     """Command to cancel SD prints"""
 
