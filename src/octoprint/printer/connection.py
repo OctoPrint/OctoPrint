@@ -79,12 +79,11 @@ PRINTING_STATES = {
     ConnectedPrinterState.STARTING,
     ConnectedPrinterState.PRINTING,
     ConnectedPrinterState.PAUSING,
-    ConnectedPrinterState.PAUSED,
     ConnectedPrinterState.RESUMING,
     ConnectedPrinterState.CANCELLING,
     ConnectedPrinterState.FINISHING,
 }
-"""ConnectedPrinterStats that are considered printing states"""
+"""ConnectedPrinterStats that are considered *active* printing states"""
 
 
 class ConnectedPrinterListenerMixin:

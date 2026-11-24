@@ -38,6 +38,12 @@ following message types are currently available for usage by 3rd party clients:
   payload data model as ``current``, see :ref:`the payload data model <sec-api-push-datamodel-currentandhistory>`.
 * ``event``: Events triggered within OctoPrint, such as e.g. ``PrintFailed`` or ``MovieRenderDone``. Payload is the event
   type and payload, see :ref:`the payload data model <sec-api-push-datamodel-event>`. Sent when an event is triggered internally.
+  Note that certain events require certain permissions to be sent via the socket, or at least to also receive the full payload:
+  * ``UserLoggedIn``: requires the ``ADMIN`` permission
+  * ``UserLoggedOut``: requires the ``ADMIN`` permission
+  * ``ClientOpened``: payload requires the ``ADMIN`` permission
+  * ``ClientAuthed``: payload requires the ``ADMIN`` permission
+  * ``ConnectionsAutorefreshed``: payload requires the ``CONNECTION`` permission
 * ``slicingProgress``: Progress updates from an active slicing background job, payload contains information about the
   model being sliced, the target file, the slicer being used and the progress as a percentage.
   See :ref:`the payload data model <sec-api-push-datamodel-slicingprogress>`.

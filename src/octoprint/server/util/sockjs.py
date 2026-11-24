@@ -94,6 +94,11 @@ class PrinterStateConnection(
                 payload if user.has_permission(Permissions.ADMIN) else {}
             )
         ],
+        Events.CONNECTIONS_AUTOREFRESHED: [
+            lambda user, payload: (
+                payload if user.has_permission(Permissions.CONNECTION) else {}
+            )
+        ],
         "*": [],
     }
 
