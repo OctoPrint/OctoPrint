@@ -56,3 +56,28 @@ def sanitize(text, safe_chars="-_.", demoji=True):
 
 def remove_unicode_variations(text):
     return _UNICODE_VARIATIONS.sub("", text)
+
+
+_OLD_FORMAT_REGEX = re.compile(
+    r"%"
+    r"(?:\([^()]*\))?"  # mapping key (optional)
+    r"[#0+ -]*"  # conversion flags (optional)
+    r"(?:[1-9]\d*|\*)?"  # minimum field width (optional)
+    r"(?:\.(?:[0-9]*|\*))?"  # precision (optional)
+    r"[hlL]?"  # length modifier (optional)
+    r"[diouxXeEfFgGcrs%]"  # conversion type
+)
+# see https://docs.python.org/2/library/stdtypes.html#string-formatting
+
+
+def has_old_style_formatting(text: str) -> bool:
+    """
+    Checks whether ``text`` contains old ``%(foo)s`` style formatting.
+
+    Args:
+        text: The text to check
+
+    Returns:
+        ``True`` if old style formatting was found, ``False`` otherwise
+    """
+    return "%%" in text or _OLD_FORMAT_REGEX.search(text) is not None
