@@ -437,12 +437,13 @@
                         </label>
                     </div>
                 </div>
-                <div data-bind="visible: !settings.settings.plugins.serial_connector.firmwareDetection()">
+                <div>
                     <div class="control-group">
                         <div class="controls">
-                            <label class="checkbox">
+                            <label class="checkbox"
+                                   data-bind="css: {muted: settings.settings.plugins.serial_connector.firmwareDetection}">
                                 <input type="checkbox"
-                                       data-bind="checked: settings.settings.plugins.serial_connector.sdLowerCase"
+                                       data-bind="checked: settings.settings.plugins.serial_connector.sdLowerCase, enable: !settings.settings.plugins.serial_connector.firmwareDetection()"
                                        id="settings-serialSdLowerCase">
                                 {{ _("Select SD files by lower case path") }} <span class="label">{{ _("Prusa Firmware") }}</span>
                             </label>
@@ -450,9 +451,10 @@
                     </div>
                     <div class="control-group">
                         <div class="controls">
-                            <label class="checkbox">
+                            <label class="checkbox"
+                                   data-bind="css: {muted: settings.settings.plugins.serial_connector.firmwareDetection}">
                                 <input type="checkbox"
-                                       data-bind="checked: settings.settings.plugins.serial_connector.sdRelativePath"
+                                       data-bind="checked: settings.settings.plugins.serial_connector.sdRelativePath, enable: !settings.settings.plugins.serial_connector.firmwareDetection()"
                                        id="settings-serialSdRelativePath">
                                 {{ _("Select SD files by relative path") }} <span class="label">{{ _("RepRap Firmware") }}</span>
                             </label>
@@ -460,9 +462,10 @@
                     </div>
                     <div class="control-group">
                         <div class="controls">
-                            <label class="checkbox">
+                            <label class="checkbox"
+                                   data-bind="css: {muted: settings.settings.plugins.serial_connector.firmwareDetection}">
                                 <input type="checkbox"
-                                       data-bind="checked: settings.settings.plugins.serial_connector.disableSdPrintingDetection"
+                                       data-bind="checked: settings.settings.plugins.serial_connector.disableSdPrintingDetection, enable: !settings.settings.plugins.serial_connector.firmwareDetection()"
                                        id="settings-disableSdPrintingDetection">
                                 {{ _("Disable SD printing detection") }} <span class="label">{{ _("Ultimaker 2/2+") }}</span>
                             </label>
@@ -470,9 +473,10 @@
                     </div>
                     <div class="control-group">
                         <div class="controls">
-                            <label class="checkbox">
+                            <label class="checkbox"
+                                   data-bind="css: {muted: settings.settings.plugins.serial_connector.firmwareDetection}">
                                 <input type="checkbox"
-                                       data-bind="checked: settings.settings.plugins.serial_connector.repetierTargetTemp"
+                                       data-bind="checked: settings.settings.plugins.serial_connector.repetierTargetTemp, enable: !settings.settings.plugins.serial_connector.firmwareDetection()"
                                        id="settings-serialRepetierTargetTemp">
                                 {{ _("Support <code>TargetExtr%%n</code>/<code>TargetBed</code> target temperature format") }} <span class="label">{{ _("Repetier") }}</span>
                             </label>
@@ -480,9 +484,10 @@
                     </div>
                     <div class="control-group">
                         <div class="controls">
-                            <label class="checkbox">
+                            <label class="checkbox"
+                                   data-bind="css: {muted: settings.settings.plugins.serial_connector.firmwareDetection}">
                                 <input type="checkbox"
-                                       data-bind="checked: mapped.disableExternalHeatupDetection"
+                                       data-bind="checked: mapped.disableExternalHeatupDetection, enable: !settings.settings.plugins.serial_connector.firmwareDetection()"
                                        id="settings-serialExternalHeatupDetection">
                                 {{ _("Disable detection of external heatups") }} <span class="label">{{ _("Repetier") }}</span>
                             </label>
@@ -490,9 +495,10 @@
                     </div>
                     <div class="control-group">
                         <div class="controls">
-                            <label class="checkbox">
+                            <label class="checkbox"
+                                   data-bind="css: {muted: settings.settings.plugins.serial_connector.firmwareDetection}">
                                 <input type="checkbox"
-                                       data-bind="checked: settings.settings.plugins.serial_connector.blockWhileDwelling"
+                                       data-bind="checked: settings.settings.plugins.serial_connector.blockWhileDwelling, enable: !settings.settings.plugins.serial_connector.firmwareDetection()"
                                        id="settings-serialBlockWhileDwelling">
                                 {{ _("Actively pause communication during <code>G4</code> dwell command") }} <span class="label">{{ _("Repetier") }}</span>
                             </label>
