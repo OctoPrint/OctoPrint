@@ -711,6 +711,12 @@ def _verifyFolderExists(origin, foldername):
     return fileManager.folder_exists(origin, foldername)
 
 
+def _verifyPathExists(origin, name):
+    return fileManager.file_exists(origin, name) or fileManager.folder_exists(
+        origin, name
+    )
+
+
 def _isBusy(target, path):
     currentOrigin, currentPath = _getCurrentFile()
     if (
@@ -1447,6 +1453,20 @@ def gcodeFileCommand(storage, path=""):
 
                 try:
                     if command == "copy":
+                        if _verifyPathExists(dst_storage, sanitized_destination):
+                            # overwrite
+                            if not Permissions.FILES_DELETE.can():
+                                abort(
+                                    403,
+                                    description="File already exists, cannot overwrite due to a lack of permissions",
+                                )
+
+                            if _isBusy(dst_storage, sanitized_destination):
+                                abort(
+                                    409,
+                                    description="Trying to overwrite a file or folder that is currently in use",
+                                )
+
                         if dst_storage == storage:
                             if is_file:
                                 fileManager.copy_file(
@@ -1479,6 +1499,14 @@ def gcodeFileCommand(storage, path=""):
                                 abort(
                                     409,
                                     description="Trying to move a file or folder that is currently in use",
+                                )
+
+                            if _verifyPathExists(
+                                dst_storage, sanitized_destination
+                            ) and _isBusy(dst_storage, sanitized_destination):
+                                abort(
+                                    409,
+                                    description="Trying to overwrite a file or folder that is currently in use",
                                 )
 
                             # deselect the file if it's currently selected
