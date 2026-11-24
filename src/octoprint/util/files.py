@@ -78,7 +78,12 @@ def sanitize_filename(name, really_universal=False, safe_chars="-_.()[] "):
 
 
 def get_dos_filename(
-    input, existing_filenames=None, extension=None, allowlisted_extensions=None, **kwargs
+    input,
+    existing_filenames=None,
+    extension=None,
+    allowlisted_extensions=None,
+    keep_case=False,
+    **kwargs,
 ):
     """
     Converts the provided input filename to a 8.3 DOS compatible filename. If ``existing_filenames`` is provided, the
@@ -94,6 +99,7 @@ def get_dos_filename(
             the provided ``filename`` will simply be truncated to 3 characters.
         allowlisted_extensions (list): A list of extensions on ``input`` that will be left as-is instead of
             exchanging for ``extension``.
+        keep_case (bool): Whether to keep the case of the input
         kwargs (dict): Additional keyword arguments to provide to :func:`find_collision_free_name`.
 
     Returns:
@@ -129,6 +135,10 @@ def get_dos_filename(
         'foo~1.gco'
         >>> get_dos_filename("foo 1.gco")
         'foo_1.gco'
+        >>> get_dos_filename("FOO 1.GCO")
+        'foo_1.gco'
+        >>> get_dos_filename("FOO 1.GCO", keep_case=True)
+        'FOO_1.GCO'
     """
 
     if input is None:
@@ -140,7 +150,7 @@ def get_dos_filename(
         existing_filenames = []
 
     if extension is not None:
-        extension = extension.lower()
+        extension = extension if keep_case else extension.lower()
 
     if allowlisted_extensions is None:
         allowlisted_extensions = kwargs.pop("whitelisted_extensions", None)
@@ -149,16 +159,20 @@ def get_dos_filename(
         allowlisted_extensions = []
 
     filename, ext = os.path.splitext(input)
-
-    ext = ext.lower()
     ext = ext[1:] if ext.startswith(".") else ext
-    if ext in allowlisted_extensions or extension is None:
-        extension = ext
 
-    return find_collision_free_name(filename, extension, existing_filenames, **kwargs)
+    lower_ext = ext.lower()
+    if lower_ext in allowlisted_extensions or extension is None:
+        extension = ext if keep_case else lower_ext
+
+    return find_collision_free_name(
+        filename, extension, existing_filenames, keep_case=keep_case, **kwargs
+    )
 
 
-def find_collision_free_name(filename, extension, existing_filenames, max_power=2):
+def find_collision_free_name(
+    filename, extension, existing_filenames, max_power=2, keep_case=False
+):
     """
     Tries to find a collision free translation of "<filename>.<extension>" to the 8.3 DOS compatible format,
     preventing collisions with any of the ``existing_filenames``.
@@ -206,6 +220,10 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 
         >>> find_collision_free_name("test1234", "gco", [])
         'test1234.gco'
+        >>> find_collision_free_name("TEST1234", "GCO", [])
+        'test1234.gco'
+        >>> find_collision_free_name("TEST1234", "GCO", [], keep_case=True)
+        'TEST1234.GCO'
         >>> find_collision_free_name("test1234", "gcode", [])
         'test1234.gco'
         >>> find_collision_free_name("test12345", "gco", [])
@@ -243,9 +261,10 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
     ]
 
     def make_valid(text):
-        return re.sub(
+        validated = re.sub(
             r"\s+", "_", text.translate({ord(i): None for i in r".\"/\[]:;=,"})
-        ).lower()
+        )
+        return validated if keep_case else validated.lower()
 
     filename = make_valid(filename)
     extension = make_valid(extension)
@@ -254,7 +273,7 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
     full_name_format = "{filename}.{extension}" if extension else "{filename}"
 
     result = full_name_format.format(filename=filename, extension=extension)
-    if len(filename) <= 8 and result not in existing_filenames:
+    if len(filename) <= 8 and result.lower() not in existing_filenames:
         # early exit
         return result
 
@@ -266,7 +285,7 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
             segment=filename[: (6 - power + 1)], counter=str(counter)
         )
         result = full_name_format.format(filename=prefix, extension=extension)
-        if result not in existing_filenames:
+        if result.lower() not in existing_filenames:
             return result
         counter += 1
         if counter >= 10**power:
