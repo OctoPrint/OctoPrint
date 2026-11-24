@@ -200,6 +200,11 @@ def find_collision_free_name(
     through names of the format ``some_f~1.gco``, ``some_f~2.gco``, ..., ``some_~10.gco``, ``some_~11.gco``, ...,
     ``<prefix>~<n>.gco`` for ``n`` less than 10 ^ ``max_power``, returning as soon as one is found that is not colliding.
 
+    .. note::
+
+       Checking against existing filenames happens case insensitive. The provided list is completely turned to lower
+       case and the check happens in lower case too, regardless of the ``keep_case`` parameter.
+
     Arguments:
         filename (string): The filename without the extension to convert to 8.3.
         extension (string): The extension to convert to 8.3 -- will be truncated to 3 characters if it's longer than
@@ -234,6 +239,10 @@ def find_collision_free_name(
         'test1234.g_o'
         >>> find_collision_free_name("test12345", "gco", ["/test12~1.gco"])
         'test12~2.gco'
+        >>> find_collision_free_name("test12345", "gco", ["/TEST12~1.GCO"])
+        'test12~2.gco'
+        >>> find_collision_free_name("test12345", "gco", ["/TEST12~1.GCO"], keep_case=True)
+        'test12~2.gco'
         >>> many_files = ["/test12~{}.gco".format(x) for x in range(10)[1:]]
         >>> find_collision_free_name("test12345", "gco", many_files)
         'test1~10.gco'
@@ -257,7 +266,7 @@ def find_collision_free_name(
     if filename.startswith("/"):
         filename = filename[1:]
     existing_filenames = [
-        to_unicode(x[1:] if x.startswith("/") else x) for x in existing_filenames
+        to_unicode(x[1:] if x.startswith("/") else x).lower() for x in existing_filenames
     ]
 
     def make_valid(text):
