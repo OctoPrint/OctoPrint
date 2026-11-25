@@ -1248,6 +1248,7 @@ class Settings:
             self._migrate_notify_suppressed_commands,
             self._migrate_trusted_auth_proxies,
             self._migrate_terminal_filters,
+            self._migrate_custom_controls_2_0,
         )
 
         for migrate in migrators:
@@ -1879,6 +1880,41 @@ class Settings:
             if name in old_defaults and entry.get("regex") == old_defaults[name]:
                 entry["regex"] = new_defaults[name]
                 modified = True
+
+        return modified
+
+    def _migrate_custom_controls_2_0(self, config):
+        modified = False
+
+        if "controls" not in config:
+            return False
+
+        def convert_input(input: dict[str, Any]) -> dict[str, Any]:
+            nonlocal modified
+
+            if input.get("slider") is False:
+                del input["slider"]
+                modified = True
+
+            return input
+
+        def convert_control(control: dict[str, Any]) -> dict[str, Any]:
+            if "children" in control:
+                # container
+                control["children"] = list(map(convert_control, control["children"]))
+            else:
+                if "input" in control:
+                    control["input"] = list(map(convert_input, control["input"]))
+
+            return control
+
+        config["controls"] = list(map(convert_control, config["controls"]))
+
+        if modified:
+            backup_path = self.backup("custom_controls_2_0_migration")
+            self._logger.info(
+                f"Made a copy of the current config at {backup_path} to allow recovery of custom controls"
+            )
 
         return modified
 

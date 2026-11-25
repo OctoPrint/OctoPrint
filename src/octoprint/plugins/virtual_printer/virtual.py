@@ -1622,9 +1622,11 @@ class VirtualPrinter:
 
         self._selectedSdFile = file["path"]
         self._selectedSdFileSize = file["size"]
+
+        upper_case_names = self._settings.get_boolean(["sdFiles", "upper_case"])
         if self._settings.get_boolean(["includeFilenameInOpened"]):
             self._send(
-                f"File opened: {self._sdPathPrefix + file['name']}  Size: {self._selectedSdFileSize}"
+                f"File opened: {self._sdPathPrefix}{file['name'].upper() if upper_case_names else file['name']}  Size: {self._selectedSdFileSize}"
             )
         else:
             self._send("File opened")
@@ -2019,7 +2021,10 @@ class VirtualPrinter:
         self._writingToSdFile = file
         self._writingToSd = True
         self._selectedSdFile = file
-        self._send(f"Writing to file: {filename}")
+        upper_case_names = self._settings.get_boolean(["sdFiles", "upper_case"])
+        self._send(
+            f"Writing to file: {filename.upper() if upper_case_names else filename}"
+        )
 
     def _finishSdFile(self):
         try:

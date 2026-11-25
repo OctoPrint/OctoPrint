@@ -1603,7 +1603,9 @@ class MachineCom:
             self._logger.exception("Error while trying to start printing")
             self._trigger_error(get_exception_string(), "start_print")
 
-    def get_remote_name(self, filename: str, free: bool = False) -> str:
+    def get_remote_name(
+        self, filename: str, free: bool = False, keep_case: bool = False
+    ) -> str:
         if not self._capability_supported(self.CAPABILITY_LFN_WRITE) and valid_file_type(
             filename, "gcode"
         ):
@@ -1617,6 +1619,7 @@ class MachineCom:
                 existing_filenames=existing,
                 extension="gco",
                 allowlisted_extensions=["gco", "g"],
+                keep_case=keep_case,
             )
         else:
             # either LFN_WRITE is supported, or this is not a gcode file
@@ -1725,6 +1728,9 @@ class MachineCom:
 
             if filename.startswith("/") and self._sdRelativePath:
                 filename = filename[1:]
+
+            if self._sdLowerCase:
+                filename = filename.lower()
 
             self._sdFileToSelect = filename
             self._sdFileToSelectUser = user

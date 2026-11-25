@@ -155,6 +155,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
         # comm
         self._connection: ConnectedPrinter = None
+        self._last_connected_connector: str = "unknown"
 
         # callbacks
         self._callbacks = []
@@ -498,13 +499,15 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             )
             raise exc
 
+        self._last_connected_connector = connector
+
     def disconnect(self, *args, **kwargs):
         """
         Closes the connection to the printer.
         """
         self._file_manager.remove_storage(FileDestinations.PRINTER)
 
-        payload = {"connector": "unknown"}
+        payload = {"connector": self._last_connected_connector}
         if self._connection and self._connection.connector:
             payload["connector"] = self._connection.connector
 
@@ -1307,8 +1310,9 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             state == ConnectedPrinterState.CLOSED
             or state == ConnectedPrinterState.CLOSED_WITH_ERROR
         ):
+            connector = self._last_connected_connector
+
             # we closed the connection
-            connector = None
             if self._connection is not None:
                 connector = self._connection.connector
                 self._connection = None
@@ -1320,9 +1324,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             self._add_temperature_data()
             self._printer_profile_manager.deselect()
 
-            payload = {"connector": "unknown"}
-            if connector:
-                payload["connector"] = connector
+            payload = {"connector": connector}
             eventManager().fire(Events.DISCONNECTED, payload=payload)
 
         self._set_state(state, state_string=state_str, error_string=error_str)
@@ -1613,7 +1615,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         self._add_temperature_data(temperatures)
 
     def on_printer_controls_updated(self, controls: list[dict[str, Any]]):
-        payload = {"connector": "unknown"}
+        payload = {"connector": self._last_connected_connector}
         if self._connection and self._connection.connector:
             payload["connector"] = self._connection.connector
         eventManager().fire(Events.PRINTER_CONTROLS_CHANGED, payload=payload)
@@ -1756,7 +1758,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         payload = {
             "state_id": self.get_state_id(),
             "state_string": state_string,
-            "connector": "unknown",
+            "connector": self._last_connected_connector,
         }
         if self._connection and self._connection.connector:
             payload["connector"] = self._connection.connector
@@ -2035,7 +2037,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             name = path.rsplit("/", maxsplit=1)[1]
 
         result = {
-            "connector": "unknown",
+            "connector": self._last_connected_connector,
             "name": name,
             "path": path,
             "origin": storage,

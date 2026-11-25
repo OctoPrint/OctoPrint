@@ -98,6 +98,10 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         self._progress_callback = None
         self._last_position = None
 
+        self._files_case_sensitive = self._plugin_settings.get_boolean(
+            ["sdCaseSensitive"]
+        )
+
     @property
     def current_storage_capabilities(self):
         return self.storage_capabilities.model_copy(
@@ -557,7 +561,9 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
     ) -> PrinterFile | None:
         files = self.get_printer_files(refresh=refresh)
         for f in files:
-            if f.path == path:
+            if f.path == path or (
+                not self._files_case_sensitive and f.path.lower() == path.lower()
+            ):
                 return f
         else:
             return None
@@ -584,9 +590,13 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
 
         try:
             tags = kwargs.get("tags", set()) | {"trigger:printer.add_sd_file"}
+            remote = self._comm.get_remote_name(
+                target, free=True, keep_case=self._files_case_sensitive
+            )
             return self._comm.startFileTransfer(
                 source,
                 target,
+                remote=remote,
                 special=not valid_file_type(target, "gcode"),
                 tags=tags,
             )
@@ -640,13 +650,19 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         if not self._comm:
             raise PrinterFilesUnavailableError("No connection to printer")
 
-        return self._comm.get_remote_name(name)
+        return self._comm.get_remote_name(name, keep_case=True)
 
-    def available_file_name(self, path: str, name: str, *args, **kwargs):
+    def available_file_name(
+        self, path: str, name: str, keep_case: bool = False, *args, **kwargs
+    ) -> str:
         if not self._comm:
             raise PrinterFilesUnavailableError("No connection to printer")
 
-        return self._comm.get_remote_name(name, free=True)
+        return self._comm.get_remote_name(
+            name,
+            free=True,
+            keep_case=keep_case,
+        )
 
     # ~~ comm.MachineComPrintCallback implementation
 
