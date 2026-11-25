@@ -46,8 +46,8 @@ BRANCH_VERSIONS = [
     # bugfix is the branch for preparation of the 2.0.x bugfix releases
     # so are any bug/... branches
     {
-        "tag": "2.0.2",
-        "commit": "012a92d7f5bffa1c2c059264968283fc578ca985",
+        "tag": "2.0.3",
+        "commit": "38fd87601464ec921eacab28315b2d7944f13f07",
         "patterns": ["bugfix", "bug/.*"],
     },
     # next is currently the branch for preparation of 2.0.0rc8
