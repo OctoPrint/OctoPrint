@@ -84,7 +84,8 @@ dependencies = [
     "netaddr>=1.3.0,<1.4",  # changelog hints at breaking changes on minor version increases
     "packaging>=26.0 ; python_version>='3.10'",
     "packaging==24.2 ; python_version<'3.10'",  # later versions cause issues with limits<5.1 that's pinning packaging<25
-    "libpass>=1.9.3,<2",
+    "passlib>=1.9.5,<2 ; python_version>='3.11'",  # libpass changed name & pypi package with 1.9.5, replacing abandoned passlib package
+    "libpass==1.9.4 ; python_version<'3.11'",  # no current passlib available for Python 3.9 & 3.10, so we still use libpass in that case
     "limits==4.2 ; python_version<'3.10'",  # dependency of Flask-Limiter, later version requires Python 3.10+
     "octoprint-plugin-tool",
     "pathvalidate>=3.3.1,<4",

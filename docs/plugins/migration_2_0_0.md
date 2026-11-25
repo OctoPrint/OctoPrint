@@ -457,7 +457,7 @@ The data model will still be returned in full, however the restricted values wil
 (sec-plugins-octo_2_0_0-project-dependencies)=
 ### Dependencies
 
-The `netifaces` and `passlib` libraries are no longer part of the dependencies of OctoPrint. Any plugins that import them without listing them as additional requirements will no longer be usable. If your plugin relies on functionality provided by either of these third party libraries, make sure to also make them part of your plugin's requirements by explicitly declaring them in `setup.py` or `pyproject.toml`.
+The `netifaces` library is no longer part of the dependencies of OctoPrint. Any plugins that import it without listing it as additional requirements will no longer be usable. If your plugin relies on functionality provided by any third party libraries, make sure to also make them part of your plugin's requirements by explicitly declaring them in `pyproject.toml` (or the legacy `setup.py` if you have not yet ported your plugin over, see the next point).
 
 (sec-plugins-octo_2_0_0-project-pyproject_toml)=
 ### `pyproject.toml` and build isolation
