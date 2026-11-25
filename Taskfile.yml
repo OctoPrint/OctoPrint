@@ -35,9 +35,9 @@ tasks:
       - python tools/scan-deps.py
 
   pre-commit:
-    desc: Run pre-commit on all files
+    desc: Run pre-commit check suite on all files
     cmds:
-      - pre-commit run --all-files
+      - prek run --all-files
 
   test:
     desc: Run test suites

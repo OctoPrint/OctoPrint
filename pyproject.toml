@@ -120,8 +120,8 @@ develop = [
     "time-machine",
     # formatting, liniting, etc
     "ruff",
-    # pre-commit
-    "pre-commit",
+    # prek (formerly pre-commit)
+    "prek",
     # profiler
     "pyinstrument",
     # dev task related

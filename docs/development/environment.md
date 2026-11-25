@@ -54,7 +54,7 @@ How to install this depends on your Operative System and will not be explained h
   
   - Set up the pre-commit hooks that make sure any changes you do adhere to the styling rules:
   
-        pre-commit install
+        prek install
   
   - Tell `git` where to find the file with revisions to exclude for `git blame`:
   
@@ -83,7 +83,7 @@ and if your current working directory is OctoPrint's checked out source you can 
 
 Additionally:
 
-  - running `git commit` will trigger a `pre-commit` run on your changes to make sure everything is properly
+  - running `git commit` will trigger a `prek` run on your changes to make sure everything is properly
     formatted and linted
   - `git blame` will ignore past revisions that were only reformatting the source code, as
     listed in `.git-blame-ignore-revs`
@@ -265,7 +265,7 @@ Consider this very much outdated!
       - Name: pre-commit
       - File type: Python
       - Scope: Module 'OctoPrint'
-      - Program: `<OctoPrint venv folder>/bin/pre-commit` (Linux) or `<OctoPrint venv folder>/Scripts/pre-commit` (Windows)
+      - Program: `<OctoPrint venv folder>/bin/prek` (Linux) or `<OctoPrint venv folder>/Scripts/prek` (Windows)
       - Arguments: `run --hook-stage manual --files $FilePath$`
       - Output paths to refresh: `$FilePath$`
       - Working directory: `$ProjectFileDir$`

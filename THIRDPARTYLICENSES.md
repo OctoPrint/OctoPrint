@@ -88,7 +88,7 @@
   * [ddt](https://github.com/txels/ddt): MIT
   * [flake8](https://gitlab.com/pycqa/flake8): MIT
   * [mock](https://github.com/testing-cabal/mock): BSD
-  * [pre-commit](https://github.com/pre-commit/pre-commit): MIT
+  * [prek](https://github.com/j178/prek): MIT
   * [pyinstrument](https://github.com/joerick/pyinstrument): BSD
   * [pytest](https://docs.pytest.org/en/latest/): MIT
   * [pytest-doctest-custom](http://github.com/danilobellini/pytest-doctest-custom): MIT

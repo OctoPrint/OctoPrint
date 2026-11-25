@@ -253,7 +253,7 @@ and branching strategy, plus the commit message formatting guidelines.
    ```
 
    in the OctoPrint checkout folder. If you install the pre-commit hooks via
-   `pre-commit install` (**which you really should!**) this will even be taken care of for you prior to committing.
+   `prek install` (**which you really should!**) this will even be taken care of for you prior to committing.
 
    An [automatic build workflow](https://github.com/OctoPrint/OctoPrint/actions?query=workflow%3ABuild)
    is in place that will run these checks - if they fail your PR will be marked accordingly.
