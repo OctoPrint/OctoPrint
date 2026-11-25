@@ -662,9 +662,7 @@ def _analyse_and_convert_recursively(
                     + f"downloads/thumbs/{origin}/{quoted_path}"
                 )
 
-                def cache_buster(
-                    origin: str, path: str, size: Optional[str] = None
-                ) -> str:
+                def cache_buster(origin: str, path: str, size: str | None = None) -> str:
                     meta = fileManager.get_thumbnail(origin, path, sizehint=size)
                     lm = time.time()
                     if meta and meta.last_modified:
