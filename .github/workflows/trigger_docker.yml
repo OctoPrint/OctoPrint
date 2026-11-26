@@ -32,5 +32,5 @@ jobs:
         with:
           token: ${{ secrets.DOCKER_ACCESS_TOKEN }}
           repository: ${{ github.repository_owner }}/octoprint-docker
-          event-type: "canary"
+          event-type: "dev"
           client-payload: '{"tag_name": "dev"}'
